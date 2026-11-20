@@ -36,8 +36,8 @@ import { nativo, type Agente } from '../nativo';
 import { BarraTopo } from '../componentes/BarraTopo';
 import { formatarCusto, formatarTokens, Icone, MiniVertice, SimboloEstado } from '../componentes/Pecas';
 
-type DadosNo = { papel: Papel; agente: Agente; nivel: Nivel; tarefa: string; v?: Vertice };
-type NoVertice = Node<DadosNo, 'vertice'>;
+export type DadosNo = { papel: Papel; agente: Agente; nivel: Nivel; tarefa: string; v?: Vertice };
+export type NoVertice = Node<DadosNo, 'vertice'>;
 
 const CONDICOES = ['sempre', 'depois do batedor', 'testes passaram', 'testes falharam', 'revisão pediu mudanças', 'custo < US$ 2', 'cota ok'];
 
@@ -119,7 +119,7 @@ const ROTEIROS: Roteiro[] = [
   },
 ];
 
-function NoVerticeView({ data, selected }: NodeProps<NoVertice>) {
+export function NoVerticeView({ data, selected }: NodeProps<NoVertice>) {
   const v = data.v;
   const estado = v?.estado;
   return (

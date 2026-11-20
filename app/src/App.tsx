@@ -1,11 +1,13 @@
 /// <reference types="vite/client" />
 import { useEffect, type ComponentType } from 'react';
-import { fecharAviso, focar, irParaQuemEspera, useLoja, ESTADO_INFO } from './estado/loja';
+import { fecharAviso, focar, irPara, irParaQuemEspera, nomeUsuario, useLoja, ESTADO_INFO } from './estado/loja';
 import { pedirNovaTarefa, useCasca, type Rota } from './estado/casca';
 import { BarraLateral } from './componentes/BarraLateral';
 import { BarraTopo } from './componentes/BarraTopo';
 import { PainelDireito } from './componentes/PainelDireito';
 import { Dialogos } from './componentes/Dialogos';
+import { BoasVindas } from './componentes/BoasVindas';
+import { PainelOrquestracao } from './componentes/PainelOrquestracao';
 import { Imagens } from './telas/Imagens';
 import { Orquestracao } from './telas/Orquestracao';
 import { PrimeiraAbertura } from './telas/PrimeiraAbertura';
@@ -61,7 +63,7 @@ export function App() {
             <div className="area-sessoes">
               <Sessoes />
             </div>
-            {/* encaixe: PainelOrquestracao */}
+            <PainelOrquestracao />
           </div>
         )}
         {rota === 'orquestracao' && <Orquestracao />}
@@ -71,6 +73,7 @@ export function App() {
       </main>
       {casca.painelAberto && <PainelDireito />}
       <Dialogos />
+      <BoasVindas nome={nomeUsuario() || undefined} aoComecar={() => irPara('inicio')} />
       <div className="avisos" aria-live="polite">
         {e.avisos.map((a) => (
           <div key={a.id} className={`aviso aviso-${a.tipo}`}>

@@ -5,7 +5,7 @@
 .fundo-dither {
   position: absolute; z-index: -1; pointer-events: none;
   top: -20px; right: -40px; width: min(60%, 900px); height: 720px;
-  opacity: .5;
+  opacity: .3;
   -webkit-mask-image: radial-gradient(ellipse 70% 65% at 62% 46%, #000 45%, transparent 100%);
   mask-image: radial-gradient(ellipse 70% 65% at 62% 46%, #000 45%, transparent 100%);
 }
@@ -132,7 +132,7 @@
 }
 
 /* ---------- boas-vindas ---------- */
-.bv-fundo { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 20px; background: rgba(3,6,16,.72); backdrop-filter: blur(3px); animation: bv-entra .2s ease-out; }
+.bv-fundo { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 20px; background: rgba(3,6,16,.72); backdrop-filter: blur(3px); animation: bv-entra .2s ease-out; }
 .bv {
   position: relative; width: 460px; max-width: 100%;
   display: flex; flex-direction: column; align-items: center; text-align: center;

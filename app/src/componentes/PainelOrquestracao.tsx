@@ -1,0 +1,364 @@
+// Painel de orquestração preso embaixo dos terminais: uma aba por planner (líder),
+// o canvas com quem ele chamou, o resumo dos workers e um campo para dar mais trabalho.
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Background,
+  MarkerType,
+  Panel,
+  ReactFlow,
+  useReactFlow,
+  useViewport,
+  type Edge,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+import {
+  avisar,
+  criarVertice,
+  ESTADO_INFO,
+  focar,
+  lideresDaSessao,
+  mandar,
+  NOME_AGENTE,
+  resumoOrquestracao,
+  trabalhadoresDoLider,
+  useLoja,
+  type Vertice,
+} from '../estado/loja';
+import { nativo, type UsoDoPlano } from '../nativo';
+import { NoVerticeView, type NoVertice } from '../telas/Orquestracao';
+import { formatarCusto, formatarTokens, Icone, MiniVertice, SimboloEstado } from './Pecas';
+import { HiperMini } from './HiperMini';
+import '../orquestracao.css';
+
+const tiposNo = { vertice: NoVerticeView };
+
+const CHAVE = 'hypercube.orquestracao';
+
+function lerPreferencias(): { aberto: boolean; limite: number } {
+  try {
+    const p = JSON.parse(localStorage.getItem(CHAVE) ?? 'null');
+    if (p && typeof p.limite === 'number') return { aberto: p.aberto !== false, limite: p.limite };
+  } catch {
+    /* sem armazenamento */
+  }
+  return { aberto: true, limite: 4 };
+}
+
+function salvarPreferencias(p: { aberto: boolean; limite: number }) {
+  try {
+    localStorage.setItem(CHAVE, JSON.stringify(p));
+  } catch {
+    /* sem armazenamento */
+  }
+}
+
+// Mantém a aba escolhida ao trocar de tela.
+const memoria: { aba: Record<string, string> } = { aba: {} };
+
+const corUso = (n: number) => (n > 90 ? 'var(--erro)' : n > 70 ? 'var(--esperando)' : 'var(--texto-2)');
+
+interface Props {
+  /** Sessão mostrada; sem isso usa a sessão ativa. */
+  sessaoId?: string | null;
+}
+
+export function PainelOrquestracao({ sessaoId }: Props) {
+  const e = useLoja();
+  const sid = sessaoId ?? e.sessaoAtivaId;
+  const lideres = lideresDaSessao(e, sid);
+  const [pref, setPref] = useState(lerPreferencias);
+  const [abaId, setAbaId] = useState<string | null>(sid ? memoria.aba[sid] ?? null : null);
+  const [uso, setUso] = useState<UsoDoPlano[]>([]);
+
+  useEffect(() => {
+    nativo.processos.usoDoPlano().then(setUso);
+  }, []);
+  useEffect(() => salvarPreferencias(pref), [pref]);
+
+  const lider = lideres.find((l) => l.id === abaId) ?? lideres[0] ?? null;
+  useEffect(() => {
+    if (sid && lider) memoria.aba[sid] = lider.id;
+  }, [sid, lider]);
+
+  const workers = trabalhadoresDoLider(e, lider?.id ?? null);
+  const r = resumoOrquestracao(workers, pref.limite);
+  const usoLider = uso.find((u) => u.provedor.toLowerCase() === (lider?.agente ?? 'claude'));
+
+  const novoPlanner = async () => {
+    if (!sid) return;
+    const v = await criarVertice(sid, 'lider', 'claude', 'forte');
+    setAbaId(v.id);
+  };
+
+  const mudarLimite = (n: number) => setPref((p) => ({ ...p, limite: Math.max(1, Math.min(8, Math.round(n) || 1)) }));
+
+  return (
+    <section className={`po ${pref.aberto ? 'po-aberto' : 'po-fechado'}`} aria-label="Orquestração">
+      <header className="po-cabeca">
+        <button
+          className="po-recolher"
+          onClick={() => setPref((p) => ({ ...p, aberto: !p.aberto }))}
+          aria-expanded={pref.aberto}
+          title={pref.aberto ? 'Recolher o painel' : 'Abrir o painel'}
+        >
+          <Icone nome={pref.aberto ? 'baixo' : 'cima'} tamanho={14} />
+          <span className="po-titulo">Orquestração</span>
+        </button>
+
+        {usoLider && (
+          <span className="po-uso mono" style={{ color: corUso(usoLider.cincoHoras) }} title="Uso do plano nas últimas 5 horas">
+            {NOME_AGENTE[lider?.agente ?? 'claude'].toLowerCase()} em {usoLider.cincoHoras}% (reseta {usoLider.renovaEm})
+          </span>
+        )}
+
+        <span className="po-contas mono">
+          {r.rodando} rodando · {r.naFila} na fila · limite{' '}
+          <input
+            className="po-limite"
+            type="number"
+            min={1}
+            max={8}
+            value={pref.limite}
+            onChange={(ev) => mudarLimite(Number(ev.target.value))}
+            aria-label="Limite de workers rodando ao mesmo tempo"
+            title="Quantos workers podem rodar ao mesmo tempo"
+          />
+        </span>
+
+        <div className="po-abas" role="tablist" aria-label="Planners">
+          {lideres.map((l) => (
+            <button
+              key={l.id}
+              role="tab"
+              aria-selected={l.id === lider?.id}
+              className={`po-aba ${l.id === lider?.id ? 'ativa' : ''}`}
+              onClick={() => {
+                setAbaId(l.id);
+                if (!pref.aberto) setPref((p) => ({ ...p, aberto: true }));
+              }}
+              title={l.tarefa ?? l.nome}
+            >
+              <HiperMini estado={l.estado} tamanho={12} />
+              {l.nome}
+            </button>
+          ))}
+          <button className="po-aba po-mais" onClick={novoPlanner} disabled={!sid} title="Novo planner" aria-label="Novo planner">
+            <Icone nome="mais" tamanho={13} />
+          </button>
+        </div>
+      </header>
+
+      {pref.aberto && (
+        <>
+          <div className="po-corpo">
+            <CanvasPlanner lider={lider} workers={workers} />
+            <Resumo r={r} workers={workers} />
+          </div>
+          <Rodape workers={workers} lider={lider} />
+        </>
+      )}
+    </section>
+  );
+}
+
+// ---------- canvas ----------
+
+function CanvasPlanner({ lider, workers }: { lider: Vertice | null; workers: Vertice[] }) {
+  const vazio = !lider || workers.length === 0;
+  const { nos, arestas } = useMemo(() => (vazio ? { nos: [], arestas: [] } : montarGrafo(lider, workers)), [vazio, lider, workers]);
+  const chave = `${lider?.id ?? 'nada'}-${workers.length}`;
+  return (
+    <div className="po-canvas">
+      <ReactFlow
+        key={chave}
+        nodes={nos}
+        edges={arestas}
+        nodeTypes={tiposNo}
+        nodesConnectable={false}
+        nodesDraggable={false}
+        onNodeDoubleClick={(_, n) => n.data.v && focar(n.data.v.id)}
+        zoomOnScroll={false}
+        zoomActivationKeyCode="Control"
+        panOnDrag
+        minZoom={0.3}
+        maxZoom={1.6}
+        fitView
+        fitViewOptions={{ padding: 0.18, maxZoom: 0.9 }}
+        proOptions={{ hideAttribution: true }}
+        colorMode="dark"
+      >
+        <Background color="#1B2650" gap={20} size={1.2} />
+        <ControlesZoom />
+      </ReactFlow>
+      {vazio && (
+        <div className="po-vazio">
+          <HiperMini estado="repouso" tamanho={28} />
+          <b>{lider ? 'Este planner ainda não delegou nenhum trabalho' : 'Nenhum planner nesta sessão'}</b>
+          <span className="secundario">
+            {lider ? 'Quando ele chamar workers, eles aparecem aqui ligados a ele.' : 'Use o + nas abas para criar um líder que divide o trabalho.'}
+          </span>
+        </div>
+      )}
+      <span className="po-dica-canvas">Arraste o canvas para mover · Ctrl + scroll para dar zoom</span>
+    </div>
+  );
+}
+
+function ControlesZoom() {
+  const { zoomIn, zoomOut, fitView, zoomTo } = useReactFlow();
+  const { zoom } = useViewport();
+  return (
+    <Panel position="bottom-right" className="po-zoom">
+      <button onClick={() => zoomOut({ duration: 150 })} aria-label="Diminuir zoom" title="Diminuir zoom">
+        <Icone nome="menos" tamanho={13} />
+      </button>
+      <button onClick={() => fitView({ padding: 0.12, duration: 200 })} title="Ajustar à tela">
+        ajustar
+      </button>
+      <button className="mono" onClick={() => zoomTo(1, { duration: 150 })} title="Voltar para 100%">
+        {Math.round(zoom * 100)}%
+      </button>
+      <button onClick={() => zoomIn({ duration: 150 })} aria-label="Aumentar zoom" title="Aumentar zoom">
+        <Icone nome="mais" tamanho={13} />
+      </button>
+    </Panel>
+  );
+}
+
+function montarGrafo(lider: Vertice | null, workers: Vertice[]): { nos: NoVertice[]; arestas: Edge[] } {
+  if (!lider) return { nos: [], arestas: [] };
+  const largura = 250;
+  const total = workers.length;
+  const no = (v: Vertice, x: number, y: number): NoVertice => ({
+    id: v.id,
+    type: 'vertice',
+    position: { x, y },
+    data: { papel: v.papel, agente: v.agente, nivel: v.nivel, tarefa: v.tarefa ?? '', v },
+  });
+  const nos = [no(lider, ((total - 1) * largura) / 2, 0), ...workers.map((w, i) => no(w, i * largura, 200))];
+  const arestas: Edge[] = workers.map((w) => {
+    const ativa = w.estado === 'trabalhando';
+    const cor = ativa ? '#93A4FF' : '#27356B';
+    return {
+      id: `${lider.id}-${w.id}`,
+      source: w.paiId ?? lider.id,
+      target: w.id,
+      type: 'smoothstep',
+      animated: ativa,
+      markerEnd: { type: MarkerType.ArrowClosed, color: cor },
+      style: { stroke: cor, strokeWidth: 1.6 },
+    };
+  });
+  return { nos, arestas };
+}
+
+// ---------- resumo ----------
+
+type Contador = { chave: string; nome: string; valor: string | number; simbolo: string; cor: string };
+
+function Resumo({ r, workers }: { r: ReturnType<typeof resumoOrquestracao>; workers: Vertice[] }) {
+  const linhas: Contador[] = [
+    { chave: 'esperando', nome: 'esperando você', valor: r.esperando, simbolo: ESTADO_INFO.esperando.simbolo, cor: 'var(--esperando)' },
+    { chave: 'rodando', nome: 'rodando', valor: r.rodando, simbolo: ESTADO_INFO.trabalhando.simbolo, cor: 'var(--trabalhando)' },
+    { chave: 'fila', nome: 'na fila', valor: r.naFila, simbolo: '◌', cor: 'var(--texto-2)' },
+    { chave: 'interrompidos', nome: 'interrompidos', valor: r.interrompidos, simbolo: '◇', cor: 'var(--esperando)' },
+    { chave: 'falhou', nome: 'falhou', valor: r.falhou, simbolo: ESTADO_INFO.erro.simbolo, cor: 'var(--erro)' },
+    { chave: 'encerrados', nome: 'encerrados', valor: r.encerrados, simbolo: ESTADO_INFO.pronto.simbolo, cor: 'var(--pronto)' },
+    { chave: 'vagas', nome: 'vagas em uso', valor: `${r.vagasEmUso}/${r.limite}`, simbolo: '▣', cor: 'var(--cobalto-claro)' },
+  ];
+  return (
+    <aside className="po-resumo">
+      <div className="po-progresso">
+        <span>
+          <b className="mono">{r.concluidos}</b> de <b className="mono">{r.total}</b> workers
+        </span>
+        <span className="mono po-porcento">{r.porcento}%</span>
+      </div>
+      <span className="barra-trilho po-trilho">
+        <span className="barra-cheia" style={{ width: `${r.porcento}%`, background: 'var(--pronto)' }} />
+      </span>
+      <ul className="po-contadores">
+        {linhas.map((l) => (
+          <li key={l.chave} className={l.valor === 0 || l.valor === `0/${r.limite}` ? 'zero' : ''}>
+            <span className="po-simbolo" style={{ color: l.cor }} aria-hidden="true">
+              {l.simbolo}
+            </span>
+            <span className="po-nome">{l.nome}</span>
+            <b className="mono">{l.valor}</b>
+          </li>
+        ))}
+      </ul>
+
+      <h4 className="po-secao">Execuções</h4>
+      {workers.length === 0 ? (
+        <p className="dica">Nenhuma execução ainda.</p>
+      ) : (
+        <ul className="po-execucoes">
+          {workers.map((w) => (
+            <li key={w.id}>
+              <button onClick={() => focar(w.id)} title="Abrir o terminal">
+                <MiniVertice papel={w.papel} tamanho={16} estado={w.estado} />
+                <span className="po-exec-texto">
+                  <b>{w.nome}</b>
+                  <span className="secundario">{w.estado === 'esperando' ? w.pergunta : w.ultimaAcao ?? w.tarefa}</span>
+                </span>
+                <span className="po-exec-num mono">
+                  {formatarCusto(w.custo)}
+                  <br />
+                  {formatarTokens(w.tokens)} tk
+                </span>
+                <SimboloEstado estado={w.estado} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </aside>
+  );
+}
+
+// ---------- rodapé ----------
+
+function Rodape({ workers, lider }: { workers: Vertice[]; lider: Vertice | null }) {
+  const [alvoId, setAlvoId] = useState('');
+  const [texto, setTexto] = useState('');
+  const alvo = workers.find((w) => w.id === alvoId) ?? (lider?.id === alvoId ? lider : undefined);
+
+  const enviar = () => {
+    const t = texto.trim();
+    if (!alvo || !t) return;
+    mandar(alvo.id, t);
+    avisar(`Mais trabalho mandado para ${alvo.nome}.`, 'trabalhando', alvo.id);
+    setTexto('');
+  };
+
+  return (
+    <form
+      className="po-rodape"
+      onSubmit={(ev) => {
+        ev.preventDefault();
+        enviar();
+      }}
+    >
+      <select value={alvo ? alvo.id : ''} onChange={(ev) => setAlvoId(ev.target.value)} aria-label="Worker que recebe o trabalho">
+        <option value="">Escolha um worker…</option>
+        {lider && <option value={lider.id}>{lider.nome} (planner)</option>}
+        {workers.map((w) => (
+          <option key={w.id} value={w.id}>
+            {ESTADO_INFO[w.estado].simbolo} {w.nome}
+          </option>
+        ))}
+      </select>
+      <input
+        value={texto}
+        onChange={(ev) => setTexto(ev.target.value)}
+        placeholder={alvo ? `Dar mais trabalho a ${alvo.nome}…` : 'Dar mais trabalho a ele…'}
+        disabled={!alvo}
+        aria-label="Trabalho novo"
+      />
+      <button className="botao primario" type="submit" disabled={!alvo || !texto.trim()} title="Mandar">
+        <Icone nome="enviar" tamanho={14} />
+      </button>
+    </form>
+  );
+}

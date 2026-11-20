@@ -18,6 +18,7 @@ import { definirModoLateral, irParaRota, listarProjetos, projetoAtivo, useCasca,
 import { nativo } from '../nativo';
 import { FRASE_HIPER, Hiper } from './Hiper';
 import { AvatarProjeto, IconeCasca } from './IconesCasca';
+import { HiperMini } from './HiperMini';
 import { MiniVertice, SimboloEstado } from './Pecas';
 
 const REPO = 'https://github.com/enzGL/hypercube';
@@ -346,7 +347,7 @@ function LinhaTerminal({ e, v, nivel }: { e: Estado; v: Vertice; nivel: number }
         <MiniVertice papel={v.papel} tamanho={14} estado={v.estado} />
         <span className="linha-nome">{v.nome}</span>
         {nivel === 0 && <span className="linha-agente">{NOME_AGENTE[v.agente]}</span>}
-        <SimboloEstado estado={v.estado} />
+        {v.estado === 'trabalhando' ? <HiperMini estado="trabalhando" tamanho={16} rotulo="Trabalhando" /> : <SimboloEstado estado={v.estado} />}
       </button>
       {filhos.length > 0 && (
         <ul>

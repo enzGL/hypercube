@@ -43,7 +43,9 @@ export function diaNoHypercube(): number {
 }
 
 export function deveMostrarBoasVindas(): boolean {
-  if (new URLSearchParams(window.location.search).has('boasvindas')) return true;
+  const busca = new URLSearchParams(window.location.search);
+  if (busca.has('boasvindas')) return true;
+  if (busca.has('semboasvindas')) return false;
   return ler(CHAVE_VISTO) !== hojeLocal();
 }
 
