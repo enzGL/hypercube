@@ -1,0 +1,41 @@
+import { refazerPrimeiraAbertura } from '../estado/loja';
+import { nativo } from '../nativo';
+import { Hiper } from '../componentes/Hiper';
+import { Icone } from '../componentes/Pecas';
+
+const REPO = 'https://github.com/enzGL/hypercube';
+
+export function Sobre() {
+  return (
+    <div className="tela-sobre rolagem">
+      <div className="sobre-cartao">
+        <img className="logo grande" src="./logo-hypercube.png" alt="Logo do Hypercube" width={120} height={120} />
+        <h1>Hypercube</h1>
+        <p className="lema">Todos os seus agentes, num cubo só.</p>
+        <p className="secundario">Versão 0.1 · {nativo.modo === 'simulado' ? 'modo simulado (sem terminais de verdade)' : 'app desktop'}</p>
+        <div className="sobre-estrela">
+          <p>É grátis para usar. Só pedimos que você dê uma estrela no GitHub!</p>
+          <a className="botao primario" href={REPO} target="_blank" rel="noreferrer">
+            <Icone nome="estrela" /> Dar estrela no GitHub
+          </a>
+        </div>
+        <div className="sobre-hiper">
+          <Hiper estado="sucesso" tamanho={80} />
+          <p>
+            Um tesseract é um hipercubo. Cada agente é um <b>Vértice</b>, e o <b>Hiper</b> acompanha todos eles.
+          </p>
+        </div>
+        <ul className="sobre-lista secundario">
+          <li>Código aberto, licença MIT. O nome, o Hiper e a logo não entram na licença.</li>
+          <li>Tudo fica no seu computador: nada vai para a nuvem.</li>
+          <li>
+            Atalho <kbd>Alt</kbd>+<kbd>N</kbd>: vai para o Vértice que espera há mais tempo.
+          </li>
+        </ul>
+        <button className="botao" onClick={refazerPrimeiraAbertura}>
+          Ver a primeira abertura de novo
+        </button>
+      </div>
+    </div>
+  );
+}

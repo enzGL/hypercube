@@ -1,0 +1,207 @@
+import { useEffect, useState } from 'react';
+import {
+  abrirDialogo,
+  criarSessao,
+  criarVertice,
+  DESCRICAO_PAPEL,
+  NOME_NIVEL,
+  NOME_PAPEL,
+  useLoja,
+  type Nivel,
+  type Papel,
+} from '../estado/loja';
+import { nativo, NOME_AGENTE, type Agente, type AgenteDetectado } from '../nativo';
+import { Icone, MiniVertice } from './Pecas';
+
+function useAgentes() {
+  const [a, setA] = useState<AgenteDetectado[]>([]);
+  useEffect(() => {
+    nativo.processos.detectarAgentes().then(setA);
+  }, []);
+  return a;
+}
+
+function Moldura({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  useEffect(() => {
+    const k = (ev: KeyboardEvent) => ev.key === 'Escape' && abrirDialogo(null);
+    window.addEventListener('keydown', k);
+    return () => window.removeEventListener('keydown', k);
+  }, []);
+  return (
+    <div className="fundo-dialogo" onMouseDown={() => abrirDialogo(null)}>
+      <div className="dialogo" role="dialog" aria-label={titulo} onMouseDown={(ev) => ev.stopPropagation()}>
+        <header className="dialogo-cabeca">
+          <h2>{titulo}</h2>
+          <button className="icone-botao" onClick={() => abrirDialogo(null)} aria-label="Fechar">
+            <Icone nome="fechar" />
+          </button>
+        </header>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+const EQUIPE: Papel[] = ['lider', 'batedor', 'construtor', 'revisor'];
+const AGENTE_PADRAO: Record<string, Agente> = { lider: 'claude', batedor: 'gemini', construtor: 'codex', revisor: 'claude' };
+const NIVEL_PADRAO: Record<string, Nivel> = { lider: 'forte', batedor: 'barato', construtor: 'padrao', revisor: 'padrao' };
+
+function NovaSessao() {
+  const agentes = useAgentes();
+  const [nome, setNome] = useState('');
+  const [pasta, setPasta] = useState('C:\\Projetos\\loja-online');
+  const [worktrees, setWorktrees] = useState(true);
+  const [inicio, setInicio] = useState<'vazio' | 'lider' | 'equipe'>('lider');
+  const [agente, setAgente] = useState<Agente>('claude');
+
+  const criar = async () => {
+    const s = criarSessao(nome.trim() || 'Nova sessão', pasta, worktrees);
+    abrirDialogo(null);
+    if (inicio === 'lider') await criarVertice(s.id, 'lider', agente, 'forte');
+    if (inicio === 'equipe') for (const p of EQUIPE) await criarVertice(s.id, p, p === 'lider' ? agente : AGENTE_PADRAO[p], NIVEL_PADRAO[p]);
+  };
+
+  return (
+    <Moldura titulo="Nova sessão">
+      <label className="campo">
+        <span>Nome</span>
+        <input autoFocus value={nome} onChange={(ev) => setNome(ev.target.value)} placeholder="Ex.: Checkout novo" />
+      </label>
+      <div className="campo">
+        <span>Pasta do projeto</span>
+        <div className="linha-campo">
+          <input className="mono" value={pasta} onChange={(ev) => setPasta(ev.target.value)} />
+          <button className="botao" onClick={async () => setPasta((await nativo.arquivos.escolherPasta()) ?? pasta)}>
+            <Icone nome="pasta" /> Escolher…
+          </button>
+        </div>
+      </div>
+      <label className="interruptor">
+        <input type="checkbox" checked={worktrees} onChange={(ev) => setWorktrees(ev.target.checked)} />
+        <span className="interruptor-trilho" />
+        <span>Cada Vértice trabalha no seu git worktree</span>
+      </label>
+      <div className="campo">
+        <span>Começar com</span>
+        <div className="opcoes">
+          {[
+            { id: 'vazio', nome: 'Nenhum Vértice', desc: 'Sessão vazia, você cria depois' },
+            { id: 'lider', nome: 'Só o Líder', desc: 'Ele divide as tarefas quando precisar' },
+            { id: 'equipe', nome: 'Equipe completa', desc: 'Líder, batedor, construtor e revisor' },
+          ].map((o) => (
+            <button key={o.id} className={`opcao ${inicio === o.id ? 'ativo' : ''}`} onClick={() => setInicio(o.id as typeof inicio)}>
+              <b>{o.nome}</b>
+              <span>{o.desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      {inicio !== 'vazio' && (
+        <label className="campo">
+          <span>Agente do Líder</span>
+          <select value={agente} onChange={(ev) => setAgente(ev.target.value as Agente)}>
+            {agentes.filter((a) => a.instalado && a.agente !== 'terminal').map((a) => (
+              <option key={a.agente} value={a.agente}>
+                {NOME_AGENTE[a.agente]}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      <footer className="dialogo-rodape">
+        <button className="botao" onClick={() => abrirDialogo(null)}>
+          Cancelar
+        </button>
+        <button className="botao primario" onClick={criar} disabled={!pasta.trim()}>
+          Criar sessão
+        </button>
+      </footer>
+    </Moldura>
+  );
+}
+
+function NovoVertice({ sessaoId, papelInicial }: { sessaoId: string; papelInicial?: Papel }) {
+  const agentes = useAgentes();
+  const [papel, setPapel] = useState<Papel>(papelInicial ?? 'construtor');
+  const [agente, setAgente] = useState<Agente>(AGENTE_PADRAO[papelInicial ?? 'construtor']);
+  const [nivel, setNivel] = useState<Nivel>(NIVEL_PADRAO[papelInicial ?? 'construtor']);
+  const [tarefa, setTarefa] = useState('');
+  const e = useLoja();
+  const ativos = e.vertices.filter((v) => v.sessaoId === sessaoId && v.estado === 'trabalhando').length;
+
+  return (
+    <Moldura titulo="Novo Vértice">
+      <div className="campo">
+        <span>Papel</span>
+        <div className="opcoes papeis-grade">
+          {(['lider', 'batedor', 'construtor', 'revisor', 'consertador'] as Papel[]).map((p) => (
+            <button
+              key={p}
+              className={`opcao ${papel === p ? 'ativo' : ''}`}
+              onClick={() => {
+                setPapel(p);
+                if (AGENTE_PADRAO[p]) setAgente(AGENTE_PADRAO[p]);
+                if (NIVEL_PADRAO[p]) setNivel(NIVEL_PADRAO[p]);
+              }}
+            >
+              <span className="opcao-topo">
+                <MiniVertice papel={p} tamanho={18} /> <b>{NOME_PAPEL[p]}</b>
+              </span>
+              <span>{DESCRICAO_PAPEL[p]}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="linha-dupla">
+        <label className="campo">
+          <span>Agente</span>
+          <select value={agente} onChange={(ev) => setAgente(ev.target.value as Agente)}>
+            {agentes.map((a) => (
+              <option key={a.agente} value={a.agente} disabled={!a.instalado}>
+                {NOME_AGENTE[a.agente]}
+                {a.instalado ? '' : ' (não instalado)'}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="campo">
+          <span>Nível</span>
+          <div className="segmentos">
+            {(['barato', 'padrao', 'forte'] as Nivel[]).map((n) => (
+              <button key={n} className={nivel === n ? 'ativo' : ''} onClick={() => setNivel(n)}>
+                {NOME_NIVEL[n]}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <label className="campo">
+        <span>Primeira tarefa (opcional)</span>
+        <textarea rows={2} value={tarefa} onChange={(ev) => setTarefa(ev.target.value)} placeholder="Ex.: Mapeie onde o pedido é cobrado" />
+      </label>
+      {ativos >= 8 && <p className="aviso-limite">Já há 8 Vértices trabalhando nesta sessão (o limite).</p>}
+      <footer className="dialogo-rodape">
+        <button className="botao" onClick={() => abrirDialogo(null)}>
+          Cancelar
+        </button>
+        <button
+          className="botao primario"
+          disabled={ativos >= 8}
+          onClick={async () => {
+            abrirDialogo(null);
+            await criarVertice(sessaoId, papel, agente, nivel, tarefa.trim() || undefined);
+          }}
+        >
+          Criar Vértice
+        </button>
+      </footer>
+    </Moldura>
+  );
+}
+
+export function Dialogos() {
+  const { dialogo } = useLoja();
+  if (!dialogo) return null;
+  if (dialogo.tipo === 'novaSessao') return <NovaSessao />;
+  return <NovoVertice sessaoId={dialogo.sessaoId} papelInicial={dialogo.papel} />;
+}
