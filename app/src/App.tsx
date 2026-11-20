@@ -50,8 +50,6 @@ export function App() {
     return () => window.removeEventListener('keydown', k);
   }, []);
 
-  if (!e.configurado) return <PrimeiraAbertura />;
-
   return (
     <div className={`app ${casca.lateralRecolhida ? 'com-lateral-recolhida' : ''} ${casca.painelAberto ? 'com-painel' : ''}`}>
       <BarraTopo />
@@ -73,7 +71,11 @@ export function App() {
       </main>
       {casca.painelAberto && <PainelDireito />}
       <Dialogos />
-      <BoasVindas nome={nomeUsuario() || undefined} aoComecar={() => irPara('inicio')} />
+      {e.configurado ? (
+        <BoasVindas nome={nomeUsuario() || undefined} aoComecar={() => irPara('inicio')} />
+      ) : (
+        <PrimeiraAbertura />
+      )}
       <div className="avisos" aria-live="polite">
         {e.avisos.map((a) => (
           <div key={a.id} className={`aviso aviso-${a.tipo}`}>
