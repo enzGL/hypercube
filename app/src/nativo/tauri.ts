@@ -1,6 +1,7 @@
 // Implementação para o Tauri 2. Cada função chama um comando Rust de mesmo nome
-// (src-tauri: portable-pty, git worktree, notificação, servidor local de hooks).
-// Os comandos ainda não existem: este arquivo define a forma das chamadas.
+// (app/src-tauri: portable-pty, servidor local de hooks, git worktree, notificação, diálogo).
+// Eventos que vêm do Rust: `terminal_saida` ({ id, dados }), `terminal_fim` ({ id, codigo })
+// e `evento_agente` (EventoAgente).
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import type { Desligar, EventoAgente, Nativo, SaidaGerada } from './tipos';
@@ -19,7 +20,35 @@ function ouvir<T>(canal: string, ouvinte: (dado: T) => void): Desligar {
   };
 }
 
+interface Saida {
+  id: string;
+  dados: string;
+}
+
+interface Fim {
+  id: string;
+  codigo: number;
+}
+
+// Um só ouvinte de `terminal_saida` para todos os terminais; cada um recebe só o que é dele.
+const ouvintesSaida = new Map<string, Set<(dados: string) => void>>();
+let saidaLigada = false;
+
+function ligarSaida() {
+  if (saidaLigada) return;
+  saidaLigada = true;
+  listen<Saida>('terminal_saida', (e) => {
+    ouvintesSaida.get(e.payload.id)?.forEach((f) => f(e.payload.dados));
+  });
+  listen<Fim>('terminal_fim', (e) => {
+    ouvintesSaida
+      .get(e.payload.id)
+      ?.forEach((f) => f(`\r\n\x1b[2m[processo encerrado · código ${e.payload.codigo}]\x1b[0m\r\n`));
+  });
+}
+
 export function criarNativoTauri(): Nativo {
+  ligarSaida();
   return {
     modo: 'tauri',
     terminais: {
@@ -28,10 +57,19 @@ export function criarNativoTauri(): Nativo {
       redimensionar: (id, cols, rows) => invoke('terminal_redimensionar', { id, cols, rows }),
       encerrar: (id) => invoke('terminal_encerrar', { id }),
       historico: (id) => invoke<string>('terminal_historico', { id }),
-      aoReceber: (id, ouvinte) => ouvir<string>(`terminal:${id}`, ouvinte),
+      aoReceber: (id, ouvinte) => {
+        let lista = ouvintesSaida.get(id);
+        if (!lista) ouvintesSaida.set(id, (lista = new Set()));
+        const minha = lista;
+        minha.add(ouvinte);
+        return () => {
+          minha.delete(ouvinte);
+          if (!minha.size && ouvintesSaida.get(id) === minha) ouvintesSaida.delete(id);
+        };
+      },
     },
     eventos: {
-      aoEvento: (ouvinte) => ouvir<EventoAgente>('hook:evento', ouvinte),
+      aoEvento: (ouvinte) => ouvir<EventoAgente>('evento_agente', ouvinte),
     },
     arquivos: {
       escolherPasta: () => invoke<string | null>('arquivos_escolher_pasta'),
