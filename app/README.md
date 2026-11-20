@@ -9,12 +9,12 @@ O Hypercube junta numa janela todas as sessões dos seus agentes de IA no termin
 ## Telas
 
 - **Primeira abertura:** o Hiper procura os agentes instalados; abra uma pasta ou explore com um exemplo.
-- **Barra lateral:** Hiper com o estado geral, telas, projetos agrupados por pasta, sessões com contador de Vértices e subagentes embaixo do agente pai, "Nova sessão" e o pedido de estrela.
+- **Barra lateral:** Hiper com o estado geral, telas, projetos agrupados por pasta, sessões com contador de Vértices e subagentes embaixo do agente pai e "Nova sessão".
 - **Sessões:** grade de terminais, um por Vértice. Layouts automático, foco e grade livre (arraste para reordenar). Fechar o painel só esconde: o processo continua. Faixa de permissão (Permitir/Negar), corrida (`/corrida 3 tarefa`), revisão cruzada (`/revisar`) e campo de comando embaixo.
 - **Orquestração:** canvas com os Vértices como nós e ligações com condições (testes passaram, custo, cota). Roteiros prontos, nível barato/padrão/forte, limite de custo por rodada, entregas `resultado.md`, `saida.json`, `diff.patch`.
 - **Imagens:** quadro infinito com o que os Vértices salvam em `.hypercube/saidas/`. HTML isolado, artboards lado a lado, comparar versões e comentar num ponto da imagem para mandar ao Vértice.
 - **Roteador:** provedores gratuitos, chamadas do dia, cadeias editáveis por nível.
-- **Sobre:** versão, licença e estrela.
+- **Sobre:** versão e licença.
 
 Estados, sempre com forma e cor: ◐ trabalhando, ◆ esperando você, ● pronto, ✕ erro. Atalho `Alt+N` vai para quem espera há mais tempo; o título da janela mostra quantos esperam.
 

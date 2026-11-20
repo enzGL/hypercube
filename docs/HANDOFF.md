@@ -23,7 +23,7 @@ Atualizado em 2026-11-20.
 
 **Componentes:**
 - `Hiper.tsx` — SVG exato do mascote aprovado, 5 estados (repouso, atenção, processando, sucesso, erro)
-- `BarraLateral.tsx` — projetos agrupados por pasta, sessões com contagem de Vértices, subagentes aninhados, rodapé com estrela GitHub
+- `BarraLateral.tsx` — projetos agrupados por pasta, sessões com contagem de Vértices, subagentes aninhados
 - `BarraTopo.tsx` — contadores ao vivo, uso do plano Claude e Codex
 - `Terminal.tsx` — wrapper xterm.js
 - `Pecas.tsx` — peças reutilizáveis

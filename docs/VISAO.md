@@ -96,7 +96,7 @@ Em aberto: onde roda o servidor da comunidade (pode ser o mesmo backend do Tesse
 
 ## 6. Download e estrela
 
-Decidido em 2026-11-20: **estrela pedida, não obrigatória**. O download é livre. Na página de download e na tela "Sobre" do app:
+Decidido em 2026-11-20: **estrela pedida, não obrigatória**. O download é livre. O pedido aparece **só na página de download do site**; o app não pede estrela (decidido em 2026-11-20):
 
 > É grátis para usar. Só pedimos que você dê uma estrela no GitHub!
 

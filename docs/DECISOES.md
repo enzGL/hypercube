@@ -9,7 +9,7 @@
 - Canvas de orquestração com React Flow (biblioteca MIT).
 
 - **Licença: MIT** (2026-11-20). Diferente do TesserAct (PolyForm Noncommercial): aqui qualquer um usa, muda e distribui. O nome "Hypercube", o Hiper e a logo não entram na licença. Por ser MIT, nada de código com licença AGPL ou GPL.
-- **Estrela pedida, não obrigatória** (2026-11-20). Download livre; a página mostra "É grátis para usar. Só pedimos que você dê uma estrela no GitHub!" com o botão da estrela ao lado do link. Sem login do GitHub, sem trava.
+- **Estrela pedida, não obrigatória** (2026-11-20). Download livre; a página mostra "É grátis para usar. Só pedimos que você dê uma estrela no GitHub!" com o botão da estrela ao lado do link. Sem login do GitHub, sem trava. O app em si não pede estrela.
 - **Repositório próprio e público:** `enzGL/hypercube`, com link para o TesserAct no README.
 - **Roteador-ia em Node na 0.3** (2026-11-20, escolha do Claude): reaproveita o roteador que já funciona, compilado num executável único (Node SEA) e rodado pelo Tauri como sidecar, então a versão portátil continua sendo uma pasta só. Portar para Rust só se o tamanho ou a partida pesarem.
 - **Logo: ideia C, "Oito Vértices"** (2026-11-20): cubo de 8 cubos menores em dither cobalto, o da frente flutua (o líder). O Hiper (ideia B, mascote em dither) segue como personagem dentro do app. Protótipo em `design/logo/logo-ideias.html`.
