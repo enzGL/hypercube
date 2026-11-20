@@ -16,11 +16,14 @@
         "title": "Hypercube",
         "width": 1440,
         "height": 900,
-        "minWidth": 1000,
-        "minHeight": 640,
+        "minWidth": 1100,
+        "minHeight": 700,
         "center": true,
         "visible": false,
-        "backgroundColor": "#0B132D"
+        "backgroundColor": "#00000000",
+        "decorations": false,
+        "transparent": true,
+        "shadow": false
       }
     ],
     "security": {
@@ -29,7 +32,9 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
+    "targets": [
+      "nsis"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
