@@ -539,3 +539,61 @@ export function restaurarConfig() {
 }
 
 export { NOME_AGENTE };
+
+// ---------- painel de orquestração (seletores) ----------
+
+/** Planners da sessão: os Vértices líderes, na ordem em que aparecem. */
+export function lideresDaSessao(e: Estado, sessaoId: string | null): Vertice[] {
+  return ordenados(e, sessaoId ?? '').filter((v) => v.papel === 'lider');
+}
+
+/**
+ * Workers de um planner: os subagentes que ele criou e, para o primeiro líder da
+ * sessão, os outros Vértices principais (é ele quem divide o trabalho entre eles).
+ */
+export function trabalhadoresDoLider(e: Estado, liderId: string | null): Vertice[] {
+  const lider = e.vertices.find((v) => v.id === liderId);
+  if (!lider) return [];
+  const primeiro = lideresDaSessao(e, lider.sessaoId)[0]?.id === lider.id;
+  const principais = primeiro ? ordenados(e, lider.sessaoId).filter((v) => v.papel !== 'lider') : [];
+  const filhos = e.vertices.filter((v) => v.paiId === lider.id);
+  return [...principais, ...filhos];
+}
+
+export interface ResumoOrquestracao {
+  total: number;
+  concluidos: number;
+  porcento: number;
+  rodando: number;
+  naFila: number;
+  esperando: number;
+  interrompidos: number;
+  falhou: number;
+  encerrados: number;
+  vagasEmUso: number;
+  limite: number;
+}
+
+/** Contas do resumo. Quem trabalha além do limite de vagas conta como "na fila". */
+export function resumoOrquestracao(ws: Vertice[], limite: number): ResumoOrquestracao {
+  const trabalhando = ws.filter((v) => v.estado === 'trabalhando').length;
+  const esperando = ws.filter((v) => v.estado === 'esperando').length;
+  const interrompidos = ws.filter((v) => v.estado === 'pronto' && v.ultimaAcao === 'Interrompido').length;
+  const falhou = ws.filter((v) => v.estado === 'erro').length;
+  const encerrados = ws.filter((v) => v.estado === 'pronto' && v.ultimaAcao !== 'Interrompido').length;
+  const rodando = Math.min(trabalhando, limite);
+  const concluidos = encerrados + falhou + interrompidos;
+  return {
+    total: ws.length,
+    concluidos,
+    porcento: ws.length ? Math.round((concluidos / ws.length) * 100) : 0,
+    rodando,
+    naFila: Math.max(0, trabalhando - limite),
+    esperando,
+    interrompidos,
+    falhou,
+    encerrados,
+    vagasEmUso: Math.min(limite, rodando + esperando),
+    limite,
+  };
+}
