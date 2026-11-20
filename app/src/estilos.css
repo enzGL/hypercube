@@ -590,3 +590,16 @@ textarea { resize: vertical; }
 .topo-acoes { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .passo-colunas { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--texto-2); }
 .passo-colunas button { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 6px; border: 1px solid var(--borda-forte); }
+
+/* ---------- janela sem moldura (só dentro do app desktop) ---------- */
+html[data-tauri], html[data-tauri] body { background: transparent; }
+html[data-tauri] #raiz { overflow: hidden; border-radius: 12px; border: 1px solid var(--borda-forte); background: var(--fundo); box-sizing: border-box; }
+html[data-tauri][data-maximizada] #raiz { border-radius: 0; border: 0; }
+html[data-tauri] .app { height: 100%; }
+.janela-controles { display: flex; align-items: center; gap: 2px; margin-left: 4px; padding-left: 6px; border-left: 1px solid var(--borda); }
+.janela-botao { display: grid; place-items: center; width: 34px; height: 28px; border: 0; border-radius: 6px; background: transparent; color: var(--texto-2); cursor: pointer; }
+.janela-botao svg { fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.janela-botao:hover { background: var(--cartao); color: var(--texto); }
+.janela-fechar:hover { background: var(--cobalto); color: #fff; }
+.janela-botao:focus-visible { outline: 2px solid var(--cobalto-claro); outline-offset: 1px; }
+html[data-tauri]:not([data-maximizada]) :is(.fundo-dialogo, .primeira-fundo, .bv-fundo) { border-radius: 12px; }

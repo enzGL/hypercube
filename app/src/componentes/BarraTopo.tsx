@@ -1,5 +1,6 @@
 // Barra de cima do app (abas de projeto, navegação, uso dos agentes, RAM) e o cabeçalho de cada tela.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { ControlesJanela, alternarMaximizar } from './ControlesJanela';
 import { abrirDialogo, contar, selecionarSessao, useLoja, verticesDaSessao } from '../estado/loja';
 import {
   abrirAba,
@@ -163,7 +164,13 @@ function BarraGlobal() {
   };
 
   return (
-    <header className="barra-global" data-tauri-drag-region>
+    <header
+      className="barra-global"
+      data-tauri-drag-region
+      onDoubleClick={(ev) => {
+        if ((ev.target as HTMLElement).hasAttribute('data-tauri-drag-region')) alternarMaximizar();
+      }}
+    >
       <div className="bg-grupo" ref={refMenu}>
         <button className={`bg-botao bg-logo ${menu ? 'ligado' : ''}`} onClick={() => setMenu((m) => !m)} aria-label="Menu" aria-expanded={menu} title="Menu">
           <img className="logo" src="./logo-hypercube.png" alt="" width={18} height={18} />
@@ -263,6 +270,7 @@ function BarraGlobal() {
           <IconeCasca nome="painelDireito" />
         </button>
       </div>
+      <ControlesJanela />
     </header>
   );
 }
