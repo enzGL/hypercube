@@ -539,3 +539,38 @@ export function restaurarConfig() {
 }
 
 export { NOME_AGENTE };
+
+// ---------- Início (acrescentado pelo Vértice inicio) ----------
+
+/** Nome que aparece na saudação. Fica em `hypercube.nome`; vazio quando ninguém definiu. */
+export function nomeUsuario(): string {
+  try {
+    return (localStorage.getItem('hypercube.nome') ?? '').trim();
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Mensagens trocadas com os agentes por dia, do mais antigo (89 dias atrás) até hoje.
+ * Enquanto não há histórico real, gera uma série estável (mesma para o mesmo dia)
+ * e soma o que os Vértices abertos já fizeram hoje.
+ */
+export function atividade90Dias(): number[] {
+  const hoje = Math.floor(Date.now() / 86_400_000);
+  const dias: number[] = [];
+  for (let i = 89; i >= 0; i--) {
+    const d = hoje - i;
+    let x = (d * 2654435761) >>> 0;
+    x ^= x >>> 15;
+    x = Math.imul(x, 2246822519) >>> 0;
+    x = (x ^ (x >>> 13)) >>> 0;
+    const ruido = (x % 1000) / 1000;
+    const semana = new Date(d * 86_400_000).getUTCDay();
+    const fimDeSemana = semana === 0 || semana === 6 ? 0.45 : 1;
+    const tendencia = 0.55 + (0.45 * (90 - i)) / 90;
+    dias.push(Math.round((280 + ruido * 900) * fimDeSemana * tendencia));
+  }
+  dias[89] += estado.vertices.filter((v) => v.tokens > 0).length * 12;
+  return dias;
+}
