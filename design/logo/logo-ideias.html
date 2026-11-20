@@ -1,0 +1,281 @@
+<title>Logo do Hypercube</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400&family=Libre+Baskerville:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* Layout: cabeçalho curto, painel de controles, três ideias em linhas (logo claro | logo escuro | tamanhos pequenos + texto). Base: Cobalt Toile do TesserAct. */
+:root{
+  --bg:#F7F4EC; --panel:#FBF9F3; --card:#FFFDF8; --line:#E4DED0; --line2:#D3CBB8;
+  --ink:#142057; --muted:#5B6488; --accent:#122EC6; --accent-soft:#E5EDFF;
+  --sw-light:#E5EDFF; --sw-dark:#03060F;
+  --serif:"Libre Baskerville",Georgia,"Times New Roman",serif;
+  --sans:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Geist Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#080E22; --panel:#0B132D; --card:#0E1738; --line:#1B2650; --line2:#27356B;
+  --ink:#E8E9EB; --muted:#9AA3C7; --accent:#93A4FF; --accent-soft:#18254F; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#080E22; --panel:#0B132D; --card:#0E1738; --line:#1B2650; --line2:#27356B;
+  --ink:#E8E9EB; --muted:#9AA3C7; --accent:#93A4FF; --accent-soft:#18254F; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 64px}
+.wrap{max-width:1120px;margin:0 auto;display:grid;gap:28px}
+header{display:grid;gap:10px}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--serif);font-weight:400;font-size:clamp(30px,5vw,46px);line-height:1.1;margin:0;color:var(--accent);text-wrap:balance}
+header p{margin:0;max-width:64ch;color:var(--muted)}
+.controls{display:flex;flex-wrap:wrap;gap:18px 28px;align-items:center;padding:14px 18px;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.controls label{display:flex;gap:8px;align-items:center;font-size:14px}
+.controls input[type=range]{width:140px;accent-color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-size:13px;padding:6px 12px;background:transparent;color:var(--ink);border:0;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--bg)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.idea{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,300px);gap:16px;padding-top:28px;border-top:1px solid var(--line)}
+.sw{border-radius:10px;display:grid;place-items:center;padding:22px 16px 18px;gap:12px;aspect-ratio:1/1.08;max-width:100%}
+.sw.l{background:var(--sw-light);color:#122EC6}
+.sw.d{background:var(--sw-dark);color:#E5EDFF;border:1px solid var(--line)}
+.sw canvas{width:min(100%,300px);aspect-ratio:1;image-rendering:pixelated;display:block}
+.lock{display:flex;align-items:baseline;gap:8px;font-family:var(--serif);font-size:22px}
+.lock small{font-family:var(--sans);font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.7}
+.txt{display:grid;gap:12px;align-content:start;min-width:0}
+.tag{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.txt h2{font-family:var(--serif);font-weight:400;font-size:24px;margin:0;line-height:1.2}
+.txt p{margin:0;color:var(--muted)}
+.txt ul{margin:0;padding-left:18px;color:var(--muted);display:grid;gap:4px}
+.small{display:flex;gap:14px;align-items:flex-end;padding:12px;background:var(--card);border:1px solid var(--line);border-radius:8px}
+.small figure{margin:0;display:grid;gap:4px;justify-items:center;font-size:11px;color:var(--muted);font-family:var(--mono)}
+.small canvas{image-rendering:pixelated;display:block}
+.ico{border-radius:6px;padding:4px}
+.ico.l{background:var(--sw-light)} .ico.d{background:var(--sw-dark)}
+.rec{background:var(--accent-soft);border-radius:10px;padding:18px 20px;display:grid;gap:6px}
+.rec strong{font-family:var(--serif);font-weight:400;font-size:20px;color:var(--accent)}
+.rec p{margin:0;max-width:72ch}
+@media (max-width:860px){.idea{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.txt{grid-column:1/-1;order:-1}}
+@media (max-width:520px){.idea{grid-template-columns:minmax(0,1fr)}}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Hypercube · /design · etapa 1: logo</span>
+    <h1>Três ideias de logo em dither</h1>
+    <p>Mesmo efeito da logo do TesserAct (cobalto sobre azul-pálido, escuro sobre preto, grão que se mexe), com formas próprias. Cada ideia aparece em fundo claro, fundo escuro e no tamanho de ícone, que é onde uma logo costuma falhar.</p>
+  </header>
+
+  <div class="controls" role="group" aria-label="Controles do dither">
+    <label for="anim"><input type="checkbox" id="anim" checked> Animar</label>
+    <label for="grain">Grão <input type="range" id="grain" min="0" max="100" value="55"></label>
+    <span class="seg" role="group" aria-label="Tipo de dither">
+      <button type="button" id="m-fs" aria-pressed="true">Difusão (como o TesserAct)</button>
+      <button type="button" id="m-bayer" aria-pressed="false">Ordenado</button>
+    </span>
+  </div>
+
+  <section class="idea" data-k="A">
+    <div class="sw l"><canvas aria-label="Ideia A em fundo claro"></canvas><div class="lock">Hypercube</div></div>
+    <div class="sw d"><canvas aria-label="Ideia A em fundo escuro"></canvas><div class="lock">Hypercube</div></div>
+    <div class="txt">
+      <span class="tag">Ideia A</span>
+      <h2>Hipercubo girando</h2>
+      <p>O hipercubo de verdade (16 vértices, 32 arestas) projetado de 4D para a tela. Parado, fica torto, o que já separa do cubo dentro de cubo do TesserAct. Animado, ele gira na quarta dimensão.</p>
+      <ul><li>Cada ponto é um Vértice (agente); o ponto em anel é o líder.</li><li>Arestas do fundo ficam pontilhadas, as da frente sólidas.</li></ul>
+      <div class="small"><figure><canvas class="ico l" width="48" height="48"></canvas>48</figure><figure><canvas class="ico d" width="48" height="48"></canvas>48</figure><figure><canvas class="ico l" width="24" height="24"></canvas>24</figure></div>
+    </div>
+  </section>
+
+  <section class="idea" data-k="B">
+    <div class="sw l"><canvas aria-label="Ideia B em fundo claro"></canvas><div class="lock">Hypercube</div></div>
+    <div class="sw d"><canvas aria-label="Ideia B em fundo escuro"></canvas><div class="lock">Hypercube</div></div>
+    <div class="txt">
+      <span class="tag">Ideia B</span>
+      <h2>Hiper é a logo</h2>
+      <p>O mascote aprovado vira o símbolo: o cubo de três faces, os olhos e o aro hexagonal, agora em dither. Logo e personagem viram uma coisa só.</p>
+      <ul><li>Na animação o aro respira e o Hiper pisca.</li><li>Os olhos ficam sempre claros, também no fundo escuro.</li></ul>
+      <div class="small"><figure><canvas class="ico l" width="48" height="48"></canvas>48</figure><figure><canvas class="ico d" width="48" height="48"></canvas>48</figure><figure><canvas class="ico l" width="24" height="24"></canvas>24</figure></div>
+    </div>
+  </section>
+
+  <section class="idea" data-k="C">
+    <div class="sw l"><canvas aria-label="Ideia C em fundo claro"></canvas><div class="lock">Hypercube</div></div>
+    <div class="sw d"><canvas aria-label="Ideia C em fundo escuro"></canvas><div class="lock">Hypercube</div></div>
+    <div class="txt">
+      <span class="tag">Ideia C</span>
+      <h2>Oito Vértices</h2>
+      <p>Um cubo feito de 8 cubos menores, um por agente. O cubo da frente, em cobalto cheio, sai do lugar e flutua: é o líder que distribui o trabalho.</p>
+      <ul><li>Conta a história do app sem texto: muitos agentes, um que rege.</li><li>Forma simples, lê bem em 24 px.</li></ul>
+      <div class="small"><figure><canvas class="ico l" width="48" height="48"></canvas>48</figure><figure><canvas class="ico d" width="48" height="48"></canvas>48</figure><figure><canvas class="ico l" width="24" height="24"></canvas>24</figure></div>
+    </div>
+  </section>
+
+  <div class="rec">
+    <strong>Minha sugestão: C como logo, B como mascote</strong>
+    <p>C é a que mais se diferencia do TesserAct e continua legível no ícone da barra de tarefas. O Hiper (B) segue como personagem dentro do app, e o anel do líder da ideia A pode virar o indicador de "agente líder" nas telas. Escolha uma (ou peça ajustes) e eu sigo para as telas do /design.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+const INK=[18,46,198], PAPER_L=[229,237,255], PAPER_D=[3,6,15], EYE=[229,237,255];
+const g=v=>{const c=Math.round(Math.max(0,Math.min(1,v))*255);return `rgb(${c},${c},${c})`};
+const EYEFILL='#ff0000';
+
+/* ---------- ruído ---------- */
+function h2(x,y){let h=Math.imul(x|0,374761393)+Math.imul(y|0,668265263)|0;h=Math.imul(h^(h>>>13),1274126177);return ((h^(h>>>16))>>>0)/4294967296}
+function vn(x,y){const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);
+  const a=h2(xi,yi),b=h2(xi+1,yi),c=h2(xi,yi+1),d=h2(xi+1,yi+1);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v}
+function fbm(x,y){return vn(x,y)*.55+vn(x*2.1+17,y*2.1+9)*.3+vn(x*4.3+3,y*4.3+41)*.15}
+const BAYER=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(v=>(v+.5)/16);
+
+/* ---------- ideia A: hipercubo 4D ---------- */
+const V4=[...Array(16)].map((_,i)=>[i&1?1:-1,i&2?1:-1,i&4?1:-1,i&8?1:-1]);
+const E4=[];for(let i=0;i<16;i++)for(let j=i+1;j<16;j++){const x=i^j;if(x&&!(x&(x-1)))E4.push([i,j])}
+function projA(a){
+  const ca=Math.cos(a),sa=Math.sin(a),cb=Math.cos(a*.62),sb=Math.sin(a*.62);
+  const ry=.62,rx=.42,cy=Math.cos(ry),sy=Math.sin(ry),cx=Math.cos(rx),sx=Math.sin(rx);
+  return V4.map(([x,y,z,w])=>{
+    let x1=x*ca-w*sa,w1=x*sa+w*ca;           // plano XW
+    let z1=z*cb-w1*sb,w2=z*sb+w1*cb;         // plano ZW
+    const k=2.2/(3.4-w2);
+    let X=x1*k,Y=y*k,Z=z1*k;
+    let X2=X*cy+Z*sy,Z2=-X*sy+Z*cy;          // vista 3D
+    let Y2=Y*cx-Z2*sx,Z3=Y*sx+Z2*cx;
+    return {x:X2,y:-Y2,z:Z3,k};
+  });
+}
+let fitA=null;
+function getFitA(){if(fitA)return fitA;let mnx=1e9,mxx=-1e9,mny=1e9,mxy=-1e9;
+  for(let s=0;s<120;s++){for(const p of projA(s/120*Math.PI*2)){mnx=Math.min(mnx,p.x);mxx=Math.max(mxx,p.x);mny=Math.min(mny,p.y);mxy=Math.max(mxy,p.y)}}
+  const S=158/Math.max(mxx-mnx,mxy-mny);return fitA={S,ox:100-(mnx+mxx)/2*S,oy:100-(mny+mxy)/2*S}}
+function hull(pts){pts=pts.slice().sort((a,b)=>a.x-b.x||a.y-b.y);const cr=(o,a,b)=>(a.x-o.x)*(b.y-o.y)-(a.y-o.y)*(b.x-o.x);
+  const lo=[],up=[];for(const p of pts){while(lo.length>1&&cr(lo[lo.length-2],lo[lo.length-1],p)<=0)lo.pop();lo.push(p)}
+  for(const p of pts.slice().reverse()){while(up.length>1&&cr(up[up.length-2],up[up.length-1],p)<=0)up.pop();up.push(p)}
+  return lo.slice(0,-1).concat(up.slice(0,-1))}
+function drawA(c,t,anim){
+  const {S,ox,oy}=getFitA();const a=anim?.6+t*.45:.6;
+  const P=projA(a).map(p=>({x:ox+p.x*S,y:oy+p.y*S,z:p.z,k:p.k}));
+  const zs=P.map(p=>p.z),zmin=Math.min(...zs),zmax=Math.max(...zs);
+  const depth=z=>(z-zmin)/(zmax-zmin||1); // 0 = fundo
+  // campo de fundo (o casco), com o grão
+  const H=hull(P);c.lineJoin='round';
+  const gr=c.createLinearGradient(0,20,0,180);gr.addColorStop(0,g(.93));gr.addColorStop(1,g(.8));
+  c.fillStyle=gr;c.strokeStyle=gr;c.lineWidth=22;c.beginPath();H.forEach((p,i)=>i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.closePath();c.fill();c.stroke();
+  const ed=E4.map(([i,j])=>({i,j,z:(P[i].z+P[j].z)/2})).sort((p,q)=>p.z-q.z);
+  c.lineCap='round';
+  for(const e of ed){const A=P[e.i],B=P[e.j],d=depth(e.z),w=3.2+4.2*(A.k+B.k)/2;
+    c.strokeStyle=g(.9);c.lineWidth=w+5;c.beginPath();c.moveTo(A.x,A.y);c.lineTo(B.x,B.y);c.stroke();
+    c.strokeStyle=g(.5*(1-d)*(1-d));c.lineWidth=w;c.beginPath();c.moveTo(A.x,A.y);c.lineTo(B.x,B.y);c.stroke()}
+  let lead=0;P.forEach((p,i)=>{if(p.z>P[lead].z)lead=i});
+  P.map((p,i)=>({p,i})).sort((u,v)=>u.p.z-v.p.z).forEach(({p,i})=>{const d=depth(p.z),r=3.5+3.2*p.k;
+    c.fillStyle=g(.9);c.beginPath();c.arc(p.x,p.y,r+2.5,0,7);c.fill();
+    c.fillStyle=g(.45*(1-d)*(1-d));c.beginPath();c.arc(p.x,p.y,r,0,7);c.fill();
+    if(i===lead){c.strokeStyle=g(0);c.lineWidth=3;c.beginPath();c.arc(p.x,p.y,r+6,0,7);c.stroke()}});
+}
+
+/* ---------- ideia B: Hiper ---------- */
+function poly(c,pts){c.beginPath();pts.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath()}
+function drawB(c,t,anim){
+  const fl=anim?-4*Math.sin(t*1.85):0, br=anim?1+.045*Math.sin(t*1.85):1;
+  const bl=anim?((t*.95)%5.2<.18?.12:1):1;
+  c.save();c.translate(0,10);
+  c.fillStyle=g(.72);c.beginPath();c.ellipse(100,184,40*(anim?1-.08*Math.sin(t*1.85):1),5,0,0,7);c.fill();
+  c.translate(0,fl);
+  // aro hexagonal
+  c.save();c.translate(100,98);c.scale(br,br);c.translate(-100,-98);
+  c.lineJoin='round';c.lineCap='round';
+  c.strokeStyle=g(.9);c.lineWidth=11;poly(c,[[100,20],[170,59],[170,137],[100,176],[30,137],[30,59]]);c.stroke();
+  c.strokeStyle=g(.3);c.lineWidth=5;poly(c,[[100,20],[170,59],[170,137],[100,176],[30,137],[30,59]]);c.stroke();
+  c.beginPath();[[100,20,100,42],[170,59,150,70],[170,137,150,126],[100,176,100,154],[30,137,50,126],[30,59,50,70]].forEach(s=>{c.moveTo(s[0],s[1]);c.lineTo(s[2],s[3])});c.stroke();
+  c.restore();
+  const top=[[100,42],[150,70],[100,98],[50,70]],lf=[[50,70],[100,98],[100,154],[50,126]],rt=[[150,70],[100,98],[100,154],[150,126]];
+  let gt=c.createLinearGradient(60,45,140,95);gt.addColorStop(0,g(.95));gt.addColorStop(1,g(.72));
+  c.fillStyle=gt;poly(c,top);c.fill();
+  let gl=c.createLinearGradient(50,70,100,154);gl.addColorStop(0,g(.6));gl.addColorStop(1,g(.36));
+  c.fillStyle=gl;poly(c,lf);c.fill();
+  let gx=c.createLinearGradient(150,70,100,154);gx.addColorStop(0,g(.34));gx.addColorStop(1,g(.14));
+  c.fillStyle=gx;poly(c,rt);c.fill();
+  c.strokeStyle=g(0);c.lineJoin='round';c.lineCap='round';c.lineWidth=9;
+  poly(c,[[100,42],[150,70],[150,126],[100,154],[50,126],[50,70]]);c.stroke();
+  c.lineWidth=6;c.beginPath();c.moveTo(50,70);c.lineTo(100,98);c.lineTo(150,70);c.moveTo(100,98);c.lineTo(100,154);c.stroke();
+  // olhos: sempre claros
+  c.fillStyle=g(0);
+  for(const ex of [78,122]){c.beginPath();c.ellipse(ex,114,9.5,12.5*Math.max(bl,.35),0,0,7);c.fill()}
+  c.fillStyle=EYEFILL;
+  for(const ex of [78,122]){c.beginPath();c.ellipse(ex,114,6.5,9.5*bl,0,0,7);c.fill()}
+  c.restore();
+}
+
+/* ---------- ideia C: oito vértices ---------- */
+const GAP=.2;
+function prC(x,y,z){return [(x-z)*.866,(x+z)*.5-y]}
+let fitC=null;
+function getFitC(){if(fitC)return fitC;let mnx=1e9,mxx=-1e9,mny=1e9,mxy=-1e9;const L=2+GAP,lift=.95;
+  for(const x of [0,L])for(const y of [0,L+lift])for(const z of [0,L]){const [a,b]=prC(x-L/2,y-L/2,z-L/2);mnx=Math.min(mnx,a);mxx=Math.max(mxx,a);mny=Math.min(mny,b);mxy=Math.max(mxy,b)}
+  const S=164/Math.max(mxx-mnx,mxy-mny);return fitC={S,ox:100-(mnx+mxx)/2*S,oy:100-(mny+mxy)/2*S}}
+function drawC(c,t,anim){
+  const {S,ox,oy}=getFitC(),L=2+GAP,q=1+GAP;
+  const P=(x,y,z)=>{const [a,b]=prC(x-L/2,y-L/2,z-L/2);return [ox+a*S,oy+b*S]};
+  const lift=anim?.62+.2*Math.sin(t*1.7):.7;
+  const cubes=[];for(let i=0;i<2;i++)for(let j=0;j<2;j++)for(let k=0;k<2;k++)cubes.push({x:i*q,y:j*q,z:k*q,lead:i&&j&&k});
+  cubes.forEach(cb=>{if(cb.lead)cb.y+=lift});
+  cubes.sort((a,b)=>(a.x+a.y+a.z)-(b.x+b.y+b.z));
+  c.lineJoin='round';
+  for(const cb of cubes){
+    const {x,y,z}=cb,x1=x+1,y1=y+1,z1=z+1;
+    const top=[P(x,y1,z),P(x1,y1,z),P(x1,y1,z1),P(x,y1,z1)];
+    const rf=[P(x1,y,z),P(x1,y1,z),P(x1,y1,z1),P(x1,y,z1)];
+    const lf=[P(x,y,z1),P(x1,y,z1),P(x1,y1,z1),P(x,y1,z1)];
+    if(cb.lead){c.strokeStyle=c.fillStyle=g(.97);c.lineWidth=9;[top,lf,rf].forEach(f=>{poly(c,f);c.fill();c.stroke()})}
+    const tones=cb.lead?[.68,.0,.14]:[.9-.06*(1-y/q),.5,.24];
+    c.fillStyle=g(tones[0]);poly(c,top);c.fill();
+    c.fillStyle=g(tones[1]);poly(c,lf);c.fill();
+    c.fillStyle=g(tones[2]);poly(c,rf);c.fill();
+    c.strokeStyle=g(0);c.lineWidth=3.4;
+    [top,lf,rf].forEach(f=>{poly(c,f);c.stroke()});
+  }
+}
+
+/* ---------- dither ---------- */
+const DRAW={A:drawA,B:drawB,C:drawC};
+const off=document.createElement('canvas');const oc=off.getContext('2d',{willReadFrequently:true});
+const state={anim:!matchMedia('(prefers-reduced-motion: reduce)').matches,grain:.55,mode:'fs'};
+function render(cv,key,grid,dark,t,grainMul){
+  if(cv.width!==grid){cv.width=grid;cv.height=grid}
+  off.width=grid;off.height=grid;oc.setTransform(1,0,0,1,0,0);oc.clearRect(0,0,grid,grid);
+  oc.setTransform(grid/200,0,0,grid/200,0,0);DRAW[key](oc,t,state.anim);
+  const src=oc.getImageData(0,0,grid,grid).data,n=grid*grid,tone=new Float32Array(n),mask=new Uint8Array(n);
+  const ns=grid/200*.9, gm=state.grain*grainMul, drift=state.anim?t*.9:0;
+  for(let i=0;i<n;i++){const a=src[i*4+3];if(a<128)continue;const r=src[i*4],gg=src[i*4+1];
+    if(r>200&&gg<80){mask[i]=2;continue}
+    mask[i]=1;let v=r/255;
+    if(v>.04){const x=i%grid,y=(i/grid)|0;v+=gm*(fbm(x/ns*.045+drift,y/ns*.045-drift*.6)-.5)*1.25}
+    tone[i]=v}
+  const paper=dark?PAPER_D:PAPER_L,out=new ImageData(grid,grid),o=out.data;
+  for(let i=0;i<n;i++){if(!mask[i])continue;let col;
+    if(mask[i]===2)col=EYE;else{const v=tone[i];let b;
+      if(src[i*4]/255<=.04)b=0;
+      else if(state.mode==='fs'){b=v<.5?0:1;const err=v-b,x=i%grid;
+        if(x+1<grid&&mask[i+1]===1)tone[i+1]+=err*7/16;
+        if(i+grid<n){if(x>0&&mask[i+grid-1]===1)tone[i+grid-1]+=err*3/16;if(mask[i+grid]===1)tone[i+grid]+=err*5/16;if(x+1<grid&&mask[i+grid+1]===1)tone[i+grid+1]+=err/16}}
+      else{const x=i%grid,y=(i/grid)|0;b=v<BAYER[(y&3)*4+(x&3)]?0:1}
+      col=b?paper:INK}
+    o[i*4]=col[0];o[i*4+1]=col[1];o[i*4+2]=col[2];o[i*4+3]=255}
+  cv.getContext('2d').putImageData(out,0,0);
+}
+const items=[];
+document.querySelectorAll('.idea').forEach(sec=>{const k=sec.dataset.k;
+  const [l,d]=sec.querySelectorAll('.sw canvas');items.push({cv:l,k,grid:200,dark:false,gm:1},{cv:d,k,grid:200,dark:true,gm:1});
+  sec.querySelectorAll('.small canvas').forEach(cv=>items.push({cv,k,grid:cv.width,dark:cv.classList.contains('d'),gm:.35,small:true}))});
+function frame(t){for(const it of items)render(it.cv,it.k,it.grid,it.dark,t,it.gm)}
+let t0=performance.now(),last=0,t=0;
+function loop(now){requestAnimationFrame(loop);if(!state.anim)return;if(now-last<70)return;last=now;t=(now-t0)/1000;frame(t)}
+frame(0);requestAnimationFrame(loop);
+const anim=document.getElementById('anim');anim.checked=state.anim;
+anim.addEventListener('change',()=>{state.anim=anim.checked;t0=performance.now()-t*1000;if(!state.anim)frame(0)});
+document.getElementById('grain').addEventListener('input',e=>{state.grain=e.target.value/100;if(!state.anim)frame(0)});
+const bf=document.getElementById('m-fs'),bb=document.getElementById('m-bayer');
+function setMode(m){state.mode=m;bf.setAttribute('aria-pressed',m==='fs');bb.setAttribute('aria-pressed',m!=='fs');if(!state.anim)frame(0)}
+bf.onclick=()=>setMode('fs');bb.onclick=()=>setMode('bayer');
+})();
+</script>
