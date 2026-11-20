@@ -40,14 +40,20 @@ Abra com `?exemplo` para pular a primeira abertura (e `&tela=orquestracao`, `&se
 
 ```
 npm install
-npm run build   # gera dist/
-cargo build --release                  # compila o lançador
-target/release/hypercube               # abre numa janela própria (Edge ou Chrome em modo app)
-target/release/hypercube --exemplo     # abre direto com a sessão de exemplo
-target/release/hypercube --screenshot tela.png   # salva a imagem da tela e sai
+npm run dev            # só a interface, com o sistema simulado (porta 5184)
+npm run tauri:dev      # app de verdade (Tauri 2) com recarga
+npm run tauri:build    # instalador (src-tauri/target/release/bundle)
+npx tauri build --debug   # exe de teste em src-tauri/target/debug/hypercube.exe
 ```
 
-O lançador (`lancador/main.rs`, só a biblioteca padrão do Rust) existe até o app ir para o Tauri 2: serve `dist/` em 127.0.0.1 e abre a janela. Com `--screenshot` ele desenha sem janela, sem roubar o foco.
+O lado nativo fica em `src-tauri/` (Rust): terminais com portable-pty, servidor local de hooks
+do Claude Code (só 127.0.0.1, token aleatório, recusa `Origin`), detecção de agentes, git worktree,
+notificação e escolha de pasta. Os hooks entram por um settings temporário passado com `--settings`;
+o `~/.claude/settings.json` do usuário não é tocado.
+
+Teste de fumaça: `HYPERCUBE_FUMACA=fumaca.log HYPERCUBE_FUMACA_SAIR=1 src-tauri/target/debug/hypercube.exe`
+abre a janela no segundo monitor, detecta os agentes, confere o servidor de hooks e um terminal, grava o log e fecha.
+Com `HYPERCUBE_FUMACA_CLAUDE=<pasta>` também abre o Claude Code num PTY e espera o `SessionStart` chegar pelo hook (sem mandar prompt).
 
 ## Licença
 
