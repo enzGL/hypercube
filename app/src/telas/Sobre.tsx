@@ -1,9 +1,7 @@
 import { refazerPrimeiraAbertura } from '../estado/loja';
 import { nativo } from '../nativo';
 import { Hiper } from '../componentes/Hiper';
-import { Icone } from '../componentes/Pecas';
 
-const REPO = 'https://github.com/enzGL/hypercube';
 
 export function Sobre() {
   return (
@@ -13,12 +11,6 @@ export function Sobre() {
         <h1>Hypercube</h1>
         <p className="lema">Todos os seus agentes, num cubo só.</p>
         <p className="secundario">Versão 0.1 · {nativo.modo === 'simulado' ? 'modo simulado (sem terminais de verdade)' : 'app desktop'}</p>
-        <div className="sobre-estrela">
-          <p>É grátis para usar. Só pedimos que você dê uma estrela no GitHub!</p>
-          <a className="botao primario" href={REPO} target="_blank" rel="noreferrer">
-            <Icone nome="estrela" /> Dar estrela no GitHub
-          </a>
-        </div>
         <div className="sobre-hiper">
           <Hiper estado="sucesso" tamanho={80} />
           <p>

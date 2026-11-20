@@ -15,20 +15,10 @@ import {
   type Vertice,
 } from '../estado/loja';
 import { definirModoLateral, irParaRota, listarProjetos, projetoAtivo, useCasca, type ModoLateral, type Projeto, type Rota } from '../estado/casca';
-import { nativo } from '../nativo';
 import { FRASE_HIPER, Hiper } from './Hiper';
 import { AvatarProjeto, IconeCasca } from './IconesCasca';
 import { HiperMini } from './HiperMini';
 import { MiniVertice, SimboloEstado } from './Pecas';
-
-const REPO = 'https://github.com/enzGL/hypercube';
-
-function abrirRepo(ev: React.MouseEvent) {
-  if (nativo.modo === 'tauri') {
-    ev.preventDefault();
-    nativo.sistema.abrirLink(REPO);
-  }
-}
 
 function abrirSessao(id: string, rota: 'sessoes' | 'orquestracao' = 'sessoes') {
   selecionarSessao(id);
@@ -118,12 +108,6 @@ export function BarraLateral() {
               <span>desenhar grid</span>
               <IconeCasca nome="grid" tamanho={13} />
             </button>
-            <p className="estrela-texto">
-              É grátis para usar. Só pedimos que você dê uma estrela no GitHub!{' '}
-              <a href={REPO} target="_blank" rel="noreferrer" onClick={abrirRepo}>
-                <IconeCasca nome="estrela" tamanho={12} /> Dar estrela
-              </a>
-            </p>
           </>
         )}
 
@@ -137,15 +121,9 @@ export function BarraLateral() {
               <span>conta local · Padrão</span>
             </span>
           )}
-          {recolhida ? (
-            <a className="faixa-botao" href={REPO} target="_blank" rel="noreferrer" onClick={abrirRepo} title="É grátis para usar. Só pedimos que você dê uma estrela no GitHub!" aria-label="Dar estrela no GitHub">
-              <IconeCasca nome="estrela" />
-            </a>
-          ) : (
-            <button className="faixa-botao" onClick={() => irParaRota('sobre')} title="Sobre e ajustes" aria-label="Sobre e ajustes">
-              <IconeCasca nome="engrenagem" />
-            </button>
-          )}
+          <button className="faixa-botao" onClick={() => irParaRota('sobre')} title="Sobre e ajustes" aria-label="Sobre e ajustes">
+            <IconeCasca nome="engrenagem" />
+          </button>
         </div>
       </footer>
     </aside>

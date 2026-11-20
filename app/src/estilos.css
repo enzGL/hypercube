@@ -261,8 +261,6 @@ kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--borda
 .workspace:hover { background: var(--cartao); color: var(--texto); }
 .workspace-rotulo { font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
 .workspace .icone { margin-left: auto; }
-.estrela-texto { margin: 0; padding: 0 6px; font-size: 11px; line-height: 1.45; color: var(--texto-2); }
-.estrela-texto a { display: inline-flex; align-items: center; gap: 3px; font-weight: 500; white-space: nowrap; }
 .usuario { display: flex; align-items: center; gap: 9px; padding: 6px 2px 0 6px; border-top: 1px solid var(--borda); margin-top: 2px; }
 .lateral.recolhida .usuario { flex-direction: column; padding: 8px 0 0; border-top: 0; }
 .usuario-avatar { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; background: var(--cobalto); color: #fff; font-weight: 600; font-size: 12.5px; }
@@ -520,9 +518,6 @@ textarea { resize: vertical; }
 .logo.grande { width: 120px; height: 120px; }
 .lema { font-family: var(--f-titulo); font-style: italic; color: var(--cobalto-claro); margin: 2px 0; }
 .sobre-cartao > p { margin: 0; }
-.sobre-estrela { margin: 18px 0 8px; padding: 16px 18px; background: var(--cartao); border: 1px solid var(--borda-forte); border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
-.sobre-estrela p { margin: 0; font-size: 14px; }
-.sobre-estrela a:hover { text-decoration: none; }
 .sobre-hiper { display: flex; align-items: center; gap: 16px; text-align: left; margin: 10px 0; color: var(--texto-2); }
 .sobre-hiper p { margin: 0; }
 .sobre-lista { text-align: left; font-size: 12.5px; display: grid; gap: 4px; margin: 4px 0 16px; padding-left: 18px; }

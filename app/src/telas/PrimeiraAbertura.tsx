@@ -55,7 +55,6 @@ export function PrimeiraAbertura() {
               Explorar com um exemplo
             </button>
           </div>
-          <p className="dica">É grátis para usar. Só pedimos que você dê uma estrela no GitHub!</p>
         </div>
       </div>
     </div>

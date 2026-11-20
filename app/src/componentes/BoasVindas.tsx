@@ -80,13 +80,21 @@ export function BoasVindas({ nome, aoComecar, aoFechar, forcar = false }: Props)
   useEffect(() => {
     if (!aberto) return;
     const t = window.setTimeout(() => setHiper('sucesso'), 650);
+    // Não bloqueia o app: some sozinho, com Esc ou com um clique fora do cartão.
+    const sai = window.setTimeout(() => fechar(false), 9000);
     const k = (ev: KeyboardEvent) => {
       if (ev.key === 'Escape') fechar(false);
     };
+    const fora = (ev: MouseEvent) => {
+      if (!(ev.target as HTMLElement).closest('.bv')) fechar(false);
+    };
     window.addEventListener('keydown', k);
+    window.addEventListener('mousedown', fora);
     return () => {
       window.clearTimeout(t);
+      window.clearTimeout(sai);
       window.removeEventListener('keydown', k);
+      window.removeEventListener('mousedown', fora);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aberto]);
@@ -95,29 +103,32 @@ export function BoasVindas({ nome, aoComecar, aoFechar, forcar = false }: Props)
 
   const primeiroDia = dia === 1;
   return (
-    <div className="bv-fundo" onMouseDown={() => fechar(false)}>
-      <div className="bv" role="dialog" aria-modal="true" aria-labelledby="bv-titulo" onMouseDown={(ev) => ev.stopPropagation()}>
+    <div className="bv-fundo">
+      <div className="bv" role="status" aria-labelledby="bv-titulo">
         <button className="icone-botao bv-fechar" onClick={() => fechar(false)} aria-label="Fechar">
           <Icone nome="fechar" tamanho={14} />
         </button>
         <div className="bv-hiper">
-          <Hiper estado={hiper} tamanho={108} />
+          <Hiper estado={hiper} tamanho={64} />
         </div>
-        <p className="bv-dia mono">DIA {dia} NO HYPERCUBE</p>
-        <h2 id="bv-titulo" className="bv-titulo">{quem ? `Olá, ${quem}` : 'Olá!'}</h2>
-        <p className="bv-texto">
-          {primeiroDia
-            ? 'Que bom ter você aqui. Vamos montar o seu primeiro cubo de Vértices?'
-            : 'Bem-vindo de volta. Vamos colocar os seus Vértices para trabalhar hoje?'}
-        </p>
-        <div className="bv-botoes">
-          <button className="botao grande" onClick={() => fechar(false)}>
-            Pular
-          </button>
-          <button className="botao grande primario" autoFocus onClick={() => fechar(true)}>
-            Começar
-          </button>
+        <div className="bv-corpo">
+          <p className="bv-dia mono">DIA {dia} NO HYPERCUBE</p>
+          <h2 id="bv-titulo" className="bv-titulo">{quem ? `Olá, ${quem}` : 'Olá!'}</h2>
+          <p className="bv-texto">
+            {primeiroDia
+              ? 'Que bom ter você aqui. Vamos montar o seu primeiro cubo de Vértices?'
+              : 'Bem-vindo de volta. Vamos colocar os seus Vértices para trabalhar hoje?'}
+          </p>
+          <div className="bv-botoes">
+            <button className="botao" onClick={() => fechar(false)}>
+              Pular
+            </button>
+            <button className="botao primario" onClick={() => fechar(true)}>
+              Começar
+            </button>
+          </div>
         </div>
+        <span className="bv-tempo" aria-hidden="true" />
       </div>
     </div>
   );
