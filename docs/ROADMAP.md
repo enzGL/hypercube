@@ -10,3 +10,4 @@ Uma etapa por vez, cada uma testada no app antes da próxima.
 | 0.3 Imagens e roteador | Canvas de imagens (app + localhost); ferramentas MCP de canvas; roteador-ia dentro | agente gera 3 telas e elas aparecem no canvas ao vivo |
 | 0.4 Lançamento | README em PT/EN, página de download com pedido de estrela | instalador baixado pelo site |
 | Depois | Celular via QR; aba MCP/Skills; passar conversa entre agentes | — |
+| Última: Comunidade | Vitrine de projetos com estrelas; perfil com cor e mascote próprio; selos por horas de agente com ranking semanal e mensal; login do TesserAct com perfil mais personalizável e destaque; envio opcional só do total de horas | uma pessoa publica um projeto, ganha o primeiro selo e aparece no ranking da semana |

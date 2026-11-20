@@ -77,6 +77,18 @@ Regra: todo o código é nosso; de fora, só bibliotecas instaladas por npm ou c
 - Painel do roteador dentro do app: provedores, chamadas do dia, cadeias editáveis.
 - Regras de segurança do roteador continuam: só localhost, token, recusa `Origin` de navegador, log sem conteúdo.
 
+### Comunidade (última etapa)
+Pedido do Enzo em 2026-11-20: um lugar onde quem usa o Hypercube mostra o que está construindo com ele.
+
+- **Vitrine de projetos:** cada pessoa publica um projeto (nome, link, descrição curta, captura da página, estágio). Grade de cartões com busca por nome, pessoa ou tag; filtro por estágio (ideia, em construção, beta, no ar, faturando); ordem por estrelas, votos ou mais recentes. Quem visita dá estrela no que usaria.
+- **Perfil:** nome, arroba com endereço próprio (`/gente/<arroba>`), "o que você constrói", cor e mascote. A pessoa escolhe entre os mini-mascotes de Vértice ou **cria o próprio** (cor, olhos, acessório), sempre no estilo do Hiper.
+- **Selos por tempo de agente:** a pessoa ganha selos conforme as horas que teve Vértices trabalhando no Hypercube. Ranking semanal e mensal no site. Os desenhos dos selos ficam para o /design (série própria, ligada ao cubo: 1 vértice, aresta, face, cubo, hipercubo...).
+- **Quem tem TesserAct:** entra com o login do TesserAct e ganha perfil mais personalizável (capa, mais cores, mascote animado, mais projetos fixados) e destaque na comunidade.
+- **Privacidade:** a comunidade é opcional e desligada por padrão. O app só envia o total de horas de agente por dia, nunca conteúdo, nomes de pasta ou comandos. Sem a comunidade ligada, nada sai do computador (continua valendo "nada vai para a nuvem").
+- **Contra trapaça no ranking:** contar só tempo com Vértice de fato trabalhando (estado "processando" pelos hooks), com teto por dia, e o servidor descarta saltos fora do normal.
+
+Em aberto: onde roda o servidor da comunidade (pode ser o mesmo backend do TesserAct, já que o login é dele), nome e endereço da página, e a série de selos.
+
 ### Depois
 - Celular: QR para acompanhar e responder agentes pelo telefone, com criptografia de ponta a ponta.
 - Aba MCP e Skills: ver e copiar servidores MCP e skills entre agentes.
