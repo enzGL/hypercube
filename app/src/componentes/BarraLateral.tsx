@@ -23,6 +23,7 @@ import { AvatarProjeto, IconeCasca } from './IconesCasca';
 import { HiperMini } from './HiperMini';
 import { SimboloEstado } from './Pecas';
 import { abrirEditarAgente, MascoteAgente } from './EditarAgente';
+import { CartaoUsuario } from './Perfil';
 
 function abrirSessao(id: string, rota: 'sessoes' | 'orquestracao' = 'sessoes') {
   selecionarSessao(id);
@@ -115,20 +116,11 @@ export function BarraLateral() {
           </>
         )}
 
-        <div className="usuario">
-          <span className="usuario-avatar" aria-hidden="true">
-            V
-          </span>
-          {!recolhida && (
-            <span className="usuario-texto">
-              <b>Você</b>
-              <span>conta local · Padrão</span>
-            </span>
-          )}
+        <CartaoUsuario recolhida={recolhida}>
           <button className="faixa-botao" onClick={() => irParaRota('sobre')} title="Sobre e ajustes" aria-label="Sobre e ajustes">
             <IconeCasca nome="engrenagem" />
           </button>
-        </div>
+        </CartaoUsuario>
       </footer>
     </aside>
   );
@@ -232,7 +224,7 @@ function filtrarProjeto(e: Estado, p: Projeto, busca: string) {
   const sessoes = todas
     .map(({ sessao, vertices }) => {
       if (sessao.nome.toLowerCase().includes(busca)) return { sessao, vertices };
-      const vs = vertices.filter((v) => v.nome.toLowerCase().includes(busca) || NOME_AGENTE[v.agente].toLowerCase().includes(busca));
+      const vs = vertices.filter((v) => nomeDoAgente(v).toLowerCase().includes(busca) || v.nome.toLowerCase().includes(busca) || NOME_AGENTE[v.agente].toLowerCase().includes(busca));
       return vs.length ? { sessao, vertices: vs } : null;
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
