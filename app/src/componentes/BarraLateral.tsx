@@ -20,6 +20,7 @@ import { FRASE_HIPER, Hiper } from './Hiper';
 import { AvatarProjeto, IconeCasca } from './IconesCasca';
 import { HiperMini } from './HiperMini';
 import { MiniVertice, SimboloEstado } from './Pecas';
+import { CartaoUsuario } from './Perfil';
 
 function abrirSessao(id: string, rota: 'sessoes' | 'orquestracao' = 'sessoes') {
   selecionarSessao(id);
@@ -112,20 +113,11 @@ export function BarraLateral() {
           </>
         )}
 
-        <div className="usuario">
-          <span className="usuario-avatar" aria-hidden="true">
-            V
-          </span>
-          {!recolhida && (
-            <span className="usuario-texto">
-              <b>Você</b>
-              <span>conta local · Padrão</span>
-            </span>
-          )}
+        <CartaoUsuario recolhida={recolhida}>
           <button className="faixa-botao" onClick={() => irParaRota('sobre')} title="Sobre e ajustes" aria-label="Sobre e ajustes">
             <IconeCasca nome="engrenagem" />
           </button>
-        </div>
+        </CartaoUsuario>
       </footer>
     </aside>
   );

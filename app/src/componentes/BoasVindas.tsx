@@ -2,8 +2,10 @@
 // Conta os dias desde o primeiro uso ("DIA N NO HYPERCUBE").
 import { useEffect, useState } from 'react';
 import { nomeUsuario, type EstadoHiper } from '../estado/loja';
+import { usePerfil } from '../estado/perfil';
 import { Hiper } from './Hiper';
 import { Icone } from './Pecas';
+import { AvatarPerfil } from './Perfil';
 import '../inicio.css';
 
 const CHAVE_PRIMEIRO = 'hypercube.primeiroUso';
@@ -68,7 +70,8 @@ export function BoasVindas({ nome, aoComecar, aoFechar, forcar = false }: Props)
   const [aberto, setAberto] = useState(() => forcar || deveMostrarBoasVindas());
   const [dia] = useState(diaNoHypercube);
   const [hiper, setHiper] = useState<EstadoHiper>('repouso');
-  const quem = (nome ?? nomeUsuario()).trim();
+  const perfil = usePerfil();
+  const quem = (nome ?? (perfil.nome || nomeUsuario())).trim();
 
   const fechar = (comecar: boolean) => {
     marcarBoasVindasVista();
@@ -110,6 +113,11 @@ export function BoasVindas({ nome, aoComecar, aoFechar, forcar = false }: Props)
         </button>
         <div className="bv-hiper">
           <Hiper estado={hiper} tamanho={64} />
+          {(perfil.foto || quem) && (
+            <span className="pf-bv-foto">
+              <AvatarPerfil nome={quem} foto={perfil.foto} tamanho={34} />
+            </span>
+          )}
         </div>
         <div className="bv-corpo">
           <p className="bv-dia mono">DIA {dia} NO HYPERCUBE</p>
