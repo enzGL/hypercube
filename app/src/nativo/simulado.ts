@@ -107,7 +107,7 @@ function montarRoteiro(agente: Agente, pedido: string): Roteiro {
       { espera: 1300, texto: ferramenta('Task', 'Batedor', 'mapear pontos de cobrança'), evento: { tipo: 'SubagentStart', mensagem: 'Mapear pontos de cobrança', subagenteId: 'sub-1' } },
       { espera: 1500, texto: ferramenta('Task', 'Construtor', 'nova tentativa sem cobrança dupla') },
       { espera: 1500, texto: ferramenta('Task', 'Revisor', 'revisão cruzada do diff') },
-      { espera: 6000, texto: `  ${CINZA}esperando os Vértices entregarem resultado.md…${FIM}\r\n`, evento: { tipo: 'SubagentStop', subagenteId: 'sub-1', tokens: 900, custo: 0.004 } },
+      { espera: 6000, texto: `  ${CINZA}esperando os agentes entregarem resultado.md…${FIM}\r\n`, evento: { tipo: 'SubagentStop', subagenteId: 'sub-1', tokens: 900, custo: 0.004 } },
       { espera: 9000, texto: ferramenta('Read', 'vertices/batedor/resultado.md') },
       { espera: 12000, texto: ferramenta('Read', 'vertices/construtor/diff.patch', '+86 −12'), evento: { tipo: 'PreToolUse', ferramenta: 'Read', tokens: 2600, custo: 0.02 } },
       { espera: 14000, texto: `  ${CINZA}esperando a revisão…${FIM}\r\n` },
@@ -236,7 +236,7 @@ class TerminalSimulado {
     this.emitir({ tipo: 'UserPromptSubmit', terminalId: this.id, mensagem: sim ? 'Permitido' : 'Negado' });
     const passos = sim
       ? pergunta.sim
-      : [{ espera: 300, texto: `${VERMELHO}✕ Negado.${FIM} O Vértice parou e espera outra instrução.\r\n`, evento: { tipo: 'Stop' as const } }];
+      : [{ espera: 300, texto: `${VERMELHO}✕ Negado.${FIM} O agente parou e espera outra instrução.\r\n`, evento: { tipo: 'Stop' as const } }];
     this.rodar(passos, () => {
       this.ocupado = false;
       this.prompt();

@@ -1,4 +1,4 @@
-// Painel do roteador de IA: Vértices do nível "barato" vão para modelos gratuitos.
+// Painel do roteador de IA: agentes do nível "barato" vão para modelos gratuitos.
 import { useEffect, useState } from 'react';
 import { avisar } from '../estado/loja';
 import { nativo, type EstadoRoteador } from '../nativo';
@@ -39,7 +39,7 @@ export function Roteador() {
                 onChange={(ev) => {
                   setR({ ...r, ligado: ev.target.checked });
                   nativo.roteador.ligar(ev.target.checked);
-                  avisar(ev.target.checked ? 'Roteador ligado.' : 'Roteador desligado: o nível barato usa o agente do Vértice.');
+                  avisar(ev.target.checked ? 'Roteador ligado.' : 'Roteador desligado: o nível barato usa o próprio agente.');
                 }}
               />
               <span className="interruptor-trilho" />
@@ -129,7 +129,7 @@ export function Roteador() {
           ))}
           <section className="cartao">
             <h3>Nível forte</h3>
-            <p className="secundario">Não passa pelo roteador: usa direto o agente do Vértice (Claude Code, Codex…).</p>
+            <p className="secundario">Não passa pelo roteador: usa direto o próprio agente (Claude Code, Codex…).</p>
           </section>
         </div>
 

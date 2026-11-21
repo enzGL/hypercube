@@ -1,4 +1,5 @@
 // Início: saudação, caixa de comando, projetos recentes, atalhos e uso dos agentes.
+import { LogoAgente } from '../componentes/LogoAgente';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   abrirDialogo,
@@ -19,14 +20,6 @@ import '../inicio.css';
 
 type Modo = 'normal' | 'planejar' | 'equipe';
 const NOME_MODO: Record<Modo, string> = { normal: 'Normal', planejar: 'Planejar', equipe: 'Equipe' };
-const COR_AGENTE: Record<Agente, string> = {
-  claude: '#D9825B',
-  codex: '#9AA3C7',
-  gemini: '#5B8DEF',
-  kiro: '#8A5BD6',
-  opencode: '#4CC38A',
-  terminal: '#9AA3C7',
-};
 const AGENTES_PADRAO: Agente[] = ['claude', 'codex', 'gemini'];
 
 // ---------- utilidades ----------
@@ -222,7 +215,7 @@ function CaixaComando({ pastas }: { pastas: string[] }) {
       const nome = t.length > 38 ? `${t.slice(0, 36).trimEnd()}…` : t;
       const s = criarSessao(nome, pasta, modo === 'equipe');
       if (modo === 'equipe') {
-        await criarVertice(s.id, 'lider', agente, 'forte', `Divida esta tarefa entre os Vértices: ${t}`);
+        await criarVertice(s.id, 'lider', agente, 'forte', `Divida esta tarefa entre os agentes: ${t}`);
         await criarVertice(s.id, 'batedor', 'gemini', 'barato');
         await criarVertice(s.id, 'construtor', 'codex', 'padrao');
         await criarVertice(s.id, 'revisor', 'claude', 'padrao');
@@ -266,7 +259,7 @@ function CaixaComando({ pastas }: { pastas: string[] }) {
           rotulo="Agente"
           valor={agente}
           aoMudar={setAgente}
-          icone={<span className="ini-ponto-agente" style={{ background: COR_AGENTE[agente] }} />}
+          icone={<LogoAgente agente={agente} tamanho={14} />}
           opcoes={listaAgentes.map((a) => ({ valor: a, nome: NOME_AGENTE[a] }))}
         />
         <Seletor
@@ -298,8 +291,8 @@ function CartaoUso({ uso, aoAtualizar }: { uso: UsoDoPlano; aoAtualizar: () => v
   return (
     <article className="ini-uso">
       <header className="ini-uso-topo">
-        <span className="ini-uso-avatar" style={{ color: COR_AGENTE[agente], borderColor: COR_AGENTE[agente] }}>
-          {uso.provedor[0]}
+        <span className="ini-uso-avatar">
+          <LogoAgente agente={agente} tamanho={18} />
         </span>
         <b className="ini-uso-nome">{NOME_AGENTE[agente]}</b>
         <span className="ini-vivo">
@@ -484,7 +477,7 @@ export function Inicio({ nome }: { nome?: string }) {
             {!usos.some((u) => u.provedor === 'Claude') && (
               <article className="ini-uso ini-uso-espera">
                 <header className="ini-uso-topo">
-                  <span className="ini-uso-avatar" style={{ color: COR_AGENTE.claude, borderColor: COR_AGENTE.claude }}>C</span>
+                  <span className="ini-uso-avatar"><LogoAgente agente="claude" tamanho={18} /></span>
                   <b className="ini-uso-nome">{NOME_AGENTE.claude}</b>
                   <button className="icone-botao" onClick={atualizarUso} aria-label="Atualizar uso do Claude" title="Atualizar">
                     <Ic d={IC_ATUALIZAR} tamanho={14} />

@@ -69,7 +69,7 @@ export function Hiper({ estado = 'repouso', tamanho = 96, rotulo = 'Hiper, o ass
 export const FRASE_HIPER: Record<EstadoHiper, string> = {
   repouso: 'Tudo calmo por aqui.',
   atencao: 'Alguém precisa de você.',
-  processando: 'Os Vértices estão trabalhando.',
+  processando: 'Os agentes estão trabalhando.',
   sucesso: 'Tarefa concluída!',
   erro: 'Algo deu errado.',
 };

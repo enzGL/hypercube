@@ -14,14 +14,14 @@ export function Sobre() {
         <div className="sobre-hiper">
           <Hiper estado="sucesso" tamanho={80} />
           <p>
-            Um tesseract é um hipercubo. Cada agente é um <b>Vértice</b>, e o <b>Hiper</b> acompanha todos eles.
+            Um tesseract é um hipercubo. O <b>Hiper</b> acompanha todos os seus agentes.
           </p>
         </div>
         <ul className="sobre-lista secundario">
           <li>Código aberto, licença MIT. O nome, o Hiper e a logo não entram na licença.</li>
           <li>Tudo fica no seu computador: nada vai para a nuvem.</li>
           <li>
-            Atalho <kbd>Alt</kbd>+<kbd>N</kbd>: vai para o Vértice que espera há mais tempo.
+            Atalho <kbd>Alt</kbd>+<kbd>N</kbd>: vai para o agente que espera há mais tempo.
           </li>
         </ul>
         <button className="botao" onClick={refazerPrimeiraAbertura}>

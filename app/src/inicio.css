@@ -125,7 +125,7 @@
 @media (max-width: 900px) {
   .ini-grade-projetos, .ini-grade-comece { grid-template-columns: minmax(0, 1fr); }
   .ini-comando-opcoes { flex-wrap: wrap; }
-  .fundo-dither { width: 100%; opacity: .2; }
+  .fundo-dither { opacity: .2; }
 }
 @media (prefers-reduced-motion: reduce) {
   .ini-vivo-ponto { animation: none; }

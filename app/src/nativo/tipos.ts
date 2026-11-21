@@ -9,7 +9,7 @@ export interface OpcoesTerminal {
   pasta: string;
   /** Nome que aparece no cabeçalho do terminal (ex.: "Construtor"). */
   rotulo: string;
-  /** Pasta isolada (git worktree) do Vértice, quando existe. */
+  /** Pasta isolada (git worktree) do agente, quando existe. */
   worktree?: string;
   cols?: number;
   rows?: number;

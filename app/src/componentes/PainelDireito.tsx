@@ -54,7 +54,7 @@ export function PainelDireito() {
       <div className="pd-corpo" role="tabpanel">
         {casca.aba === 'notas' && <Notas />}
         {casca.aba === 'tarefas' && <Tarefas />}
-        {casca.aba === 'plugins' && <Vazio icone="plugins" titulo="Nenhum plugin ainda" texto="Plugins vão somar ferramentas aos Vértices. Eles chegam numa próxima versão." />}
+        {casca.aba === 'plugins' && <Vazio icone="plugins" titulo="Nenhum plugin ainda" texto="Plugins vão somar ferramentas aos agentes. Eles chegam numa próxima versão." />}
         {casca.aba === 'git' && <Vazio icone="git" titulo="Nada para mostrar" texto="As mudanças do projeto aberto vão aparecer aqui quando o app nativo estiver ligado." />}
       </div>
     </aside>
@@ -159,7 +159,7 @@ function Tarefas() {
       <Pomodoro />
 
       {total === 0 ? (
-        <Vazio icone="tarefas" titulo="Nada na sua lista" texto="Adicione uma tarefa e deixe ela à vista enquanto os Vértices trabalham." />
+        <Vazio icone="tarefas" titulo="Nada na sua lista" texto="Adicione uma tarefa e deixe ela à vista enquanto os agentes trabalham." />
       ) : lista.length === 0 ? (
         <p className="pd-dica centro">{casca.filtro === 'ativas' ? 'Tudo concluído. Bom trabalho!' : 'Nenhuma tarefa concluída ainda.'}</p>
       ) : (

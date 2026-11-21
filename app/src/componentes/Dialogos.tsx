@@ -79,13 +79,13 @@ function NovaSessao() {
       <label className="interruptor">
         <input type="checkbox" checked={worktrees} onChange={(ev) => setWorktrees(ev.target.checked)} />
         <span className="interruptor-trilho" />
-        <span>Cada Vértice trabalha no seu git worktree</span>
+        <span>Cada agente trabalha no seu git worktree</span>
       </label>
       <div className="campo">
         <span>Começar com</span>
         <div className="opcoes">
           {[
-            { id: 'vazio', nome: 'Nenhum Vértice', desc: 'Sessão vazia, você cria depois' },
+            { id: 'vazio', nome: 'Nenhum agente', desc: 'Sessão vazia, você cria depois' },
             { id: 'lider', nome: 'Só o Líder', desc: 'Ele divide as tarefas quando precisar' },
             { id: 'equipe', nome: 'Equipe completa', desc: 'Líder, batedor, construtor e revisor' },
           ].map((o) => (
@@ -130,7 +130,7 @@ function NovoVertice({ sessaoId, papelInicial }: { sessaoId: string; papelInicia
   const ativos = e.vertices.filter((v) => v.sessaoId === sessaoId && v.estado === 'trabalhando').length;
 
   return (
-    <Moldura titulo="Novo Vértice">
+    <Moldura titulo="Novo agente">
       <div className="campo">
         <span>Papel</span>
         <div className="opcoes papeis-grade">
@@ -179,7 +179,7 @@ function NovoVertice({ sessaoId, papelInicial }: { sessaoId: string; papelInicia
         <span>Primeira tarefa (opcional)</span>
         <textarea rows={2} value={tarefa} onChange={(ev) => setTarefa(ev.target.value)} placeholder="Ex.: Mapeie onde o pedido é cobrado" />
       </label>
-      {ativos >= 8 && <p className="aviso-limite">Já há 8 Vértices trabalhando nesta sessão (o limite).</p>}
+      {ativos >= 8 && <p className="aviso-limite">Já há 8 agentes trabalhando nesta sessão (o limite).</p>}
       <footer className="dialogo-rodape">
         <button className="botao" onClick={() => abrirDialogo(null)}>
           Cancelar
@@ -192,7 +192,7 @@ function NovoVertice({ sessaoId, papelInicial }: { sessaoId: string; papelInicia
             await criarVertice(sessaoId, papel, agente, nivel, tarefa.trim() || undefined);
           }}
         >
-          Criar Vértice
+          Criar agente
         </button>
       </footer>
     </Moldura>

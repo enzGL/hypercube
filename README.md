@@ -2,7 +2,7 @@
 
 O orquestrador de IA do TesserAct. Grátis e de código aberto.
 
-> Um tesseract é um hipercubo. Cada agente é um **Vértice**. O **Hiper** (o cubo mascote) rege todos.
+> Um tesseract é um hipercubo. Cada agente é um **agente**. O **Hiper** (o cubo mascote) rege todos.
 
 Para quem trabalha com várias sessões do Claude Code (e Codex, Gemini, Kiro...) ao mesmo tempo e quer:
 

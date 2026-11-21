@@ -1,4 +1,4 @@
-// Estado do app: sessões, Vértices, telas e avisos. Fala com o sistema só por `nativo`.
+// Estado do app: sessões, agentes, telas e avisos. Fala com o sistema só por `nativo`.
 import { useSyncExternalStore } from 'react';
 import { nativo, NOME_AGENTE, type Agente, type EventoAgente } from '../nativo';
 
@@ -24,7 +24,7 @@ export const DESCRICAO_PAPEL: Record<Papel, string> = {
   construtor: 'Escreve o código no seu worktree',
   revisor: 'Revisa o diff dos outros, só lendo',
   consertador: 'Corrige o que a revisão ou os testes apontaram',
-  subagente: 'Criado por outro Vértice',
+  subagente: 'Criado por outro agente',
 };
 
 export const COR_PAPEL: Record<Papel, string> = {
@@ -444,7 +444,7 @@ export function abrirDialogo(d: Dialogo) {
   mudar(() => ({ dialogo: d }));
 }
 
-/** Alt+N: vai para o Vértice que espera há mais tempo. */
+/** Alt+N: vai para o agente que espera há mais tempo. */
 export function irParaQuemEspera() {
   const v = estado.vertices
     .filter((x) => x.estado === 'esperando')
@@ -453,7 +453,7 @@ export function irParaQuemEspera() {
   else avisar('Ninguém está esperando você agora.');
 }
 
-/** Corrida: 2 a 4 Vértices na mesma tarefa; a pessoa escolhe o melhor. */
+/** Corrida: 2 a 4 agentes na mesma tarefa; a pessoa escolhe o melhor. */
 export async function iniciarCorrida(sessaoId: string, tarefa: string, quantos: number) {
   const n = Math.max(2, Math.min(4, quantos));
   const id = novoId('c');
@@ -465,7 +465,7 @@ export async function iniciarCorrida(sessaoId: string, tarefa: string, quantos: 
     ids.push(v.id);
   }
   mudar((e) => ({ corridas: e.corridas.map((c) => (c.id === id ? { ...c, ids: [...ids] } : c)), layout: 'auto' }));
-  avisar(`Corrida com ${n} Vértices começou.`);
+  avisar(`Corrida com ${n} agentes começou.`);
 }
 
 export function escolherVencedor(corridaId: string, verticeId: string) {
@@ -477,7 +477,7 @@ export function escolherVencedor(corridaId: string, verticeId: string) {
   avisar('Vencedor escolhido. Os outros worktrees foram descartados.', 'pronto');
 }
 
-/** Revisão cruzada: um Vértice revisa o diff do outro só lendo. */
+/** Revisão cruzada: um agente revisa o diff do outro só lendo. */
 export async function revisaoCruzada(alvoId: string) {
   const alvo = estado.vertices.find((x) => x.id === alvoId);
   if (!alvo) return;
@@ -503,7 +503,7 @@ export async function comecarComExemplo(salvar = true) {
   const integra = criarSessao('Testes de integração', 'C:\\Projetos\\loja-online', false);
   criarSessao('Ideias', 'C:\\Projetos\\site-pessoal', false);
 
-  await criarVertice(loja.id, 'lider', 'claude', 'forte', 'Divida a correção da cobrança dupla entre os Vértices');
+  await criarVertice(loja.id, 'lider', 'claude', 'forte', 'Divida a correção da cobrança dupla entre os agentes');
   await criarVertice(loja.id, 'batedor', 'gemini', 'barato', 'Mapeie onde o pedido é cobrado');
   await criarVertice(loja.id, 'construtor', 'codex', 'padrao', 'Crie a nova tentativa de pagamento sem cobrar duas vezes');
   await criarVertice(loja.id, 'revisor', 'claude', 'padrao', 'Revise o diff do Construtor');
@@ -552,7 +552,7 @@ export function restaurarConfig() {
 
 export { NOME_AGENTE };
 
-// ---------- Início (acrescentado pelo Vértice inicio) ----------
+// ---------- Início (acrescentado pelo agente inicio) ----------
 
 /** Nome que aparece na saudação. Fica em `hypercube.nome`; vazio quando ninguém definiu. */
 export function nomeUsuario(): string {
@@ -566,7 +566,7 @@ export function nomeUsuario(): string {
 /**
  * Mensagens trocadas com os agentes por dia, do mais antigo (89 dias atrás) até hoje.
  * Enquanto não há histórico real, gera uma série estável (mesma para o mesmo dia)
- * e soma o que os Vértices abertos já fizeram hoje.
+ * e soma o que os agentes abertos já fizeram hoje.
  */
 export function atividade90Dias(): number[] {
   const hoje = Math.floor(Date.now() / 86_400_000);
@@ -589,14 +589,14 @@ export function atividade90Dias(): number[] {
 
 // ---------- painel de orquestração (seletores) ----------
 
-/** Planners da sessão: os Vértices líderes, na ordem em que aparecem. */
+/** Planners da sessão: os agentes líderes, na ordem em que aparecem. */
 export function lideresDaSessao(e: Estado, sessaoId: string | null): Vertice[] {
   return ordenados(e, sessaoId ?? '').filter((v) => v.papel === 'lider');
 }
 
 /**
  * Workers de um planner: os subagentes que ele criou e, para o primeiro líder da
- * sessão, os outros Vértices principais (é ele quem divide o trabalho entre eles).
+ * sessão, os outros agentes principais (é ele quem divide o trabalho entre eles).
  */
 export function trabalhadoresDoLider(e: Estado, liderId: string | null): Vertice[] {
   const lider = e.vertices.find((v) => v.id === liderId);

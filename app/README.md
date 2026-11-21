@@ -2,17 +2,17 @@
 
 Todos os seus agentes, num cubo só.
 
-O Hypercube junta numa janela todas as sessões dos seus agentes de IA no terminal (Claude Code, Codex, Gemini CLI, Kiro, OpenCode ou um terminal comum). Cada agente é um **Vértice** com um papel (líder, batedor, construtor, revisor, consertador) e o **Hiper**, o mascote, mostra como está tudo.
+O Hypercube junta numa janela todas as sessões dos seus agentes de IA no terminal (Claude Code, Codex, Gemini CLI, Kiro, OpenCode ou um terminal comum). Cada agente é um **agente** com um papel (líder, batedor, construtor, revisor, consertador) e o **Hiper**, o mascote, mostra como está tudo.
 
 **É grátis para usar. Só pedimos que você dê uma estrela no GitHub!** https://github.com/enzGL/hypercube
 
 ## Telas
 
 - **Primeira abertura:** o Hiper procura os agentes instalados; abra uma pasta ou explore com um exemplo.
-- **Barra lateral:** Hiper com o estado geral, telas, projetos agrupados por pasta, sessões com contador de Vértices e subagentes embaixo do agente pai e "Nova sessão".
-- **Sessões:** grade de terminais, um por Vértice. Layouts automático, foco e grade livre (arraste para reordenar). Fechar o painel só esconde: o processo continua. Faixa de permissão (Permitir/Negar), corrida (`/corrida 3 tarefa`), revisão cruzada (`/revisar`) e campo de comando embaixo.
-- **Orquestração:** canvas com os Vértices como nós e ligações com condições (testes passaram, custo, cota). Roteiros prontos, nível barato/padrão/forte, limite de custo por rodada, entregas `resultado.md`, `saida.json`, `diff.patch`.
-- **Imagens:** quadro infinito com o que os Vértices salvam em `.hypercube/saidas/`. HTML isolado, artboards lado a lado, comparar versões e comentar num ponto da imagem para mandar ao Vértice.
+- **Barra lateral:** Hiper com o estado geral, telas, projetos agrupados por pasta, sessões com contador de agentes e subagentes embaixo do agente pai e "Nova sessão".
+- **Sessões:** grade de terminais, um por agente. Layouts automático, foco e grade livre (arraste para reordenar). Fechar o painel só esconde: o processo continua. Faixa de permissão (Permitir/Negar), corrida (`/corrida 3 tarefa`), revisão cruzada (`/revisar`) e campo de comando embaixo.
+- **Orquestração:** canvas com os agentes como nós e ligações com condições (testes passaram, custo, cota). Roteiros prontos, nível barato/padrão/forte, limite de custo por rodada, entregas `resultado.md`, `saida.json`, `diff.patch`.
+- **Imagens:** quadro infinito com o que os agentes salvam em `.hypercube/saidas/`. HTML isolado, artboards lado a lado, comparar versões e comentar num ponto da imagem para mandar ao agente.
 - **Roteador:** provedores gratuitos, chamadas do dia, cadeias editáveis por nível.
 - **Sobre:** versão e licença.
 
@@ -27,7 +27,7 @@ src/
     simulado.ts  versão simulada (hoje)
     tauri.ts     chamadas para os comandos Rust do Tauri 2
     index.ts     escolhe a versão certa
-  estado/        sessões, Vértices, avisos
+  estado/        sessões, agentes, avisos
   componentes/   barra lateral, barra de cima, terminal, Hiper, diálogos
   telas/         sessões, orquestração, imagens, roteador, sobre, primeira abertura
 ```

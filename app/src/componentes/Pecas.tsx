@@ -1,4 +1,4 @@
-// Peças pequenas reaproveitadas: símbolo de estado, mini-mascote dos Vértices, ícones.
+// Peças pequenas reaproveitadas: símbolo de estado, mini-mascote dos agentes, ícones.
 import type { ReactNode } from 'react';
 import { COR_PAPEL, ESTADO_INFO, type EstadoVertice, type Papel } from '../estado/loja';
 
@@ -14,7 +14,7 @@ export function SimboloEstado({ estado, comNome = false }: { estado: EstadoVerti
   );
 }
 
-/** Mini-mascote de cada Vértice: o cubo numa cor só, com olhos ovais brancos. */
+/** Mini-mascote de cada agente: o cubo numa cor só, com olhos ovais brancos. */
 export function MiniVertice({ papel, tamanho = 20, estado }: { papel: Papel; tamanho?: number; estado?: EstadoVertice }) {
   const c = COR_PAPEL[papel];
   return (

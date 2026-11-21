@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { LogoAgente } from '../componentes/LogoAgente';
 import {
   abrirDialogo,
   definirColunas,
@@ -82,25 +83,25 @@ export function Sessoes() {
         </div>
       )}
       <button className="botao primario" onClick={() => abrirDialogo({ tipo: 'novoVertice', sessaoId: sessao.id })}>
-        <Icone nome="mais" /> Vértice
+        <Icone nome="mais" /> Agente
       </button>
     </>
   );
 
   return (
     <div className="tela-sessoes">
-      <BarraTopo titulo={sessao.nome} subtitulo={sessao.pasta + (sessao.worktrees ? '  ·  um worktree por Vértice' : '')} acoes={todos.length ? acoes : undefined} />
+      <BarraTopo titulo={sessao.nome} subtitulo={sessao.pasta + (sessao.worktrees ? '  ·  um worktree por agente' : '')} acoes={todos.length ? acoes : undefined} />
 
       {corrida && <FaixaCorrida e={e} corridaId={corrida.id} />}
 
       {todos.length === 0 ? (
         <div className="vazio">
           <Hiper estado="repouso" tamanho={150} />
-          <h2>Nenhum Vértice nesta sessão</h2>
-          <p>Um Vértice é um agente com um papel: líder, batedor, construtor ou revisor. Cada um ganha o seu terminal.</p>
+          <h2>Nenhum agente nesta sessão</h2>
+          <p>Cada agente tem um papel: líder, batedor, construtor ou revisor. Cada um ganha o seu terminal.</p>
           <div className="vazio-acoes">
             <button className="botao primario" onClick={() => abrirDialogo({ tipo: 'novoVertice', sessaoId: sessao.id, papel: 'lider' })}>
-              <Icone nome="mais" /> Criar Vértice
+              <Icone nome="mais" /> Criar agente
             </button>
           </div>
         </div>
@@ -122,7 +123,7 @@ export function Sessoes() {
           {visiveis.length === 0 ? (
             <div className="vazio pequeno">
               <Hiper estado="repouso" tamanho={90} />
-              <p>Todos os Vértices estão ocultos. Eles continuam rodando.</p>
+              <p>Todos os agentes estão ocultos. Eles continuam rodando.</p>
             </div>
           ) : e.layout === 'foco' ? (
             <LayoutFoco e={e} visiveis={visiveis} />
@@ -200,7 +201,7 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
         <div className="painel-nome">
           <b>{v.nome}</b>
           <span className="painel-meta">
-            {NOME_AGENTE[v.agente]} · {NOME_NIVEL[v.nivel]}
+            <LogoAgente agente={v.agente} tamanho={13} /> {NOME_AGENTE[v.agente]} · {NOME_NIVEL[v.nivel]}
             {v.worktree && <span className="mono"> · {v.worktree.split('\\').pop()}</span>}
           </span>
         </div>
@@ -221,7 +222,7 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
             </button>
           )}
           {v.papel !== 'revisor' && v.agente !== 'terminal' && !corrida && (
-            <button className="icone-botao" title="Revisão cruzada: outro Vértice revisa este, só lendo" onClick={() => revisaoCruzada(v.id)}>
+            <button className="icone-botao" title="Revisão cruzada: outro agente revisa este, só lendo" onClick={() => revisaoCruzada(v.id)}>
               <Icone nome="revisar" tamanho={14} />
             </button>
           )}
@@ -298,7 +299,7 @@ function FaixaCorrida({ e, corridaId }: { e: Estado; corridaId: string }) {
     <div className="faixa faixa-corrida">
       <Icone nome="corrida" />
       <span>
-        <b>Corrida:</b> {vs.length} Vértices na mesma tarefa: “{c.tarefa}”. {todosProntos ? 'Escolha o melhor:' : 'Esperando todos terminarem…'}
+        <b>Corrida:</b> {vs.length} agentes na mesma tarefa: “{c.tarefa}”. {todosProntos ? 'Escolha o melhor:' : 'Esperando todos terminarem…'}
       </span>
       {vs.map((v) => (
         <button key={v.id} className="botao pequeno" disabled={!todosProntos} onClick={() => escolherVencedor(c.id, v.id)} title={`${formatarCusto(v.custo)} · +${v.diff.mais} −${v.diff.menos}`}>
@@ -326,7 +327,7 @@ function CampoComando({ e, sessaoId, vertices }: { e: Estado; sessaoId: string; 
     } else if (/^\/revisar\b/i.test(t)) {
       if (alvoV) revisaoCruzada(alvoV.id);
     } else if (t.startsWith('/')) {
-      avisar('Comandos: /corrida [2-4] tarefa · /revisar (revisão cruzada do Vértice escolhido)');
+      avisar('Comandos: /corrida [2-4] tarefa · /revisar (revisão cruzada do agente escolhido)');
       return;
     } else if (alvoId === 'todos') {
       mandarParaTodos(sessaoId, t);
@@ -356,7 +357,7 @@ function CampoComando({ e, sessaoId, vertices }: { e: Estado; sessaoId: string; 
               {v.nome}
             </option>
           ))}
-          {vertices.length > 1 && <option value="todos">Todos os Vértices</option>}
+          {vertices.length > 1 && <option value="todos">Todos os agentes</option>}
         </select>
       </label>
       <input
@@ -364,10 +365,10 @@ function CampoComando({ e, sessaoId, vertices }: { e: Estado; sessaoId: string; 
         onChange={(ev) => setTexto(ev.target.value)}
         placeholder={
           vertices.length === 0
-            ? 'Crie um Vértice para mandar tarefas'
+            ? 'Crie um agente para mandar tarefas'
             : alvoId === 'todos'
-              ? 'Escreva uma tarefa para todos os Vértices…'
-              : `Escreva uma tarefa para o ${alvoV?.nome ?? 'Vértice'}…  (/corrida, /revisar)`
+              ? 'Escreva uma tarefa para todos os agentes…'
+              : `Escreva uma tarefa para o ${alvoV?.nome ?? 'agente'}…  (/corrida, /revisar)`
         }
         aria-label="Comando"
       />

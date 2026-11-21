@@ -1,5 +1,6 @@
-// Canvas de orquestração: nós são Vértices, ligações dizem quem passa trabalho para quem
+// Canvas de orquestração: nós são agentes, ligações dizem quem passa trabalho para quem
 // e em que condição. Cada nó mostra estado, custo, tokens e diff ao vivo.
+import { LogoAgente } from '../componentes/LogoAgente';
 import { useEffect, useMemo, useState } from 'react';
 import {
   addEdge,
@@ -75,7 +76,7 @@ const ROTEIROS: Roteiro[] = [
     nome: 'Planejar, construir, revisar',
     descricao: 'O líder divide, o batedor mapeia, o construtor faz e o revisor confere.',
     nos: [
-      no('n1', 200, 0, 'lider', 'claude', 'forte', 'Divida a tarefa entre os Vértices'),
+      no('n1', 200, 0, 'lider', 'claude', 'forte', 'Divida a tarefa entre os agentes'),
       no('n2', 60, 180, 'batedor', 'gemini', 'barato', 'Mapeie os arquivos envolvidos'),
       no('n3', 340, 180, 'construtor', 'codex', 'padrao', 'Implemente a mudança no seu worktree'),
       no('n4', 340, 370, 'revisor', 'claude', 'padrao', 'Revise o diff do Construtor, só lendo'),
@@ -130,7 +131,7 @@ export function NoVerticeView({ data, selected }: NodeProps<NoVertice>) {
         <div>
           <b>{v?.nome ?? NOME_PAPEL[data.papel]}</b>
           <div className="no-meta">
-            {NOME_AGENTE[data.agente]} · {NOME_NIVEL[data.nivel]}
+            <LogoAgente agente={data.agente} tamanho={12} /> {NOME_AGENTE[data.agente]} · {NOME_NIVEL[data.nivel]}
           </div>
         </div>
         {estado ? <SimboloEstado estado={estado} /> : <span className="no-parado">○</span>}
@@ -169,7 +170,7 @@ export function Orquestracao() {
     Object.assign(memoria, { indice, nos, arestas, limite });
   }, [indice, nos, arestas, limite]);
 
-  // Liga cada nó a um Vértice vivo da sessão com o mesmo papel.
+  // Liga cada nó a um agente vivo da sessão com o mesmo papel.
   const vivos = useMemo(() => {
     const livres = e.vertices.filter((v) => v.sessaoId === sessao?.id && !v.paiId);
     const mapa = new Map<string, Vertice>();
@@ -215,15 +216,15 @@ export function Orquestracao() {
     const faltando = nos.filter((n) => !vivos.has(n.id));
     const ativos = e.vertices.filter((v) => v.sessaoId === sessao.id && v.estado === 'trabalhando').length;
     if (ativos + faltando.length > 8) {
-      avisar('Limite: até 8 Vértices trabalhando ao mesmo tempo.', 'erro');
+      avisar('Limite: até 8 agentes trabalhando ao mesmo tempo.', 'erro');
       return;
     }
     if (!faltando.length) {
-      avisar('Todos os nós já têm um Vértice rodando nesta sessão.');
+      avisar('Todos os nós já têm um agente rodando nesta sessão.');
       return;
     }
     for (const n of faltando) await criarVertice(sessao.id, n.data.papel, n.data.agente, n.data.nivel, n.data.tarefa);
-    avisar(`Roteiro “${ROTEIROS[indice].nome}” começou com ${faltando.length} Vértices.`, 'trabalhando');
+    avisar(`Roteiro “${ROTEIROS[indice].nome}” começou com ${faltando.length} agentes.`, 'trabalhando');
   };
 
   const abrirEntrega = async (arquivo: string) => {
@@ -299,7 +300,7 @@ export function Orquestracao() {
             <button className="botao primario largo" onClick={rodar} disabled={!sessao}>
               <Icone nome="enviar" /> Rodar roteiro nesta sessão
             </button>
-            <p className="dica">Até 8 Vértices ao mesmo tempo e 3 níveis de subagentes. Cada um trabalha no seu git worktree e entrega resultado.md, saida.json e diff.patch.</p>
+            <p className="dica">Até 8 agentes ao mesmo tempo e 3 níveis de subagentes. Cada um trabalha no seu git worktree e entrega resultado.md, saida.json e diff.patch.</p>
           </section>
 
           <section>

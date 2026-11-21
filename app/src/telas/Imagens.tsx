@@ -1,4 +1,4 @@
-// Canvas de imagens: quadro infinito (arrastar, aproximar) com tudo o que os Vértices geram
+// Canvas de imagens: quadro infinito (arrastar, aproximar) com tudo o que os agentes geram
 // na pasta `.hypercube/saidas/`. HTML abre isolado (sandbox, sem rede).
 import { useEffect, useRef, useState } from 'react';
 import { avisar, mandar, useLoja } from '../estado/loja';
@@ -103,7 +103,7 @@ export function Imagens() {
   const enviarComentario = (itemId: string, c: Comentario) => {
     const item = itens.find((i) => i.saida.id === itemId)!;
     if (!vertice) {
-      avisar('Nenhum Vértice nesta sessão para receber o comentário.', 'erro');
+      avisar('Nenhum agente nesta sessão para receber o comentário.', 'erro');
       return;
     }
     mandar(vertice.id, `Comentário em ${item.saida.nome} (ponto ${Math.round(c.x * 100)}%, ${Math.round(c.y * 100)}%): ${c.texto}`);
@@ -248,7 +248,7 @@ export function Imagens() {
                             enviarComentario(i.saida.id, c);
                           }}
                         >
-                          Mandar ao Vértice
+                          Mandar ao agente
                         </button>
                         <button className="botao pequeno" onClick={() => setRascunho(null)}>
                           Cancelar
@@ -264,7 +264,7 @@ export function Imagens() {
 
         {itens.length === 0 && (
           <div className="quadro-vazio">
-            <p>Nada por aqui ainda. Tudo o que os Vértices salvarem em <span className="mono">.hypercube/saidas/</span> aparece neste quadro.</p>
+            <p>Nada por aqui ainda. Tudo o que os agentes salvarem em <span className="mono">.hypercube/saidas/</span> aparece neste quadro.</p>
           </div>
         )}
 

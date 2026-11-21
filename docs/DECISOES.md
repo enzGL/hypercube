@@ -17,3 +17,5 @@
 
 ## Fontes
 - https://docs.github.com/en/site-policy/acceptable-use-policies/github-acceptable-use-policies
+- **No app, "agente" em vez de "Vértice"** (2026-11-20). Pedido do Enzo: usar o termo que as pessoas já usam. "Vértice" fica só como ideia de marca nos documentos antigos; papéis (líder, batedor, construtor, revisor) continuam.
+- **Logos dos agentes** (2026-11-20): pacote `@lobehub/icons-static-svg` (MIT), em `app/public/agentes/`, só para identificar cada agente.

@@ -1,4 +1,5 @@
 // Lateral esquerda: faixa de ícones, busca, árvore de projetos com terminais, Hiper e rodapé.
+import { LogoAgente } from './LogoAgente';
 import { useState } from 'react';
 import {
   abrirDialogo,
@@ -170,7 +171,7 @@ function CorpoLateral({ e, modo, busca }: { e: Estado; modo: ModoLateral; busca:
         </div>
         {comWorktree.length === 0 ? (
           <div className="lateral-vazio">
-            <p>Nenhum Vértice deste projeto tem worktree próprio ainda.</p>
+            <p>Nenhum agente deste projeto tem worktree próprio ainda.</p>
           </div>
         ) : (
           <ul className="arvore">
@@ -324,7 +325,7 @@ function LinhaTerminal({ e, v, nivel }: { e: Estado; v: Vertice; nivel: number }
         {nivel > 0 && <span className="ramo" aria-hidden="true">└</span>}
         <MiniVertice papel={v.papel} tamanho={14} estado={v.estado} />
         <span className="linha-nome">{v.nome}</span>
-        {nivel === 0 && <span className="linha-agente">{NOME_AGENTE[v.agente]}</span>}
+        {nivel === 0 && <LogoAgente agente={v.agente} tamanho={14} className="linha-agente-logo" />}
         {v.estado === 'trabalhando' ? <HiperMini estado="trabalhando" tamanho={16} rotulo="Trabalhando" /> : <SimboloEstado estado={v.estado} />}
       </button>
       {filhos.length > 0 && (

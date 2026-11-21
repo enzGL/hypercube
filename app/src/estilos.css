@@ -603,3 +603,16 @@ html[data-tauri] .app { height: 100%; }
 .janela-fechar:hover { background: var(--cobalto); color: #fff; }
 .janela-botao:focus-visible { outline: 2px solid var(--cobalto-claro); outline-offset: 1px; }
 html[data-tauri]:not([data-maximizada]) :is(.fundo-dialogo, .primeira-fundo, .bv-fundo) { border-radius: 12px; }
+
+/* ---------- logos dos agentes ---------- */
+.logo-agente { flex: 0 0 auto; display: inline-block; vertical-align: -2px; image-rendering: auto; }
+.linha-agente-logo { margin-left: auto; opacity: .9; }
+.detectado-nome { display: inline-flex; align-items: center; gap: 7px; }
+
+/* ---------- barras de rolagem no tema ---------- */
+* { scrollbar-width: thin; scrollbar-color: var(--borda-forte) transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--borda-forte); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--texto-2); }
+::-webkit-scrollbar-button { display: none; }

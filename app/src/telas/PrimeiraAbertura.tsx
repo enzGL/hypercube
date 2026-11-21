@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { LogoAgente } from '../componentes/LogoAgente';
 import { comecarComExemplo, comecarVazio } from '../estado/loja';
 import { nativo, NOME_AGENTE, type AgenteDetectado } from '../nativo';
 import { Hiper } from '../componentes/Hiper';
@@ -27,7 +28,7 @@ export function PrimeiraAbertura() {
             <span className="sobretitulo">Primeira abertura</span>
             <h1 id="primeira-titulo">Oi, eu sou o Hiper.</h1>
             <p className="secundario">
-              Cada agente que você abre aqui vira um <b>Vértice</b>. Eu aviso quando alguém precisa de você.
+              Abra aqui os seus agentes de IA, cada um no seu terminal. Eu aviso quando algum precisa de você.
             </p>
           </div>
         </div>
@@ -38,7 +39,7 @@ export function PrimeiraAbertura() {
             {(agentes ?? []).map((a) => (
               <li key={a.agente} className={a.instalado ? '' : 'ausente'}>
                 <span style={{ color: a.instalado ? 'var(--pronto)' : 'var(--texto-2)' }}>{a.instalado ? '●' : '○'}</span>
-                <span>{NOME_AGENTE[a.agente]}</span>
+                <span className="detectado-nome"><LogoAgente agente={a.agente} tamanho={15} /> {NOME_AGENTE[a.agente]}</span>
                 <span className="mono secundario">{a.instalado ? `${a.comando} ${a.versao ?? ''}` : 'não encontrado'}</span>
               </li>
             ))}

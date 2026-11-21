@@ -1,4 +1,5 @@
 // Barra de cima do app (abas de projeto, navegação, uso dos agentes, RAM) e o cabeçalho de cada tela.
+import { LogoAgente } from './LogoAgente';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ControlesJanela, alternarMaximizar } from './ControlesJanela';
 import { abrirDialogo, contar, selecionarSessao, useLoja, verticesDaSessao } from '../estado/loja';
@@ -51,9 +52,9 @@ export function CabecalhoTela({ titulo, subtitulo, acoes }: PropsCabecalho) {
           <h1>{titulo}</h1>
           {subtitulo && <span className="caminho">{subtitulo}</span>}
         </div>
-        <div className="contadores" role="status" aria-label="Estado dos Vértices desta sessão">
+        <div className="contadores" role="status" aria-label="Estado dos agentes desta sessão">
           <span className="contador-item">
-            <b>{c.agentes}</b> Vértices
+            <b>{c.agentes}</b> agentes
           </span>
           <span className="contador-item" title="Trabalhando">
             <SimboloEstado estado="trabalhando" /> <b>{c.trabalhando}</b>
@@ -257,6 +258,7 @@ function BarraGlobal() {
               title={`${u.provedor}: ${u.cincoHoras}% das 5 h · ${u.semana}% da semana · renova em ${u.renovaEm}`}
             >
               <span className="bg-chip-ponto" aria-hidden="true" />
+              <LogoAgente agente={u.provedor === 'Claude' ? 'claude' : 'codex'} tamanho={12} />
               {u.provedor} <b>{u.cincoHoras}%</b>
             </span>
           ))}

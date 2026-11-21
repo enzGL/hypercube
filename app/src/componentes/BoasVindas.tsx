@@ -116,8 +116,8 @@ export function BoasVindas({ nome, aoComecar, aoFechar, forcar = false }: Props)
           <h2 id="bv-titulo" className="bv-titulo">{quem ? `Olá, ${quem}` : 'Olá!'}</h2>
           <p className="bv-texto">
             {primeiroDia
-              ? 'Que bom ter você aqui. Vamos montar o seu primeiro cubo de Vértices?'
-              : 'Bem-vindo de volta. Vamos colocar os seus Vértices para trabalhar hoje?'}
+              ? 'Que bom ter você aqui. Vamos colocar os seus primeiros agentes para trabalhar?'
+              : 'Bem-vindo de volta. Vamos colocar os seus agentes para trabalhar hoje?'}
           </p>
           <div className="bv-botoes">
             <button className="botao" onClick={() => fechar(false)}>
