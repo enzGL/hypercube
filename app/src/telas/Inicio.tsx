@@ -20,6 +20,11 @@ import '../inicio.css';
 
 type Modo = 'normal' | 'planejar' | 'equipe';
 const NOME_MODO: Record<Modo, string> = { normal: 'Normal', planejar: 'Planejar', equipe: 'Equipe' };
+const DICA_MODO: Record<Modo, string> = {
+  normal: 'Normal: um agente faz a tarefa.',
+  planejar: 'Planejar: o agente só monta o plano, sem mudar arquivos.',
+  equipe: 'Equipe: um líder divide a tarefa com um batedor, um construtor e um revisor.',
+};
 const AGENTES_PADRAO: Agente[] = ['claude', 'codex', 'gemini'];
 
 // ---------- utilidades ----------
@@ -216,8 +221,10 @@ function CaixaComando({ pastas }: { pastas: string[] }) {
       const s = criarSessao(nome, pasta, modo === 'equipe');
       if (modo === 'equipe') {
         await criarVertice(s.id, 'lider', agente, 'forte', `Divida esta tarefa entre os agentes: ${t}`);
-        await criarVertice(s.id, 'batedor', 'gemini', 'barato');
-        await criarVertice(s.id, 'construtor', 'codex', 'padrao');
+        // Só com os agentes instalados: sem Gemini ou Codex, o papel fica com o agente escolhido.
+        const tem = (a: Agente) => listaAgentes.includes(a);
+        await criarVertice(s.id, 'batedor', tem('gemini') ? 'gemini' : agente, 'barato');
+        await criarVertice(s.id, 'construtor', tem('codex') ? 'codex' : agente, 'padrao');
         await criarVertice(s.id, 'revisor', 'claude', 'padrao');
       } else {
         await criarVertice(s.id, 'lider', agente, 'forte', modo === 'planejar' ? `Só planeje, sem mudar arquivos: ${t}` : t);
@@ -281,6 +288,7 @@ function CaixaComando({ pastas }: { pastas: string[] }) {
           <Icone nome="enviar" tamanho={16} />
         </button>
       </div>
+      <p className="ini-dica-modo">{DICA_MODO[modo]}</p>
     </div>
   );
 }

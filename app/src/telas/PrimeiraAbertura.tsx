@@ -1,5 +1,6 @@
 // Introdução: um cartão por cima do app, em passos (nome, foto, GitHub, tema, agentes).
 // Esc não fecha: é o começo. Em dev, `?passo=N` abre direto no passo N (1 em diante).
+import { marcarBoasVindasVista } from '../componentes/BoasVindas';
 import { useEffect, useMemo, useState, type ComponentType } from 'react';
 import { LogoAgente } from '../componentes/LogoAgente';
 import { comecarComExemplo, comecarVazio } from '../estado/loja';
@@ -53,7 +54,7 @@ export function PrimeiraAbertura() {
   const abrirPasta = async () => {
     salvarPerfil(p);
     const pasta = await nativo.arquivos.escolherPasta();
-    if (pasta) comecarVazio(pasta);
+    if (pasta) (marcarBoasVindasVista(), comecarVazio(pasta));
   };
 
   const confirmarGitHub = async (gh: NonNullable<Perfil['github']>) => {
@@ -165,7 +166,7 @@ export function PrimeiraAbertura() {
                   className="botao"
                   onClick={() => {
                     salvarPerfil(p);
-                    comecarComExemplo();
+                    (marcarBoasVindasVista(), comecarComExemplo());
                   }}
                   disabled={!agentes}
                 >

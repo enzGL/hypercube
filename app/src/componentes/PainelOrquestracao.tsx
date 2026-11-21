@@ -123,12 +123,12 @@ export function PainelOrquestracao({ sessaoId }: Props) {
             max={8}
             value={pref.limite}
             onChange={(ev) => mudarLimite(Number(ev.target.value))}
-            aria-label="Limite de workers rodando ao mesmo tempo"
-            title="Quantos workers podem rodar ao mesmo tempo"
+            aria-label="Limite de agentes rodando ao mesmo tempo"
+            title="Quantos agentes podem rodar ao mesmo tempo"
           />
         </span>
 
-        <div className="po-abas" role="tablist" aria-label="Planners">
+        <div className="po-abas" role="tablist" aria-label="Líderes">
           {lideres.map((l) => (
             <button
               key={l.id}
@@ -145,7 +145,7 @@ export function PainelOrquestracao({ sessaoId }: Props) {
               {nomeDoAgente(l)}
             </button>
           ))}
-          <button className="po-aba po-mais" onClick={novoPlanner} disabled={!sid} title="Novo planner" aria-label="Novo planner">
+          <button className="po-aba po-mais" onClick={novoPlanner} disabled={!sid} title="Novo líder" aria-label="Novo líder">
             <Icone nome="mais" tamanho={13} />
           </button>
         </div>
@@ -196,9 +196,9 @@ function CanvasPlanner({ lider, workers }: { lider: Vertice | null; workers: Ver
       {vazio && (
         <div className="po-vazio">
           <HiperMini estado="repouso" tamanho={28} />
-          <b>{lider ? 'Este planner ainda não delegou nenhum trabalho' : 'Nenhum planner nesta sessão'}</b>
+          <b>{lider ? 'Este líder ainda não passou trabalho para ninguém' : 'Nenhum líder nesta sessão'}</b>
           <span className="secundario">
-            {lider ? 'Quando ele chamar workers, eles aparecem aqui ligados a ele.' : 'Use o + nas abas para criar um líder que divide o trabalho.'}
+            {lider ? 'Quando ele chamar outros agentes, eles aparecem aqui ligados a ele.' : 'Use o + nas abas para criar um líder que divide o trabalho.'}
           </span>
         </div>
       )}
@@ -273,7 +273,7 @@ function Resumo({ r, workers }: { r: ReturnType<typeof resumoOrquestracao>; work
     <aside className="po-resumo">
       <div className="po-progresso">
         <span>
-          <b className="mono">{r.concluidos}</b> de <b className="mono">{r.total}</b> workers
+          <b className="mono">{r.concluidos}</b> de <b className="mono">{r.total}</b> agentes
         </span>
         <span className="mono po-porcento">{r.porcento}%</span>
       </div>
@@ -344,8 +344,8 @@ function Rodape({ workers, lider }: { workers: Vertice[]; lider: Vertice | null 
       }}
     >
       <select value={alvo ? alvo.id : ''} onChange={(ev) => setAlvoId(ev.target.value)} aria-label="Worker que recebe o trabalho">
-        <option value="">Escolha um worker…</option>
-        {lider && <option value={lider.id}>{nomeDoAgente(lider)} (planner)</option>}
+        <option value="">Escolha um agente…</option>
+        {lider && <option value={lider.id}>{nomeDoAgente(lider)} (líder)</option>}
         {workers.map((w) => (
           <option key={w.id} value={w.id}>
             {ESTADO_INFO[w.estado].simbolo} {nomeDoAgente(w)}
