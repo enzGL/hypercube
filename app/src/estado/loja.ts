@@ -362,9 +362,15 @@ export async function criarVertice(
 ): Promise<Vertice> {
   const sessao = estado.sessoes.find((s) => s.id === sessaoId)!;
   const nome = extra.nome ?? nomeLivre(sessaoId, papel);
-  const worktree = sessao.worktrees && PRECISA_COPIA.has(papel)
-    ? await nativo.processos.criarWorktree(sessao.pasta, nome.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-'))
-    : undefined;
+  // Sem git na pasta, a cópia separada falha: o agente trabalha na própria pasta e a pessoa é avisada.
+  let worktree: string | undefined;
+  if (sessao.worktrees && PRECISA_COPIA.has(papel)) {
+    try {
+      worktree = await nativo.processos.criarWorktree(sessao.pasta, nome.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-'));
+    } catch {
+      avisar('Esta pasta não usa git. O agente trabalha direto nela.');
+    }
+  }
   // No app nativo a tarefa vai junto com o terminal (o agente pode abrir pedindo para confiar na pasta).
   // O papel vale de verdade: no Claude vai como prompt de sistema; nos outros, junto da primeira mensagem.
   const nativoReal = nativo.modo === 'tauri';

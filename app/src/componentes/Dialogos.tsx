@@ -50,7 +50,8 @@ const NIVEL_PADRAO: Record<string, Nivel> = { lider: 'forte', batedor: 'barato',
 function NovaSessao() {
   const agentes = useAgentes();
   const [nome, setNome] = useState('');
-  const [pasta, setPasta] = useState('C:\\Projetos\\loja-online');
+  const e = useLoja();
+  const [pasta, setPasta] = useState(() => e.sessoes.find((s) => s.id === e.sessaoAtivaId)?.pasta ?? '');
   const [orquestracao, setOrquestracao] = useState(false);
   const [worktrees, setWorktrees] = useState(false);
   const [inicio, setInicio] = useState<'vazio' | 'agente' | 'equipe'>('agente');

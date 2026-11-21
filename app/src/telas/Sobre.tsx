@@ -1,4 +1,5 @@
-import { refazerPrimeiraAbertura } from '../estado/loja';
+import { useState } from 'react';
+import { refazerPrimeiraAbertura, useLoja } from '../estado/loja';
 import { nativo } from '../nativo';
 import { Hiper } from '../componentes/Hiper';
 import { EscolherTema } from '../componentes/EscolherTema';
@@ -30,10 +31,34 @@ export function Sobre() {
           <p className="secundario">Escolha o tema. Vale na hora e fica salvo neste computador.</p>
           <EscolherTema />
         </section>
-        <button className="botao" onClick={refazerPrimeiraAbertura}>
-          Ver a primeira abertura de novo
-        </button>
+        <RefazerIntroducao />
       </div>
+    </div>
+  );
+}
+
+function RefazerIntroducao() {
+  const e = useLoja();
+  const [confirmar, setConfirmar] = useState(false);
+  const n = e.vertices.length;
+  if (!confirmar) {
+    return (
+      <button className="botao" onClick={() => (n ? setConfirmar(true) : refazerPrimeiraAbertura())}>
+        Ver a introdução de novo
+      </button>
+    );
+  }
+  return (
+    <div className="faixa faixa-erro sobre-confirmar">
+      <span>
+        Isso fecha {n} {n === 1 ? 'terminal' : 'terminais'}. Continuar?
+      </span>
+      <button className="botao perigo" onClick={refazerPrimeiraAbertura}>
+        Fechar e ver
+      </button>
+      <button className="botao" onClick={() => setConfirmar(false)}>
+        Cancelar
+      </button>
     </div>
   );
 }

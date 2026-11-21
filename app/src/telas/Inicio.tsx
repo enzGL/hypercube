@@ -7,6 +7,7 @@ import {
   avisar,
   criarSessao,
   criarVertice,
+  irPara,
   lerEstado,
   nomeUsuario,
   selecionarSessao,
@@ -104,6 +105,7 @@ async function novoTerminal() {
     s = criarSessao(nomePasta(pasta), pasta, false);
   }
   selecionarSessao(s.id);
+  irPara('sessoes');
   await criarVertice(s.id, 'agente', 'terminal', 'barato', undefined, { nome: 'Terminal' });
 }
 
@@ -423,14 +425,6 @@ export function Inicio({ nome }: { nome?: string }) {
           </h1>
           <p className="ini-data mono">{dataCurta(agora)}</p>
           <CaixaComando pastas={pastas} />
-          <div className="ini-atalhos">
-            <button className="ini-atalho mono" onClick={novoTerminal}>
-              <Ic d={IC_TERMINAL} /> novo terminal
-            </button>
-            <button className="ini-atalho mono" onClick={novoProjeto}>
-              <Ic d={IC_PROJETO} /> novo projeto
-            </button>
-          </div>
         </section>
 
         <hr className="ini-divisa" />
