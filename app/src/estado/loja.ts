@@ -39,10 +39,10 @@ export const COR_PAPEL: Record<Papel, string> = {
 export const NOME_NIVEL: Record<Nivel, string> = { barato: 'Barato', padrao: 'Padrão', forte: 'Forte' };
 
 export const ESTADO_INFO: Record<EstadoVertice, { simbolo: string; cor: string; nome: string }> = {
-  trabalhando: { simbolo: '◐', cor: '#93A4FF', nome: 'Trabalhando' },
-  esperando: { simbolo: '◆', cor: '#E9A21B', nome: 'Esperando você' },
-  pronto: { simbolo: '●', cor: '#4CC38A', nome: 'Pronto' },
-  erro: { simbolo: '✕', cor: '#F0646E', nome: 'Erro' },
+  trabalhando: { simbolo: '◐', cor: 'var(--trabalhando)', nome: 'Trabalhando' },
+  esperando: { simbolo: '◆', cor: 'var(--esperando)', nome: 'Esperando você' },
+  pronto: { simbolo: '●', cor: 'var(--pronto)', nome: 'Pronto' },
+  erro: { simbolo: '✕', cor: 'var(--erro)', nome: 'Erro' },
 };
 
 export interface Vertice {

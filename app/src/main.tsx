@@ -1,3 +1,4 @@
+import './estado/tema'; // aplica o tema salvo antes do primeiro render
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@fontsource/geist-sans/400.css';

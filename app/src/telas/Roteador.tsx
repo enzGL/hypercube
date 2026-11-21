@@ -90,7 +90,7 @@ export function Roteador() {
                   <td>
                     <span className="barra-uso">
                       <span className="barra-trilho">
-                        <span className="barra-cheia" style={{ width: `${(p.chamadasHoje / p.cotaDiaria) * 100}%`, background: '#93A4FF' }} />
+                        <span className="barra-cheia" style={{ width: `${(p.chamadasHoje / p.cotaDiaria) * 100}%`, background: 'var(--cobalto-claro)' }} />
                       </span>
                       <span className="barra-valor">
                         {p.chamadasHoje}/{p.cotaDiaria}
@@ -156,7 +156,7 @@ export function Roteador() {
                   <td className="mono">{c.modelo}</td>
                   <td className="num mono">{c.tokens}</td>
                   <td className="num mono">{c.ms} ms</td>
-                  <td>{c.ok ? <span style={{ color: '#4CC38A' }}>● ok</span> : <span style={{ color: '#F0646E' }}>✕ passou ao próximo</span>}</td>
+                  <td>{c.ok ? <span style={{ color: 'var(--pronto)' }}>● ok</span> : <span style={{ color: 'var(--erro)' }}>✕ passou ao próximo</span>}</td>
                 </tr>
               ))}
             </tbody>

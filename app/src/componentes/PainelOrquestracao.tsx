@@ -187,7 +187,7 @@ function CanvasPlanner({ lider, workers }: { lider: Vertice | null; workers: Ver
         proOptions={{ hideAttribution: true }}
         colorMode="dark"
       >
-        <Background color="#1B2650" gap={20} size={1.2} />
+        <Background color="var(--borda)" gap={20} size={1.2} />
         <ControlesZoom />
       </ReactFlow>
       {vazio && (
@@ -238,7 +238,7 @@ function montarGrafo(lider: Vertice | null, workers: Vertice[]): { nos: NoVertic
   const nos = [no(lider, ((total - 1) * largura) / 2, 0), ...workers.map((w, i) => no(w, i * largura, 200))];
   const arestas: Edge[] = workers.map((w) => {
     const ativa = w.estado === 'trabalhando';
-    const cor = ativa ? '#93A4FF' : '#27356B';
+    const cor = ativa ? 'var(--cobalto-claro)' : 'var(--borda-forte)';
     return {
       id: `${lider.id}-${w.id}`,
       source: w.paiId ?? lider.id,
