@@ -144,6 +144,7 @@ export function NoVerticeView({ data, selected }: NodeProps<NoVertice>) {
         {estado ? <SimboloEstado estado={estado} /> : <span className="no-parado">○</span>}
       </div>
       <div className="no-tarefa">{v?.ultimaAcao ? `${v.ultimaAcao}` : data.tarefa}</div>
+      {v && (v.custo > 0 || v.tokens > 0 || v.diff.mais > 0 || v.diff.menos > 0) && (
       <div className="no-numeros mono">
         <span>{formatarCusto(v?.custo ?? 0)}</span>
         <span>{formatarTokens(v?.tokens ?? 0)} tk</span>
@@ -151,6 +152,7 @@ export function NoVerticeView({ data, selected }: NodeProps<NoVertice>) {
           <span className="mais">+{v?.diff.mais ?? 0}</span> <span className="menos">−{v?.diff.menos ?? 0}</span>
         </span>
       </div>
+      )}
       {v?.estado === 'esperando' && <div className="no-espera">◆ {v.pergunta}</div>}
       <Handle type="source" position={Position.Bottom} />
     </div>
@@ -307,7 +309,6 @@ export function Orquestracao() {
             <button className="botao primario largo" onClick={rodar} disabled={!sessao}>
               <Icone nome="enviar" /> Rodar roteiro nesta sessão
             </button>
-            <p className="dica">Até 8 agentes ao mesmo tempo e 3 níveis de subagentes. Cada um trabalha no seu git worktree e entrega resultado.md, saida.json e diff.patch.</p>
           </section>
 
           <section>
@@ -432,7 +433,7 @@ export function Orquestracao() {
                 </div>
               ))}
               <div className="secundario">○ Ainda não iniciado</div>
-              <p className="dica">Clique num nó para editar. Arraste da bolinha de baixo até outro nó para ligar. Duplo clique abre o terminal.</p>
+              <p className="dica">Clique para editar. Arraste da bolinha para ligar.</p>
             </section>
           )}
         </aside>

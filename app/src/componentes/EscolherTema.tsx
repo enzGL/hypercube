@@ -47,7 +47,6 @@ export function EscolherTema({ aoEscolher }: { aoEscolher?: (id: InfoTema['id'])
             {t.nome}
             {t.experimental && <span className="selo tema-selo">experimental</span>}
           </span>
-          <span className="tema-desc">{t.descricao}</span>
         </button>
       ))}
     </div>

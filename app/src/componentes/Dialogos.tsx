@@ -111,7 +111,7 @@ function NovaSessao() {
         <span>Cada agente trabalha numa cópia separada do projeto</span>
       </label>
       <span className="interruptor-dica">
-        Usa o git worktree: cada agente ganha a sua pasta, ligada ao mesmo repositório. Assim um não mexe no arquivo do outro, e você junta o que der certo.
+        Um não mexe no arquivo do outro.
       </span>
       <div className="campo">
         <span>Começar com</span>
@@ -180,17 +180,17 @@ function NovoVertice({ sessaoId, papelInicial }: { sessaoId: string; papelInicia
         <span className="opcao-topo">
           <MiniVertice papel="agente" tamanho={18} /> <b>Agente comum</b>
         </span>
-        <span>Abre o agente como ele é, sem skill. Bom para orquestrar do seu jeito.</span>
+        <span>Sem skill, do jeito que ele é.</span>
       </button>
       <div className="campo">
         <span>
           Agentes predefinidos <span className="secundario">(opcional)</span>
         </span>
-        <p className="dica-campo" style={{ marginTop: -2 }}>Cada um vem com uma skill do seu ofício e trabalha numa área do projeto.</p>
         <div className="opcoes papeis-grade">
           {(['lider', 'batedor', 'construtor', 'revisor', 'consertador'] as Papel[]).map((p) => (
             <button
               key={p}
+              title={DESCRICAO_PAPEL[p]}
               className={`opcao ${papel === p ? 'ativo' : ''}`}
               onClick={() => {
                 setPapel(p);
@@ -201,7 +201,6 @@ function NovoVertice({ sessaoId, papelInicial }: { sessaoId: string; papelInicia
               <span className="opcao-topo">
                 <MiniVertice papel={p} tamanho={18} /> <b>{NOME_PAPEL[p]}</b>
               </span>
-              <span>{DESCRICAO_PAPEL[p]}</span>
             </button>
           ))}
         </div>
@@ -217,6 +216,7 @@ function NovoVertice({ sessaoId, papelInicial }: { sessaoId: string; papelInicia
                 {a.instalado ? '' : ' (não instalado)'}
               </option>
             ))}
+            <option value="terminal">Terminal (sem IA)</option>
           </select>
         </label>
         <div className="campo">

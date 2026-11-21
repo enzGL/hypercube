@@ -609,7 +609,7 @@ export function refazerPrimeiraAbertura() {
 export function restaurarConfig() {
   // `?exemplo` abre direto com a sessão de exemplo (útil para demonstrar).
   const busca = new URLSearchParams(window.location.search);
-  if (busca.has('exemplo')) {
+  if (busca.has('exemplo') && nativo.modo !== 'tauri') {
     const tela = busca.get('tela') as Tela | null;
     const nomeSessao = busca.get('sessao');
     comecarComExemplo(false).then(() => {
@@ -620,7 +620,8 @@ export function restaurarConfig() {
   }
   try {
     const c = JSON.parse(localStorage.getItem(CHAVE_CONFIG) ?? 'null');
-    if (c?.modo === 'exemplo') comecarComExemplo(false);
+    // No app nativo o exemplo abriria agentes de verdade em pastas que não existem.
+    if (c?.modo === 'exemplo' && nativo.modo !== 'tauri') comecarComExemplo(false);
     else if (c?.modo === 'vazio' && typeof c.pasta === 'string') comecarVazio(c.pasta);
   } catch {
     /* primeira vez */

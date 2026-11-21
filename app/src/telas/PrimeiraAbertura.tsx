@@ -36,7 +36,7 @@ function passoInicial(total: number): number {
 
 export function PrimeiraAbertura() {
   const passos = useMemo<Passo[]>(
-    () => ['nome', 'foto', 'github', ...(EscolherTema ? (['tema'] as const) : []), 'agentes'],
+    () => ['nome', 'foto', ...(EscolherTema ? (['tema'] as const) : []), 'agentes'],
     [],
   );
   const [i, setI] = useState(() => passoInicial(passos.length));
@@ -115,7 +115,7 @@ export function PrimeiraAbertura() {
             <p className="secundario">
               {passo === 'nome' &&
                 'Eu organizo os seus agentes de IA e aviso quando algum precisa de você. Como devo te chamar?'}
-              {passo === 'foto' && 'Ela aparece na lateral. Dá para pular.'}
+              {passo === 'foto' && 'A foto aparece na lateral. Dá para pular.'}
               {passo === 'github' && 'Opcional. Traz a sua foto e o seu nome.'}
               {passo === 'tema' && 'Dá para trocar depois.'}
               {passo === 'agentes' && 'Estas eu achei no seu computador.'}
@@ -236,6 +236,7 @@ export function PrimeiraAbertura() {
                 <button className="botao primario" onClick={abrirPasta} disabled={!agentes && !erroBusca}>
                   <Icone nome="pasta" /> Abrir uma pasta de projeto
                 </button>
+                {nativo.modo !== 'tauri' && (
                 <button
                   className="botao"
                   onClick={() => {
@@ -246,6 +247,7 @@ export function PrimeiraAbertura() {
                 >
                   Explorar com um exemplo
                 </button>
+                )}
               </div>
             </>
           )}

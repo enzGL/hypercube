@@ -28,8 +28,6 @@ import { IconeCasca } from './IconesCasca';
 const ABAS: { id: AbaPainel; nome: string; icone: string }[] = [
   { id: 'notas', nome: 'Notas', icone: 'notas' },
   { id: 'tarefas', nome: 'Minhas tarefas', icone: 'tarefas' },
-  { id: 'plugins', nome: 'Plugins', icone: 'plugins' },
-  { id: 'git', nome: 'Git', icone: 'git' },
 ];
 
 export function PainelDireito() {
@@ -82,7 +80,7 @@ function Notas() {
   if (!pasta) return <Vazio icone="notas" titulo="Nenhum projeto aberto" texto="Abra um projeto para escrever as notas dele." />;
   return (
     <div className="pd-notas">
-      <span className="pd-rotulo">Notas de {nomeDaPasta(pasta)}</span>
+      <span className="pd-rotulo">{nomeDaPasta(pasta)}</span>
       <textarea
         value={casca.notas[pasta] ?? ''}
         onChange={(ev) => definirNota(pasta, ev.target.value)}
@@ -156,8 +154,6 @@ function Tarefas() {
         <kbd>Ctrl+N</kbd>
       </form>
 
-      <Pomodoro />
-
       {total === 0 ? (
         <Vazio icone="tarefas" titulo="Nada na sua lista" texto="Adicione uma tarefa e deixe ela à vista enquanto os agentes trabalham." />
       ) : lista.length === 0 ? (
@@ -168,7 +164,7 @@ function Tarefas() {
             <li key={t.id} className={`pd-tarefa ${t.feita ? 'feita' : ''} ${casca.focoTarefaId === t.id ? 'em-foco' : ''}`}>
               <button className="pd-caixa" onClick={() => alternarTarefa(t.id)} role="checkbox" aria-checked={t.feita} aria-label={t.feita ? 'Marcar como ativa' : 'Marcar como concluída'}>
                 {t.feita && (
-                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="m5.5 12.5 4 4 9-9" />
                   </svg>
                 )}
@@ -186,6 +182,8 @@ function Tarefas() {
           ))}
         </ul>
       )}
+
+      <Pomodoro />
     </div>
   );
 }

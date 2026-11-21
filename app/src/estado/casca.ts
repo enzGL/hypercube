@@ -55,7 +55,7 @@ const salvo = ler();
 let estado: EstadoCasca = {
   lateralRecolhida: !!salvo.lateralRecolhida,
   painelAberto: salvo.painelAberto ?? true,
-  aba: salvo.aba ?? 'tarefas',
+  aba: salvo.aba === 'notas' ? 'notas' : 'tarefas',
   modoLateral: 'sessoes',
   abasFechadas: Array.isArray(salvo.abasFechadas) ? salvo.abasFechadas : [],
   tarefas: Array.isArray(salvo.tarefas) ? salvo.tarefas : [],

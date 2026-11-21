@@ -50,21 +50,26 @@ export function CabecalhoTela({ titulo, subtitulo, acoes }: PropsCabecalho) {
       <div className="topo-linha">
         <div className="topo-titulo">
           <h1>{titulo}</h1>
-          {subtitulo && <span className="caminho">{subtitulo}</span>}
+          {subtitulo && (
+            <span className="caminho" title={subtitulo}>
+              {subtitulo.split(/[\/]/).filter(Boolean).pop()}
+            </span>
+          )}
         </div>
         <div className="contadores" role="status" aria-label="Estado dos agentes desta sessão">
           <span className="contador-item">
-            <b>{c.agentes}</b> agentes
+            <b>{c.agentes}</b> {c.agentes === 1 ? 'agente' : 'agentes'}
           </span>
-          <span className="contador-item" title="Trabalhando">
-            <SimboloEstado estado="trabalhando" /> <b>{c.trabalhando}</b>
-          </span>
-          <span className="contador-item" title="Esperando você">
-            <SimboloEstado estado="esperando" /> <b>{c.esperando}</b>
-          </span>
-          <span className="contador-item" title="Prontos">
-            <SimboloEstado estado="pronto" /> <b>{c.prontos}</b>
-          </span>
+          {c.trabalhando > 0 && (
+            <span className="contador-item">
+              <SimboloEstado estado="trabalhando" /> <b>{c.trabalhando}</b> trabalhando
+            </span>
+          )}
+          {c.esperando > 0 && (
+            <span className="contador-item contador-espera">
+              <SimboloEstado estado="esperando" /> <b>{c.esperando}</b> esperando você
+            </span>
+          )}
           {c.erros > 0 && (
             <span className="contador-item" title="Com erro">
               <SimboloEstado estado="erro" /> <b>{c.erros}</b>
@@ -88,19 +93,6 @@ const MENU: { rota: Rota; nome: string; icone: string }[] = [
   { rota: 'sobre', nome: 'Sobre', icone: 'sobre' },
 ];
 
-function usarMemoriaMB() {
-  const [mb, setMb] = useState<number | null>(null);
-  useEffect(() => {
-    const medir = () => {
-      const m = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory;
-      setMb(m ? Math.round(m.usedJSHeapSize / 1048576) : null);
-    };
-    medir();
-    const t = window.setInterval(medir, 4000);
-    return () => window.clearInterval(t);
-  }, []);
-  return mb;
-}
 
 function nivelUso(v: number) {
   return v >= 80 ? 'alto' : v >= 60 ? 'medio' : 'ok';
@@ -114,7 +106,6 @@ function BarraGlobal() {
   const [menu, setMenu] = useState(false);
   const refMenu = useRef<HTMLDivElement>(null);
   const ultimaSessao = useRef<Record<string, string>>({});
-  const mb = usarMemoriaMB();
   const ativo = projetoAtivo(e);
 
   useEffect(() => {
@@ -263,11 +254,7 @@ function BarraGlobal() {
             </span>
           ))}
         </div>
-        {mb !== null && (
-          <span className="bg-chip bg-ram" title="Memória usada pelo app">
-            <IconeCasca nome="memoria" tamanho={13} /> <b>{mb}</b> MB
-          </span>
-        )}
+
         <button className={`bg-botao ${casca.painelAberto ? 'ligado' : ''}`} onClick={alternarPainel} title={casca.painelAberto ? 'Esconder o painel direito' : 'Mostrar o painel direito'} aria-label="Painel direito">
           <IconeCasca nome="painelDireito" />
         </button>

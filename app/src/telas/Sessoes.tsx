@@ -105,7 +105,7 @@ export function Sessoes() {
 
   return (
     <div className="tela-sessoes">
-      <BarraTopo titulo={sessao.nome} subtitulo={sessao.pasta + (sessao.worktrees ? '  ·  cada agente numa cópia separada do projeto (worktree)' : '')} acoes={todos.length ? acoes : undefined} />
+      <BarraTopo titulo={sessao.nome} subtitulo={sessao.pasta} acoes={todos.length ? acoes : undefined} />
 
       {corrida && <FaixaCorrida e={e} corridaId={corrida.id} />}
 
@@ -251,15 +251,17 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
           </span>
         </div>
         <SimboloEstado estado={v.estado} comNome />
+        {(v.custo > 0 || v.tokens > 0 || v.diff.mais > 0 || v.diff.menos > 0) && (
         <div className="painel-numeros mono" title="Custo, tokens e diff">
-          <span>{formatarCusto(v.custo)}</span>
-          <span>{formatarTokens(v.tokens)} tk</span>
+          {v.custo > 0 && <span>{formatarCusto(v.custo)}</span>}
+          {v.tokens > 0 && <span>{formatarTokens(v.tokens)} tk</span>}
           {(v.diff.mais > 0 || v.diff.menos > 0) && (
             <span>
               <span className="mais">+{v.diff.mais}</span> <span className="menos">−{v.diff.menos}</span>
             </span>
           )}
         </div>
+        )}
         <div className="painel-acoes">
           {v.estado === 'trabalhando' && v.agente !== 'terminal' && (
             <button className="icone-botao" title="Interromper (Esc)" onClick={() => interromper(v.id)}>
@@ -361,8 +363,8 @@ function FaixaCorrida({ e, corridaId }: { e: Estado; corridaId: string }) {
 }
 
 const COMANDOS = [
-  { nome: '/corrida', argumento: '[2-4] tarefa', descricao: 'Vários agentes fazem a mesma tarefa e você escolhe o melhor' },
-  { nome: '/revisar', argumento: '', descricao: 'Outro agente revisa o trabalho do escolhido, só lendo' },
+  { nome: '/corrida', argumento: 'tarefa', descricao: 'Vários agentes tentam, você escolhe o melhor' },
+  { nome: '/revisar', argumento: '', descricao: 'Outro agente revisa este, só lendo' },
 ] as const;
 
 function CampoComando({ e, sessaoId, vertices }: { e: Estado; sessaoId: string; vertices: Vertice[] }) {

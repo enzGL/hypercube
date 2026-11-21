@@ -51,7 +51,8 @@ export function BarraLateral() {
         if (rota === 'inicio' || rota === 'sobre' || rota === 'roteador') irParaRota('sessoes');
       },
     },
-    { id: 'arquivos', nome: 'Arquivos', icone: 'pasta', ativo: rota !== 'inicio' && casca.modoLateral === 'arquivos', acao: () => definirModoLateral('arquivos') },
+    // Arquivos volta quando a lista de arquivos existir.
+    // { id: 'arquivos', nome: 'Arquivos', icone: 'pasta', ativo: rota !== 'inicio' && casca.modoLateral === 'arquivos', acao: () => definirModoLateral('arquivos') },
     { id: 'git', nome: 'Git', icone: 'git', ativo: rota !== 'inicio' && casca.modoLateral === 'git', acao: () => definirModoLateral('git') },
   ];
 
@@ -108,9 +109,7 @@ export function BarraLateral() {
               }}
               title="Montar a grade dos terminais do seu jeito"
             >
-              <span className="workspace-rotulo">Workspace</span>
-              <span className="workspace-ponto">·</span>
-              <span>desenhar grid</span>
+              <span>Montar grade</span>
               <IconeCasca nome="grid" tamanho={13} />
             </button>
           </>
