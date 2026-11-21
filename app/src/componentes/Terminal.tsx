@@ -5,22 +5,28 @@ import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
 import { nativo } from '../nativo';
+import { EVENTO_TEMA, token } from '../estado/tema';
 
-const TEMA = {
-  background: '#050916',
-  foreground: '#E8E9EB',
-  cursor: '#93A4FF',
-  cursorAccent: '#050916',
-  selectionBackground: '#27356B',
-  black: '#0B132D',
-  blue: '#93A4FF',
-  brightBlue: '#B7C3FF',
-  green: '#4CC38A',
-  yellow: '#E9A21B',
-  red: '#F0646E',
-  white: '#E8E9EB',
-  brightBlack: '#9AA3C7',
-};
+// Cores do xterm a partir dos tokens do tema atual (refeitas quando o tema muda).
+function temaXterm() {
+  const fundo = token('--terminal', '#050916');
+  const texto = token('--texto', '#E8E9EB');
+  return {
+    background: fundo,
+    foreground: texto,
+    cursor: token('--cobalto-claro', '#93A4FF'),
+    cursorAccent: fundo,
+    selectionBackground: token('--selecao', '#27356B'),
+    black: token('--term-preto', '#0B132D'),
+    blue: token('--trabalhando', '#93A4FF'),
+    brightBlue: token('--term-azul-vivo', '#B7C3FF'),
+    green: token('--pronto', '#4CC38A'),
+    yellow: token('--esperando', '#E9A21B'),
+    red: token('--erro', '#F0646E'),
+    white: texto,
+    brightBlack: token('--texto-2', '#9AA3C7'),
+  };
+}
 
 export function Terminal({ terminalId, focado, aoFocar }: { terminalId: string; focado?: boolean; aoFocar?: () => void }) {
   const caixa = useRef<HTMLDivElement>(null);
@@ -29,7 +35,7 @@ export function Terminal({ terminalId, focado, aoFocar }: { terminalId: string; 
   useEffect(() => {
     const el = caixa.current!;
     const term = new XTerm({
-      theme: TEMA,
+      theme: temaXterm(),
       fontFamily: '"Geist Mono", ui-monospace, Consolas, monospace',
       fontSize: 12.5,
       lineHeight: 1.25,
@@ -69,12 +75,17 @@ export function Terminal({ terminalId, focado, aoFocar }: { terminalId: string; 
       pendente = null;
     });
     const entrada = term.onData((d) => nativo.terminais.escrever(terminalId, d));
+    const trocarTema = () => {
+      term.options.theme = temaXterm();
+    };
+    window.addEventListener(EVENTO_TEMA, trocarTema);
 
     return () => {
       vivo = false;
       obs.disconnect();
       desligar();
       entrada.dispose();
+      window.removeEventListener(EVENTO_TEMA, trocarTema);
       term.dispose();
       termRef.current = null;
     };

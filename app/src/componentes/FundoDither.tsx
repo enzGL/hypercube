@@ -2,6 +2,7 @@
 // em canvas e convertido em pontilhado de caracteres (dither ordenado 4×4).
 // Gira devagar; com "reduzir movimento" fica parado num ângulo fixo.
 import { useEffect, useRef } from 'react';
+import { EVENTO_TEMA } from '../estado/tema';
 import '../inicio.css';
 
 type V3 = [number, number, number];
@@ -113,7 +114,8 @@ export function FundoDither({ className = '' }: { className?: string }) {
     if (!ctx || !g) return;
 
     const parado = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-    const cor = getComputedStyle(tela).getPropertyValue('--cobalto-claro').trim() || '#93a4ff';
+    const lerCor = () => getComputedStyle(tela).getPropertyValue('--cobalto-claro').trim() || 'currentColor';
+    let cor = lerCor();
     let cols = 0;
     let linhas = 0;
     let quadro = 0;
@@ -172,9 +174,16 @@ export function FundoDither({ className = '' }: { className?: string }) {
       pintar(performance.now());
     });
     obs.observe(tela);
+    // troca de tema: relê a cor e repinta
+    const trocarTema = () => {
+      cor = lerCor();
+      pintar(performance.now());
+    };
+    window.addEventListener(EVENTO_TEMA, trocarTema);
     return () => {
       cancelAnimationFrame(quadro);
       obs.disconnect();
+      window.removeEventListener(EVENTO_TEMA, trocarTema);
     };
   }, []);
 

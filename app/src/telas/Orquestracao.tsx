@@ -49,10 +49,10 @@ const aresta = (id: string, source: string, target: string, condicao: string): E
   label: condicao,
   type: 'smoothstep',
   data: { condicao },
-  markerEnd: { type: MarkerType.ArrowClosed, color: '#27356B' },
-  style: { stroke: '#27356B', strokeWidth: 1.6 },
-  labelStyle: { fill: '#9AA3C7', fontSize: 11, fontFamily: 'Geist Mono, monospace' },
-  labelBgStyle: { fill: '#0B132D' },
+  markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--borda-forte)' },
+  style: { stroke: 'var(--borda-forte)', strokeWidth: 1.6 },
+  labelStyle: { fill: 'var(--texto-2)', fontSize: 11, fontFamily: 'Geist Mono, monospace' },
+  labelBgStyle: { fill: 'var(--fundo)' },
   labelBgPadding: [6, 3],
   labelBgBorderRadius: 4,
 });
@@ -188,7 +188,7 @@ export function Orquestracao() {
   const arestasVivas = arestas.map((a) => {
     const v = vivos.get(a.source);
     const ativa = v?.estado === 'trabalhando';
-    return { ...a, animated: ativa, style: { ...a.style, stroke: ativa ? '#93A4FF' : '#27356B' } };
+    return { ...a, animated: ativa, style: { ...a.style, stroke: ativa ? 'var(--cobalto-claro)' : 'var(--borda-forte)' } };
   });
 
   const noSel = nosVivos.find((n) => n.id === selNo);
@@ -265,9 +265,9 @@ export function Orquestracao() {
             proOptions={{ hideAttribution: true }}
             colorMode="dark"
           >
-            <Background color="#1B2650" gap={22} size={1.4} />
+            <Background color="var(--borda)" gap={22} size={1.4} />
             <Controls showInteractive={false} />
-            <MiniMap pannable zoomable nodeColor={(n) => COR_PAPEL[(n.data as DadosNo).papel]} maskColor="rgba(5,9,22,.7)" style={{ background: '#080E22', width: 150, height: 96 }} />
+            <MiniMap pannable zoomable nodeColor={(n) => COR_PAPEL[(n.data as DadosNo).papel]} maskColor="color-mix(in srgb, var(--terminal) 70%, transparent)" style={{ background: 'var(--fundo-lateral)', width: 150, height: 96 }} />
           </ReactFlow>
         </div>
 
@@ -294,7 +294,7 @@ export function Orquestracao() {
                 {formatarCusto(custoRodada)} de {formatarCusto(limite)}
               </span>
               <span className="barra-trilho">
-                <span className="barra-cheia" style={{ width: `${Math.min(100, (custoRodada / limite) * 100)}%`, background: custoRodada > limite ? '#F0646E' : '#93A4FF' }} />
+                <span className="barra-cheia" style={{ width: `${Math.min(100, (custoRodada / limite) * 100)}%`, background: custoRodada > limite ? 'var(--erro)' : 'var(--cobalto-claro)' }} />
               </span>
             </div>
             <button className="botao primario largo" onClick={rodar} disabled={!sessao}>

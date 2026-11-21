@@ -1,6 +1,7 @@
 import { refazerPrimeiraAbertura } from '../estado/loja';
 import { nativo } from '../nativo';
 import { Hiper } from '../componentes/Hiper';
+import { EscolherTema } from '../componentes/EscolherTema';
 
 
 export function Sobre() {
@@ -24,6 +25,11 @@ export function Sobre() {
             Atalho <kbd>Alt</kbd>+<kbd>N</kbd>: vai para o agente que espera há mais tempo.
           </li>
         </ul>
+        <section className="sobre-aparencia" aria-labelledby="sobre-aparencia-titulo">
+          <h2 id="sobre-aparencia-titulo">Aparência</h2>
+          <p className="secundario">Escolha o tema. Vale na hora e fica salvo neste computador.</p>
+          <EscolherTema />
+        </section>
         <button className="botao" onClick={refazerPrimeiraAbertura}>
           Ver a primeira abertura de novo
         </button>
