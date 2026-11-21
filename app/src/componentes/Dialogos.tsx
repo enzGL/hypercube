@@ -84,28 +84,26 @@ function NovaSessao() {
           </button>
         </div>
       </div>
-      <div className="campo">
+      <label className="campo">
         <span>Como usar esta sessão</span>
-        <div className="opcoes">
-          {[
-            { id: false, nome: 'Terminal padrão', desc: 'Os agentes lado a lado, cada um no seu terminal. Você manda em cada um.' },
-            { id: true, nome: 'Orquestração', desc: 'Um painel mostra quem divide e quem faz, com limite de agentes ao mesmo tempo.' },
-          ].map((o) => (
-            <button
-              key={String(o.id)}
-              className={`opcao ${orquestracao === o.id ? 'ativo' : ''}`}
-              onClick={() => {
-                setOrquestracao(o.id);
-                setWorktrees(o.id);
-                if (!o.id && inicio === 'equipe') setInicio('agente');
-              }}
-            >
-              <b>{o.nome}</b>
-              <span>{o.desc}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+        <select
+          value={orquestracao ? 'orquestracao' : 'terminal'}
+          onChange={(ev) => {
+            const sim = ev.target.value === 'orquestracao';
+            setOrquestracao(sim);
+            setWorktrees(sim);
+            if (!sim && inicio === 'equipe') setInicio('agente');
+          }}
+        >
+          <option value="terminal">Terminal padrão</option>
+          <option value="orquestracao">Orquestração</option>
+        </select>
+        <span className="dica-campo">
+          {orquestracao
+            ? 'Um painel mostra quem divide e quem faz, com limite de agentes ao mesmo tempo.'
+            : 'Os agentes lado a lado, cada um no seu terminal. Você manda em cada um.'}
+        </span>
+      </label>
       <label className="interruptor">
         <input type="checkbox" checked={worktrees} onChange={(ev) => setWorktrees(ev.target.checked)} />
         <span className="interruptor-trilho" />
@@ -133,6 +131,7 @@ function NovaSessao() {
         <label className="campo">
           <span>{inicio === 'equipe' ? 'Agente do Líder' : 'Agente'}</span>
           <select value={agente} onChange={(ev) => setAgente(ev.target.value as Agente)}>
+            {agentes.length === 0 && <option value={agente}>{NOME_AGENTE[agente]} (procurando os outros…)</option>}
             {agentes.filter((a) => a.instalado && a.agente !== 'terminal').map((a) => (
               <option key={a.agente} value={a.agente}>
                 {NOME_AGENTE[a.agente]}
@@ -210,6 +209,7 @@ function NovoVertice({ sessaoId, papelInicial }: { sessaoId: string; papelInicia
         <label className="campo">
           <span>Agente</span>
           <select value={agente} onChange={(ev) => setAgente(ev.target.value as Agente)}>
+            {agentes.length === 0 && <option value={agente}>{NOME_AGENTE[agente]} (procurando os outros…)</option>}
             {agentes.map((a) => (
               <option key={a.agente} value={a.agente} disabled={!a.instalado}>
                 {NOME_AGENTE[a.agente]}

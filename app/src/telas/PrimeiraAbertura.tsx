@@ -4,7 +4,7 @@ import { marcarBoasVindasVista } from '../componentes/BoasVindas';
 import { useCallback, useEffect, useMemo, useState, type ComponentType } from 'react';
 import { LogoAgente } from '../componentes/LogoAgente';
 import { comecarComExemplo, comecarVazio } from '../estado/loja';
-import { nativo, NOME_AGENTE, type AgenteDetectado } from '../nativo';
+import { nativo, NOME_AGENTE, type Agente, type AgenteDetectado } from '../nativo';
 import { Hiper } from '../componentes/Hiper';
 import { Icone } from '../componentes/Pecas';
 import { AvatarPerfil, CampoFoto, CampoGitHub } from '../componentes/Perfil';
@@ -18,6 +18,15 @@ const modulosTema = import.meta.glob('../componentes/EscolherTema.tsx', { eager:
 const EscolherTema = Object.values(modulosTema)[0]?.EscolherTema;
 
 type Passo = 'nome' | 'foto' | 'github' | 'tema' | 'agentes';
+
+/** IAs que valem a pena e como instalar (comandos oficiais pelo npm). */
+const SUGESTAO: Partial<Record<Agente, { desc: string; comando?: string; site: string }>> = {
+  claude: { desc: 'Da Anthropic. Bom para planejar e mexer em projetos grandes.', comando: 'npm install -g @anthropic-ai/claude-code', site: 'https://docs.anthropic.com/en/docs/claude-code' },
+  codex: { desc: 'Da OpenAI. Rápido para escrever e corrigir código.', comando: 'npm install -g @openai/codex', site: 'https://github.com/openai/codex' },
+  gemini: { desc: 'Do Google. Tem cota grátis generosa e lê muito contexto.', comando: 'npm install -g @google/gemini-cli', site: 'https://github.com/google-gemini/gemini-cli' },
+  opencode: { desc: 'Aberto. Funciona com vários modelos, até locais.', comando: 'npm install -g opencode-ai', site: 'https://opencode.ai' },
+  kiro: { desc: 'Da AWS. Trabalha a partir de especificações.', site: 'https://kiro.dev' },
+};
 
 function passoInicial(total: number): number {
   if (!import.meta.env.DEV) return 0;
@@ -38,15 +47,20 @@ export function PrimeiraAbertura() {
 
   const [agentes, setAgentes] = useState<AgenteDetectado[] | null>(null);
   const [erroBusca, setErroBusca] = useState(false);
-  const procurar = useCallback(() => {
+  const procurar = useCallback((novo = false) => {
     setAgentes(null);
     setErroBusca(false);
     nativo.processos
-      .detectarAgentes()
+      .detectarAgentes(novo)
       .then(setAgentes)
       .catch(() => setErroBusca(true));
   }, []);
-  useEffect(procurar, [procurar]);
+  useEffect(() => procurar(), [procurar]);
+
+  const [copiado, setCopiado] = useState<string | null>(null);
+  const copiar = (t: string) => {
+    navigator.clipboard?.writeText(t).then(() => setCopiado(t), () => undefined);
+  };
 
   const nomeOk = p.nome.trim().length > 0;
   const podeSeguir = passo !== 'nome' || nomeOk;
@@ -97,11 +111,11 @@ export function PrimeiraAbertura() {
             </h1>
             <p className="secundario">
               {passo === 'nome' &&
-                'Abra aqui os seus agentes de IA, cada um no seu terminal. Eu aviso quando algum precisa de você. Como você quer ser chamado?'}
+                'Abra aqui os seus agentes de IA, cada um no seu terminal. Eu aviso quando algum precisa de você. Como devo te chamar?'}
               {passo === 'foto' && 'Quer pôr uma foto? Ela aparece no seu cartão, na lateral. Dá para pular.'}
               {passo === 'github' && 'Opcional. Traz a sua foto e o seu nome do perfil público do GitHub.'}
               {passo === 'tema' && 'Dá para trocar depois em Sobre e ajustes, na aba Aparência.'}
-              {passo === 'agentes' && 'Achei estes no computador. Abra uma pasta de projeto para começar.'}
+              {passo === 'agentes' && 'Li as IAs instaladas no seu computador e separei outras que valem a pena. Abra uma pasta de projeto para começar.'}
             </p>
           </div>
         </div>
@@ -157,7 +171,7 @@ export function PrimeiraAbertura() {
                 {erroBusca && (
                   <p className="detectados-erro">
                     Algo falhou na procura. Dá para tentar de novo ou seguir sem a lista.
-                    <button className="botao pequeno" onClick={procurar}>
+                    <button className="botao pequeno" onClick={() => procurar(true)}>
                       Tentar de novo
                     </button>
                   </p>
@@ -165,20 +179,52 @@ export function PrimeiraAbertura() {
                 {agentes && !agentes.some((a) => a.instalado && a.agente !== 'terminal') && (
                   <p className="detectados-erro">
                     Nenhum agente de IA encontrado. Instale o Claude Code, o Codex ou o Gemini e procure de novo.
-                    <button className="botao pequeno" onClick={procurar}>
+                    <button className="botao pequeno" onClick={() => procurar(true)}>
                       Procurar de novo
                     </button>
                   </p>
                 )}
                 <ul>
-                  {(agentes ?? []).map((a) => (
-                    <li key={a.agente} className={a.instalado ? '' : 'ausente'}>
-                      <span style={{ color: a.instalado ? 'var(--pronto)' : 'var(--texto-2)' }}>{a.instalado ? '●' : '○'}</span>
+                  {(agentes ?? []).filter((a) => a.instalado && a.agente !== 'terminal').map((a) => (
+                    <li key={a.agente}>
+                      <span style={{ color: 'var(--pronto)' }}>●</span>
                       <span className="detectado-nome"><LogoAgente agente={a.agente} tamanho={15} /> {NOME_AGENTE[a.agente]}</span>
-                      <span className="mono secundario">{a.instalado ? `${a.comando} ${a.versao ?? ''}` : 'não encontrado'}</span>
+                      <span className="mono secundario">{`${a.comando} ${a.versao ?? ''}`}</span>
                     </li>
                   ))}
                 </ul>
+                {agentes && agentes.some((a) => !a.instalado && SUGESTAO[a.agente]) && (
+                  <div className="sugeridos">
+                    <h3>Outras que você pode instalar</h3>
+                    <ul>
+                      {agentes.filter((a) => !a.instalado && SUGESTAO[a.agente]).map((a) => {
+                        const s = SUGESTAO[a.agente]!;
+                        return (
+                          <li key={a.agente} className="sugerido">
+                            <span className="detectado-nome"><LogoAgente agente={a.agente} tamanho={15} /> {NOME_AGENTE[a.agente]}</span>
+                            <span className="secundario sugerido-desc">{s.desc}</span>
+                            <span className="sugerido-acoes">
+                              {s.comando && (
+                                <button className="botao pequeno mono" title="Copiar o comando de instalação" onClick={() => copiar(s.comando!)}>
+                                  {copiado === s.comando ? 'Copiado' : s.comando}
+                                </button>
+                              )}
+                              <button className="botao pequeno" onClick={() => nativo.sistema.abrirLink(s.site)}>
+                                Site
+                              </button>
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    <p className="secundario sugerido-rodape">
+                      Instalou alguma?
+                      <button className="botao pequeno" onClick={() => procurar(true)}>
+                        Procurar de novo
+                      </button>
+                    </p>
+                  </div>
+                )}
               </div>
               <div className="primeira-acoes">
                 <button className="botao primario" onClick={abrirPasta} disabled={!agentes && !erroBusca}>

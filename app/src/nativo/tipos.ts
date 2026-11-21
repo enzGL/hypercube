@@ -126,7 +126,8 @@ export interface Nativo {
   };
 
   processos: {
-    detectarAgentes(): Promise<AgenteDetectado[]>;
+    /** `novo`: procura de novo em vez de usar a última procura (depois de instalar um agente). */
+    detectarAgentes(novo?: boolean): Promise<AgenteDetectado[]>;
     usoDoPlano(): Promise<UsoDoPlano[]>;
     criarWorktree(pasta: string, ramo: string): Promise<string>;
   };

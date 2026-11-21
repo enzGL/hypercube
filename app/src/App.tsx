@@ -2,6 +2,7 @@
 import { useEffect, type ComponentType } from 'react';
 import { irPara, irParaQuemEspera, nomeUsuario, temOrquestracao, useLoja } from './estado/loja';
 import { Avisos } from './componentes/Avisos';
+import { nativo } from './nativo';
 import { pedirNovaTarefa, useCasca, type Rota } from './estado/casca';
 import { BarraLateral } from './componentes/BarraLateral';
 import { BarraTopo } from './componentes/BarraTopo';
@@ -35,6 +36,11 @@ export function App() {
   const e = useLoja();
   const casca = useCasca();
   const rota = e.tela as Rota;
+
+  // Começa a procurar os agentes já na abertura: os diálogos usam o resultado guardado.
+  useEffect(() => {
+    nativo.processos.detectarAgentes().catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     const k = (ev: KeyboardEvent) => {

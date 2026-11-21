@@ -80,7 +80,10 @@ export function criarNativoTauri(): Nativo {
       },
     },
     processos: {
-      detectarAgentes: () => detectarComCache(),
+      detectarAgentes: (novo) => {
+        if (novo) procura = null;
+        return detectarComCache();
+      },
       usoDoPlano: () => invoke('processos_uso_do_plano'),
       criarWorktree: (pasta, ramo) => invoke<string>('processos_criar_worktree', { pasta, ramo }),
     },

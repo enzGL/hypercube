@@ -814,3 +814,13 @@ html[data-tauri]:not([data-maximizada]) :is(.fundo-dialogo, .primeira-fundo, .bv
 @keyframes mascote-acessorio { from { transform: translateY(-36px); opacity: 0; } to { transform: none; opacity: 1; } }
 .opcao-comum { width: 100%; margin-bottom: 14px; }
 .botao.ligado { border-color: var(--cobalto-claro); color: var(--cobalto-claro); background: color-mix(in srgb, var(--cobalto-claro) 12%, transparent); }
+.sugeridos { margin-top: 14px; }
+.sugeridos ul { display: flex; flex-direction: column; gap: 8px; }
+.sugerido { display: grid !important; grid-template-columns: 150px minmax(0, 1fr); gap: 4px 12px; align-items: center; }
+.sugerido-acoes { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; }
+.sugerido-acoes .mono { font-size: 11.5px; }
+.sugerido-desc { font-size: 12.5px; }
+.sugerido-rodape { display: flex; align-items: center; gap: 8px; font-size: 12.5px; margin-top: 10px; }
+.campo .dica-campo { display: block; }
+.detectados li.sugerido { grid-template-columns: 130px minmax(0, 1fr); gap: 6px 12px; padding: 8px 0; border-top: 1px solid var(--borda); }
+.detectados li.sugerido:first-child { border-top: 0; }
