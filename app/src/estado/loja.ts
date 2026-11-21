@@ -38,6 +38,47 @@ export const COR_PAPEL: Record<Papel, string> = {
 
 export const NOME_NIVEL: Record<Nivel, string> = { barato: 'Barato', padrao: 'Padrão', forte: 'Forte' };
 
+export const DESCRICAO_NIVEL: Record<Nivel, string> = {
+  barato: 'Modelo leve: rápido e gasta pouco do plano. Bom para ler e mapear o código.',
+  padrao: 'Equilíbrio entre custo e qualidade. Serve para a maioria das tarefas.',
+  forte: 'Modelo mais capaz: pensa melhor e gasta mais. Para planejar e decidir.',
+};
+
+const ACAO_FERRAMENTA: Record<string, string> = {
+  bash: 'rodar um comando no terminal',
+  powershell: 'rodar um comando no terminal',
+  edit: 'mudar um arquivo',
+  multiedit: 'mudar um arquivo',
+  write: 'criar ou reescrever um arquivo',
+  notebookedit: 'mudar um notebook',
+  read: 'ler um arquivo',
+  webfetch: 'abrir uma página da internet',
+  websearch: 'pesquisar na internet',
+};
+
+/** O pedido de permissão em linguagem direta, e o que cada botão faz. */
+export function descreverPedido(pergunta: string): { acao: string; sim: string; nao: string; dicaSim: string; dicaNao: string } {
+  if (pergunta.startsWith('Confiar nesta pasta')) {
+    return {
+      acao: 'quer trabalhar nesta pasta. Confie só se o projeto for seu ou de quem você conhece.',
+      sim: 'Confiar na pasta',
+      nao: 'Não confiar',
+      dicaSim: 'O agente passa a ler e mudar arquivos desta pasta',
+      dicaNao: 'O agente fecha sem mexer em nada',
+    };
+  }
+  const m = /permission to use ([\w-]+)/i.exec(pergunta);
+  const ferramenta = m?.[1];
+  const acao = ferramenta ? ACAO_FERRAMENTA[ferramenta.toLowerCase()] ?? `usar a ferramenta ${ferramenta}` : null;
+  return {
+    acao: acao ? `quer ${acao}.` : `pede permissão: ${pergunta}`,
+    sim: 'Permitir',
+    nao: 'Negar',
+    dicaSim: acao ? `Deixa o agente ${acao}, só desta vez` : 'Deixa o agente fazer isso, só desta vez',
+    dicaNao: 'O agente não faz isso e segue de outro jeito',
+  };
+}
+
 export const ESTADO_INFO: Record<EstadoVertice, { simbolo: string; cor: string; nome: string }> = {
   trabalhando: { simbolo: '◐', cor: 'var(--trabalhando)', nome: 'Trabalhando' },
   esperando: { simbolo: '◆', cor: 'var(--esperando)', nome: 'Esperando você' },

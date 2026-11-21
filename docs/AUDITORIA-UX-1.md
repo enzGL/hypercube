@@ -40,3 +40,8 @@ O líder conferiu cada achado no código. Abaixo estão só os que se confirmara
 - Saudação pelo relógio local ser um problema: é o esperado.
 - "Encerrar sem confirmação": a confirmação já existe.
 - Digitar "sim" no campo geral para responder permissão: é especulação, sem caso real.
+
+## Situação (2026-11-21)
+- Feitos em 2026-11-20: #1, #2, #3 (modos), #6.
+- Feitos em 2026-11-21: #3 (níveis com frase no diálogo), #4 (menu ao digitar `/`, com setas, Tab e Esc), #5 (em Sessões os avisos ficam numa faixa acima do campo; orquestração começa recolhida com 1 agente), #7 (worktree explicado), #9 ("Minhas tarefas"; Pomodoro recolhível), #10 (pedido em linguagem direta, com dica em cada botão), #11 (procura na hora, com "tentar de novo" e aviso quando não há agente). Novo agente também cai num agente instalado quando o sugerido não está.
+- Faltam: #8, #12 a #15.

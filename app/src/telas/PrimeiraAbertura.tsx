@@ -1,7 +1,7 @@
 // Introdução: um cartão por cima do app, em passos (nome, foto, GitHub, tema, agentes).
 // Esc não fecha: é o começo. Em dev, `?passo=N` abre direto no passo N (1 em diante).
 import { marcarBoasVindasVista } from '../componentes/BoasVindas';
-import { useEffect, useMemo, useState, type ComponentType } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ComponentType } from 'react';
 import { LogoAgente } from '../componentes/LogoAgente';
 import { comecarComExemplo, comecarVazio } from '../estado/loja';
 import { nativo, NOME_AGENTE, type AgenteDetectado } from '../nativo';
@@ -37,10 +37,16 @@ export function PrimeiraAbertura() {
   const [buscaGitHub, setBuscaGitHub] = useState(false);
 
   const [agentes, setAgentes] = useState<AgenteDetectado[] | null>(null);
-  useEffect(() => {
-    const t = window.setTimeout(() => nativo.processos.detectarAgentes().then(setAgentes), 700);
-    return () => clearTimeout(t);
+  const [erroBusca, setErroBusca] = useState(false);
+  const procurar = useCallback(() => {
+    setAgentes(null);
+    setErroBusca(false);
+    nativo.processos
+      .detectarAgentes()
+      .then(setAgentes)
+      .catch(() => setErroBusca(true));
   }, []);
+  useEffect(procurar, [procurar]);
 
   const nomeOk = p.nome.trim().length > 0;
   const podeSeguir = passo !== 'nome' || nomeOk;
@@ -147,7 +153,23 @@ export function PrimeiraAbertura() {
           {passo === 'agentes' && (
             <>
               <div className="detectados">
-                <h3>{agentes ? 'Agentes neste computador' : 'Procurando agentes instalados…'}</h3>
+                <h3>{agentes ? 'Agentes neste computador' : erroBusca ? 'Não consegui procurar os agentes' : 'Procurando agentes instalados…'}</h3>
+                {erroBusca && (
+                  <p className="detectados-erro">
+                    Algo falhou na procura. Dá para tentar de novo ou seguir sem a lista.
+                    <button className="botao pequeno" onClick={procurar}>
+                      Tentar de novo
+                    </button>
+                  </p>
+                )}
+                {agentes && !agentes.some((a) => a.instalado && a.agente !== 'terminal') && (
+                  <p className="detectados-erro">
+                    Nenhum agente de IA encontrado. Instale o Claude Code, o Codex ou o Gemini e procure de novo.
+                    <button className="botao pequeno" onClick={procurar}>
+                      Procurar de novo
+                    </button>
+                  </p>
+                )}
                 <ul>
                   {(agentes ?? []).map((a) => (
                     <li key={a.agente} className={a.instalado ? '' : 'ausente'}>
@@ -159,7 +181,7 @@ export function PrimeiraAbertura() {
                 </ul>
               </div>
               <div className="primeira-acoes">
-                <button className="botao primario" onClick={abrirPasta} disabled={!agentes}>
+                <button className="botao primario" onClick={abrirPasta} disabled={!agentes && !erroBusca}>
                   <Icone nome="pasta" /> Abrir uma pasta de projeto
                 </button>
                 <button
@@ -168,7 +190,7 @@ export function PrimeiraAbertura() {
                     salvarPerfil(p);
                     (marcarBoasVindasVista(), comecarComExemplo());
                   }}
-                  disabled={!agentes}
+                  disabled={!agentes && !erroBusca}
                 >
                   Explorar com um exemplo
                 </button>

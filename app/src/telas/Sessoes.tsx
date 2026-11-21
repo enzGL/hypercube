@@ -20,6 +20,7 @@ import {
   revisaoCruzada,
   avisar,
   corDoAgente,
+  descreverPedido,
   nomeDoAgente,
   useLoja,
   type Estado,
@@ -30,6 +31,7 @@ import { BarraTopo } from '../componentes/BarraTopo';
 import { Hiper } from '../componentes/Hiper';
 import { formatarCusto, formatarTokens, Icone, SimboloEstado } from '../componentes/Pecas';
 import { Terminal } from '../componentes/Terminal';
+import { Avisos } from '../componentes/Avisos';
 import { abrirEditarAgente, IconeLapis, MascoteAgente, NomeEditavel } from '../componentes/EditarAgente';
 
 const LAYOUTS: { id: Layout; nome: string }[] = [
@@ -93,7 +95,7 @@ export function Sessoes() {
 
   return (
     <div className="tela-sessoes">
-      <BarraTopo titulo={sessao.nome} subtitulo={sessao.pasta + (sessao.worktrees ? '  ·  um worktree por agente' : '')} acoes={todos.length ? acoes : undefined} />
+      <BarraTopo titulo={sessao.nome} subtitulo={sessao.pasta + (sessao.worktrees ? '  ·  cada agente numa cópia separada do projeto (worktree)' : '')} acoes={todos.length ? acoes : undefined} />
 
       {corrida && <FaixaCorrida e={e} corridaId={corrida.id} />}
 
@@ -143,6 +145,7 @@ export function Sessoes() {
         </>
       )}
 
+      <Avisos emLinha />
       <CampoComando e={e} sessaoId={sessao.id} vertices={todos} />
     </div>
   );
@@ -291,20 +294,7 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
         </div>
       )}
 
-      {v.estado === 'esperando' && v.pergunta && (
-        <div className="faixa faixa-espera" role="alert">
-          <span className="estado-simbolo">◆</span>
-          <span>
-            <b>{nome} pede permissão:</b> {v.pergunta}
-          </span>
-          <button className="botao primario pequeno" onClick={() => responder(v.id, true)}>
-            Permitir
-          </button>
-          <button className="botao pequeno" onClick={() => responder(v.id, false)}>
-            Negar
-          </button>
-        </div>
-      )}
+      {v.estado === 'esperando' && v.pergunta && <FaixaPermissao v={v} nome={nome} />}
 
       {v.terminalId && <Terminal terminalId={v.terminalId} focado={focado} aoFocar={() => e.focoId !== v.id && focar(v.id)} />}
 
@@ -319,6 +309,24 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
         </footer>
       )}
     </article>
+  );
+}
+
+function FaixaPermissao({ v, nome }: { v: Vertice; nome: string }) {
+  const d = descreverPedido(v.pergunta!);
+  return (
+    <div className="faixa faixa-espera" role="alert">
+      <span className="estado-simbolo">◆</span>
+      <span title={v.pergunta}>
+        <b>{nome}</b> {d.acao}
+      </span>
+      <button className="botao primario pequeno" title={d.dicaSim} onClick={() => responder(v.id, true)}>
+        {d.sim}
+      </button>
+      <button className="botao pequeno" title={d.dicaNao} onClick={() => responder(v.id, false)}>
+        {d.nao}
+      </button>
+    </div>
   );
 }
 
@@ -340,6 +348,11 @@ function FaixaCorrida({ e, corridaId }: { e: Estado; corridaId: string }) {
     </div>
   );
 }
+
+const COMANDOS = [
+  { nome: '/corrida', argumento: '[2-4] tarefa', descricao: 'Vários agentes fazem a mesma tarefa e você escolhe o melhor' },
+  { nome: '/revisar', argumento: '', descricao: 'Outro agente revisa o trabalho do escolhido, só lendo' },
+] as const;
 
 function CampoComando({ e, sessaoId, vertices }: { e: Estado; sessaoId: string; vertices: Vertice[] }) {
   const [texto, setTexto] = useState('');
@@ -372,14 +385,48 @@ function CampoComando({ e, sessaoId, vertices }: { e: Estado; sessaoId: string; 
     setTexto('');
   };
 
+  // Menu de comandos: aparece enquanto a pessoa digita "/" e ainda não pôs espaço.
+  const [marcado, setMarcado] = useState(0);
+  const [menuFechado, setMenuFechado] = useState(false);
+  const busca = /^\/(\S*)$/.exec(texto)?.[1]?.toLowerCase();
+  const opcoes = busca === undefined || menuFechado ? [] : COMANDOS.filter((c) => c.nome.slice(1).startsWith(busca));
+  const escolher = (c: (typeof COMANDOS)[number]) => {
+    setTexto(c.nome + (c.argumento ? ' ' : ''));
+    setMarcado(0);
+    if (!c.argumento) setMenuFechado(true);
+  };
+
   return (
     <form
       className="comando"
       onSubmit={(ev) => {
         ev.preventDefault();
+        const c = opcoes[marcado];
+        if (c && (texto.trim() !== c.nome || c.argumento)) return escolher(c);
         enviar();
       }}
     >
+      {opcoes.length > 0 && (
+        <ul className="comando-menu" role="listbox" aria-label="Comandos">
+          {opcoes.map((c, n) => (
+            <li key={c.nome} role="option" aria-selected={n === marcado}>
+              <button
+                type="button"
+                className={n === marcado ? 'ativo' : ''}
+                onMouseEnter={() => setMarcado(n)}
+                onMouseDown={(ev) => ev.preventDefault()}
+                onClick={() => escolher(c)}
+              >
+                <span className="mono">
+                  {c.nome}
+                  {c.argumento && <span className="secundario"> {c.argumento}</span>}
+                </span>
+                <span className="secundario">{c.descricao}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       <label className="comando-alvo">
         <span>Para</span>
         <select value={alvoId} onChange={(ev) => setAlvo(ev.target.value)} aria-label="Mandar para">
@@ -393,13 +440,32 @@ function CampoComando({ e, sessaoId, vertices }: { e: Estado; sessaoId: string; 
       </label>
       <input
         value={texto}
-        onChange={(ev) => setTexto(ev.target.value)}
+        onChange={(ev) => {
+          setTexto(ev.target.value);
+          setMarcado(0);
+          setMenuFechado(false);
+        }}
+        onKeyDown={(ev) => {
+          if (!opcoes.length) return;
+          if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+            ev.preventDefault();
+            const d = ev.key === 'ArrowDown' ? 1 : -1;
+            setMarcado((m) => (m + d + opcoes.length) % opcoes.length);
+          } else if (ev.key === 'Tab') {
+            ev.preventDefault();
+            escolher(opcoes[marcado]);
+          } else if (ev.key === 'Escape') {
+            setMenuFechado(true);
+          }
+        }}
+        aria-expanded={opcoes.length > 0}
+        aria-autocomplete="list"
         placeholder={
           vertices.length === 0
             ? 'Crie um agente para mandar tarefas'
             : alvoId === 'todos'
               ? 'Escreva uma tarefa para todos os agentes…'
-              : `Escreva uma tarefa para o ${alvoV ? nomeDoAgente(alvoV) : 'agente'}…  (/corrida, /revisar)`
+              : `Escreva uma tarefa para o ${alvoV ? nomeDoAgente(alvoV) : 'agente'}…  (digite / para ver os comandos)`
         }
         aria-label="Comando"
       />

@@ -27,7 +27,7 @@ import { IconeCasca } from './IconesCasca';
 
 const ABAS: { id: AbaPainel; nome: string; icone: string }[] = [
   { id: 'notas', nome: 'Notas', icone: 'notas' },
-  { id: 'tarefas', nome: 'Tarefas', icone: 'tarefas' },
+  { id: 'tarefas', nome: 'Minhas tarefas', icone: 'tarefas' },
   { id: 'plugins', nome: 'Plugins', icone: 'plugins' },
   { id: 'git', nome: 'Git', icone: 'git' },
 ];
@@ -192,10 +192,19 @@ function Tarefas() {
 
 // ---------- Pomodoro ----------
 
+const CHAVE_POMODORO = 'hypercube.pomodoroRecolhido';
+
 function Pomodoro() {
   const casca = useCasca();
   const p = casca.pomodoro;
   const [, setTique] = useState(0);
+  const [recolhido, setRecolhido] = useState(() => {
+    try {
+      return localStorage.getItem(CHAVE_POMODORO) === '1';
+    } catch {
+      return false;
+    }
+  });
   useEffect(() => {
     if (!p.rodando) return;
     const t = window.setInterval(() => setTique((n) => n + 1), 250);
@@ -208,13 +217,35 @@ function Pomodoro() {
   const fracao = 1 - restante / POMODORO_MS;
   const estado = p.rodando ? 'Focando' : p.iniciado ? 'Pausado' : 'Pronto pra focar';
 
+  const alternar = () =>
+    setRecolhido((r) => {
+      try {
+        localStorage.setItem(CHAVE_POMODORO, r ? '0' : '1');
+      } catch {
+        /* sem armazenamento */
+      }
+      return !r;
+    });
+
+  if (recolhido) {
+    return (
+      <section className={`pomodoro pomodoro-recolhido ${p.rodando ? 'rodando' : ''}`} aria-label="Pomodoro">
+        <button className="pomodoro-cabeca pomodoro-alternar" onClick={alternar} aria-expanded={false} title="Mostrar o Pomodoro">
+          <IconeCasca nome="relogio" tamanho={14} />
+          <span>Pomodoro</span>
+          <span className="pomodoro-duracao mono">{p.iniciado ? formatarTempo(restante) : '25 min'}</span>
+        </button>
+      </section>
+    );
+  }
+
   return (
     <section className={`pomodoro ${p.rodando ? 'rodando' : ''}`} aria-label="Pomodoro">
-      <div className="pomodoro-cabeca">
+      <button className="pomodoro-cabeca pomodoro-alternar" onClick={alternar} aria-expanded title="Recolher o Pomodoro">
         <IconeCasca nome="relogio" tamanho={14} />
         <span>Pomodoro</span>
         <span className="pomodoro-duracao">25 min</span>
-      </div>
+      </button>
       <div className="pomodoro-linha">
         <span className="pomodoro-estado">{estado}</span>
         <span className="pomodoro-tempo mono" role="timer" aria-live="off">

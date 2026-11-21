@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 import { useEffect, type ComponentType } from 'react';
-import { fecharAviso, focar, irPara, irParaQuemEspera, nomeUsuario, useLoja, ESTADO_INFO } from './estado/loja';
+import { irPara, irParaQuemEspera, nomeUsuario, useLoja } from './estado/loja';
+import { Avisos } from './componentes/Avisos';
 import { pedirNovaTarefa, useCasca, type Rota } from './estado/casca';
 import { BarraLateral } from './componentes/BarraLateral';
 import { BarraTopo } from './componentes/BarraTopo';
@@ -14,7 +15,6 @@ import { PrimeiraAbertura } from './telas/PrimeiraAbertura';
 import { Roteador } from './telas/Roteador';
 import { Sessoes } from './telas/Sessoes';
 import { Sobre } from './telas/Sobre';
-import { Icone } from './componentes/Pecas';
 
 // A tela Início vem de telas/Inicio.tsx quando ela existir; até lá fica o marcador abaixo.
 const modulosInicio = import.meta.glob<{ Inicio?: ComponentType; default?: ComponentType }>('./telas/Inicio.tsx', { eager: true });
@@ -76,32 +76,7 @@ export function App() {
       ) : (
         <PrimeiraAbertura />
       )}
-      <div className="avisos" aria-live="polite">
-        {e.avisos.map((a) => (
-          <div key={a.id} className={`aviso aviso-${a.tipo}`}>
-            {a.tipo !== 'info' && (
-              <span className="estado-simbolo" style={{ color: ESTADO_INFO[a.tipo].cor }}>
-                {ESTADO_INFO[a.tipo].simbolo}
-              </span>
-            )}
-            <span className="aviso-texto">{a.texto}</span>
-            {a.verticeId && (
-              <button
-                className="link"
-                onClick={() => {
-                  focar(a.verticeId!);
-                  fecharAviso(a.id);
-                }}
-              >
-                Ver
-              </button>
-            )}
-            <button className="icone-botao" onClick={() => fecharAviso(a.id)} aria-label="Fechar aviso">
-              <Icone nome="fechar" tamanho={12} />
-            </button>
-          </div>
-        ))}
-      </div>
+      {!(rota === 'sessoes' && e.sessoes.some((s) => s.id === e.sessaoAtivaId)) && <Avisos />}
     </div>
   );
 }

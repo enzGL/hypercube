@@ -782,3 +782,18 @@ html[data-tauri]:not([data-maximizada]) :is(.fundo-dialogo, .primeira-fundo, .bv
 .sobre-aparencia { width: 100%; text-align: left; margin: 4px 0 18px; }
 .sobre-aparencia h2 { margin: 0 0 2px; font-size: 14px; font-weight: 600; }
 .sobre-aparencia > p { margin: 0 0 10px; font-size: 12.5px; }
+
+/* ---------- auditoria 1: menu de comandos, avisos em faixa, dicas ---------- */
+.comando { position: relative; }
+.comando-menu { position: absolute; left: 12px; right: 12px; bottom: calc(100% - 4px); z-index: 30; list-style: none; margin: 0; padding: 4px; background: var(--cartao); border: 1px solid var(--borda-forte); border-radius: 10px; box-shadow: 0 12px 32px var(--sombra-forte); }
+.comando-menu button { width: 100%; display: flex; align-items: baseline; gap: 12px; padding: 7px 10px; border-radius: 7px; background: transparent; border: 0; color: var(--texto); text-align: left; font-size: 12.5px; cursor: pointer; }
+.comando-menu button.ativo { background: color-mix(in srgb, var(--cobalto-claro) 16%, transparent); }
+.comando-menu .mono { min-width: 170px; }
+.avisos-linha { flex: 0 0 auto !important; display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 12px 0; }
+.avisos-linha .aviso { flex: 1 1 280px; max-width: 520px; box-shadow: none; }
+.dica-campo { font-size: 12px; color: var(--texto-2); margin: 6px 0 0; line-height: 1.45; }
+.interruptor-dica { display: block; font-size: 12px; color: var(--texto-2); margin: -4px 0 8px 46px; line-height: 1.45; }
+.detectados-erro { color: var(--erro); font-size: 12.5px; display: flex; align-items: center; gap: 10px; }
+.pomodoro-alternar { width: 100%; background: transparent; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; text-align: left; }
+.pomodoro-recolhido .pomodoro-cabeca { margin: 0; }
+.linha-dupla .dica-campo { max-width: 260px; }

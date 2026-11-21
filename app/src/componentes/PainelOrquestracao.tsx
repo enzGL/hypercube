@@ -72,6 +72,10 @@ export function PainelOrquestracao({ sessaoId }: Props) {
   const [pref, setPref] = useState(lerPreferencias);
   const [abaId, setAbaId] = useState<string | null>(sid ? memoria.aba[sid] ?? null : null);
   const [uso, setUso] = useState<UsoDoPlano[]>([]);
+  // Com só um agente na sessão o painel começa recolhido, até a pessoa abrir.
+  const [escolheu, setEscolheu] = useState(false);
+  const poucos = e.vertices.filter((v) => v.sessaoId === sid).length <= 1;
+  const aberto = escolheu ? pref.aberto : pref.aberto && !poucos;
 
   useEffect(() => {
     nativo.processos.usoDoPlano().then(setUso);
@@ -96,15 +100,18 @@ export function PainelOrquestracao({ sessaoId }: Props) {
   const mudarLimite = (n: number) => setPref((p) => ({ ...p, limite: Math.max(1, Math.min(8, Math.round(n) || 1)) }));
 
   return (
-    <section className={`po ${pref.aberto ? 'po-aberto' : 'po-fechado'}`} aria-label="Orquestração">
+    <section className={`po ${aberto ? 'po-aberto' : 'po-fechado'}`} aria-label="Orquestração">
       <header className="po-cabeca">
         <button
           className="po-recolher"
-          onClick={() => setPref((p) => ({ ...p, aberto: !p.aberto }))}
-          aria-expanded={pref.aberto}
-          title={pref.aberto ? 'Recolher o painel' : 'Abrir o painel'}
+          onClick={() => {
+            setEscolheu(true);
+            setPref((p) => ({ ...p, aberto: !aberto }));
+          }}
+          aria-expanded={aberto}
+          title={aberto ? 'Recolher o painel' : 'Abrir o painel'}
         >
-          <Icone nome={pref.aberto ? 'baixo' : 'cima'} tamanho={14} />
+          <Icone nome={aberto ? 'baixo' : 'cima'} tamanho={14} />
           <span className="po-titulo">Orquestração</span>
         </button>
 
@@ -137,7 +144,8 @@ export function PainelOrquestracao({ sessaoId }: Props) {
               className={`po-aba ${l.id === lider?.id ? 'ativa' : ''}`}
               onClick={() => {
                 setAbaId(l.id);
-                if (!pref.aberto) setPref((p) => ({ ...p, aberto: true }));
+                setEscolheu(true);
+                if (!aberto) setPref((p) => ({ ...p, aberto: true }));
               }}
               title={l.tarefa ?? nomeDoAgente(l)}
             >
@@ -151,7 +159,7 @@ export function PainelOrquestracao({ sessaoId }: Props) {
         </div>
       </header>
 
-      {pref.aberto && (
+      {aberto && (
         <>
           <div className="po-corpo">
             <CanvasPlanner lider={lider} workers={workers} />

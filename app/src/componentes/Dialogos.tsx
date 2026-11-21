@@ -3,6 +3,7 @@ import {
   abrirDialogo,
   criarSessao,
   criarVertice,
+  DESCRICAO_NIVEL,
   DESCRICAO_PAPEL,
   NOME_NIVEL,
   NOME_PAPEL,
@@ -58,7 +59,13 @@ function NovaSessao() {
     const s = criarSessao(nome.trim() || 'Nova sessão', pasta, worktrees);
     abrirDialogo(null);
     if (inicio === 'lider') await criarVertice(s.id, 'lider', agente, 'forte');
-    if (inicio === 'equipe') for (const p of EQUIPE) await criarVertice(s.id, p, p === 'lider' ? agente : AGENTE_PADRAO[p], NIVEL_PADRAO[p]);
+    if (inicio === 'equipe') {
+      const instalado = (a: Agente) => agentes.some((d) => d.agente === a && d.instalado);
+      for (const p of EQUIPE) {
+        const preferido = p === 'lider' ? agente : AGENTE_PADRAO[p];
+        await criarVertice(s.id, p, instalado(preferido) ? preferido : agente, NIVEL_PADRAO[p]);
+      }
+    }
   };
 
   return (
@@ -79,8 +86,11 @@ function NovaSessao() {
       <label className="interruptor">
         <input type="checkbox" checked={worktrees} onChange={(ev) => setWorktrees(ev.target.checked)} />
         <span className="interruptor-trilho" />
-        <span>Cada agente trabalha no seu git worktree</span>
+        <span>Cada agente trabalha numa cópia separada do projeto</span>
       </label>
+      <span className="interruptor-dica">
+        Usa o git worktree: cada agente ganha a sua pasta, ligada ao mesmo repositório. Assim um não mexe no arquivo do outro, e você junta o que der certo.
+      </span>
       <div className="campo">
         <span>Começar com</span>
         <div className="opcoes">
@@ -127,6 +137,12 @@ function NovoVertice({ sessaoId, papelInicial }: { sessaoId: string; papelInicia
   const [nivel, setNivel] = useState<Nivel>(NIVEL_PADRAO[papelInicial ?? 'construtor']);
   const [tarefa, setTarefa] = useState('');
   const e = useLoja();
+  // O agente sugerido para o papel pode não estar instalado: cai no primeiro que está.
+  useEffect(() => {
+    if (!agentes.length || agentes.some((a) => a.agente === agente && a.instalado)) return;
+    const primeiro = agentes.find((a) => a.instalado && a.agente !== 'terminal') ?? agentes.find((a) => a.instalado);
+    if (primeiro) setAgente(primeiro.agente);
+  }, [agentes, agente]);
   const ativos = e.vertices.filter((v) => v.sessaoId === sessaoId && v.estado === 'trabalhando').length;
 
   return (
@@ -168,11 +184,12 @@ function NovoVertice({ sessaoId, papelInicial }: { sessaoId: string; papelInicia
           <span>Nível</span>
           <div className="segmentos">
             {(['barato', 'padrao', 'forte'] as Nivel[]).map((n) => (
-              <button key={n} className={nivel === n ? 'ativo' : ''} onClick={() => setNivel(n)}>
+              <button key={n} className={nivel === n ? 'ativo' : ''} title={DESCRICAO_NIVEL[n]} onClick={() => setNivel(n)}>
                 {NOME_NIVEL[n]}
               </button>
             ))}
           </div>
+          <p className="dica-campo">{DESCRICAO_NIVEL[nivel]}</p>
         </div>
       </div>
       <label className="campo">
