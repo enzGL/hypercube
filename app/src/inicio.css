@@ -3,11 +3,13 @@
 /* ---------- tela ---------- */
 .inicio { position: relative; overflow-y: auto; overflow-x: hidden; background: var(--fundo); isolation: isolate; }
 .fundo-dither {
-  position: absolute; z-index: -1; pointer-events: none;
-  top: -20px; right: -40px; width: min(60%, 900px); height: 720px;
-  opacity: .3;
-  -webkit-mask-image: radial-gradient(ellipse 70% 65% at 62% 46%, #000 45%, transparent 100%);
-  mask-image: radial-gradient(ellipse 70% 65% at 62% 46%, #000 45%, transparent 100%);
+  /* No centro da janela inteira, parado atrás do conteúdo enquanto a página rola. */
+  position: fixed; z-index: -1; pointer-events: none;
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: min(100vw, 980px); height: min(100vh, 820px);
+  opacity: .26;
+  -webkit-mask-image: radial-gradient(ellipse 55% 55% at 50% 50%, #000 40%, transparent 100%);
+  mask-image: radial-gradient(ellipse 55% 55% at 50% 50%, #000 40%, transparent 100%);
 }
 .inicio-conteudo { max-width: 960px; margin: 0 auto; padding: 56px 32px 48px; }
 
