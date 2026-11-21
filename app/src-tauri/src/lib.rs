@@ -61,10 +61,11 @@ async fn processos_criar_worktree(pasta: String, ramo: String) -> R<String> {
     em_fundo(move || processos::criar_worktree(&pasta, &ramo)).await?
 }
 
-/// Uso do plano ainda não é lido de verdade: lista vazia (a interface esconde os chips).
+/// Uso do plano do Claude, lido da linha de status da última sessão aberta pelo app.
+/// Vazio enquanto nenhuma sessão do Claude rodou. O Codex ainda não informa uso.
 #[tauri::command]
-async fn processos_uso_do_plano() -> R<Vec<Value>> {
-    Ok(vec![])
+async fn processos_uso_do_plano() -> R<Vec<hooks::UsoPlano>> {
+    Ok(hooks::ULTIMO_USO.lock().unwrap().clone().into_iter().collect())
 }
 
 // ---------- sistema ----------

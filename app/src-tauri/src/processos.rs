@@ -99,6 +99,16 @@ pub struct AgenteDetectado {
 
 pub const AGENTES: [&str; 5] = ["claude", "codex", "gemini", "kiro", "opencode"];
 
+/// "codex-cli 0.169.0" → "0.169.0"; "2.1.322 (Claude Code)" → "2.1.322". Sem número, a linha curta.
+pub fn numero_da_versao(linha: &str) -> String {
+    linha
+        .split(|c: char| c.is_whitespace() || c == '(' || c == ')' || c == ',')
+        .map(|p| p.trim_start_matches('v'))
+        .find(|p| p.contains('.') && p.chars().next().is_some_and(|c| c.is_ascii_digit()))
+        .map(str::to_string)
+        .unwrap_or_else(|| linha.chars().take(24).collect())
+}
+
 pub fn detectar_um(agente: &str) -> AgenteDetectado {
     let mut r = AgenteDetectado { agente: agente.into(), instalado: false, versao: None, comando: agente.into() };
     let Some(prog) = resolver(agente) else { return r };
@@ -106,7 +116,7 @@ pub fn detectar_um(agente: &str) -> AgenteDetectado {
     if let Some((_, out)) = rodar_com_limite(comando_sem_janela(&prog, &["--version"]), Duration::from_secs(8)) {
         let linha = out.lines().map(str::trim).find(|l| !l.is_empty()).unwrap_or("");
         if !linha.is_empty() {
-            r.versao = Some(linha.chars().take(80).collect());
+            r.versao = Some(numero_da_versao(linha));
         }
     }
     r

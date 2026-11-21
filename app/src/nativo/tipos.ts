@@ -13,6 +13,8 @@ export interface OpcoesTerminal {
   worktree?: string;
   cols?: number;
   rows?: number;
+  /** Primeira tarefa: o app nativo entrega ao agente quando ele estiver pronto para receber. */
+  tarefa?: string;
 }
 
 /** Eventos de estado vindos dos hooks HTTP dos agentes (127.0.0.1 + token). */

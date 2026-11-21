@@ -56,11 +56,17 @@ export function Terminal({ terminalId, focado, aoFocar }: { terminalId: string; 
     obs.observe(el);
     requestAnimationFrame(ajustar);
 
-    let desligar = () => {};
+    // Liga o ouvinte antes de pedir o histórico; o que chegar no meio fica guardado e entra depois dele.
+    let pendente: string[] | null = [];
+    const desligar = nativo.terminais.aoReceber(terminalId, (d) => {
+      if (pendente) pendente.push(d);
+      else term.write(d);
+    });
     nativo.terminais.historico(terminalId).then((h) => {
       if (!vivo) return;
       term.write(h);
-      desligar = nativo.terminais.aoReceber(terminalId, (d) => term.write(d));
+      for (const d of pendente ?? []) term.write(d);
+      pendente = null;
     });
     const entrada = term.onData((d) => nativo.terminais.escrever(terminalId, d));
 

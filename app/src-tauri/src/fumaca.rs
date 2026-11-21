@@ -102,7 +102,7 @@ pub fn rodar(app: AppHandle) {
             rotulo: "Fumaça".into(),
             worktree: None,
             cols: Some(100),
-            rows: Some(30),
+            rows: Some(30), tarefa: None,
         };
         match estado.terminais.criar(&app, &estado.hooks, opcoes) {
             Ok(id) => {
@@ -141,7 +141,7 @@ pub fn rodar(app: AppHandle) {
                 rotulo: "Fumaça Claude".into(),
                 worktree: None,
                 cols: Some(120),
-                rows: Some(40),
+                rows: Some(40), tarefa: None,
             };
             match estado.terminais.criar(&app, &estado.hooks, o) {
                 Ok(id) => {
@@ -167,7 +167,7 @@ pub fn rodar(app: AppHandle) {
                 rotulo: "Fica aberto".into(),
                 worktree: None,
                 cols: None,
-                rows: None,
+                rows: None, tarefa: None,
             };
             if let Ok(id) = estado.terminais.criar(&app, &estado.hooks, aberto) {
                 std::thread::sleep(Duration::from_secs(2));

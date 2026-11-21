@@ -25,6 +25,43 @@ pub struct OpcoesTerminal {
     pub worktree: Option<String>,
     pub cols: Option<u16>,
     pub rows: Option<u16>,
+    /// Primeira tarefa. No Claude e no Codex vai como argumento (o agente espera a pasta
+    /// ser liberada e só então começa); nos outros, é digitada quando o terminal abre.
+    #[serde(default)]
+    pub tarefa: Option<String>,
+}
+
+/// Texto que o Claude Code mostra quando a pasta ainda não foi liberada.
+pub const PEDIDO_CONFIAR: &str = "Confiar nesta pasta? O agente quer sua permissão para ler, editar e rodar arquivos aqui.";
+
+/// Tira as sequências de controle do terminal para procurar texto na saída.
+fn texto_limpo(s: &str) -> String {
+    let mut r = String::with_capacity(s.len());
+    let mut it = s.chars().peekable();
+    while let Some(c) = it.next() {
+        if c == '\x1b' {
+            if it.peek() == Some(&'[') {
+                it.next();
+                while let Some(&d) = it.peek() {
+                    it.next();
+                    if ('@'..='~').contains(&d) {
+                        break;
+                    }
+                }
+            } else {
+                it.next();
+            }
+            r.push(' ');
+        } else if !c.is_control() || c == '\n' {
+            r.push(c);
+        }
+    }
+    r
+}
+
+pub fn pede_confiar(saida: &str) -> bool {
+    let t: String = texto_limpo(saida).split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase();
+    t.contains("trust this folder") || t.contains("do you trust the files")
 }
 
 #[derive(Serialize, Clone)]
@@ -107,6 +144,9 @@ impl Terminais {
     pub fn criar(&self, app: &AppHandle, hooks: &hooks::ServidorHooks, o: OpcoesTerminal) -> Result<String, String> {
         let id = format!("t{}-{}", hooks::agora_ms() % 1_000_000_000, self.proximo.fetch_add(1, Ordering::Relaxed));
         let (prog, mut args) = programa(&o.agente)?;
+        // Tarefa como argumento só quando o programa roda direto (via cmd.exe o texto viraria comando).
+        let tarefa_no_argumento =
+            (o.agente == "claude" || o.agente == "codex") && !processos::precisa_cmd(&prog) && o.tarefa.is_some();
 
         // Claude Code: hooks desta sessão num settings temporário (--settings), sem tocar no do usuário.
         let mut settings = None;
@@ -128,8 +168,15 @@ impl Terminais {
             CommandBuilder::new(&prog)
         };
         cmd.args(&args);
+        if tarefa_no_argumento {
+            cmd.arg(o.tarefa.as_deref().unwrap_or_default());
+        }
         cmd.cwd(pasta_de_trabalho(&o));
         cmd.env("HYPERCUBE_TERMINAL_ID", &id);
+        // Se o Hypercube foi aberto de dentro de outro agente, o filho não herda as marcas dele.
+        for k in ["CLAUDECODE", "CLAUDE_CODE_CHILD_SESSION", "CLAUDE_CODE_ENTRYPOINT", "CLAUDE_CODE_SSE_PORT"] {
+            cmd.env_remove(k);
+        }
         cmd.env("TERM", "xterm-256color");
         cmd.env("COLORTERM", "truecolor");
 
@@ -147,10 +194,13 @@ impl Terminais {
 
         // Leitura da saída.
         let (app2, id2, hist2, esc2) = (app.clone(), id.clone(), historico.clone(), escritor.clone());
+        let olhar_confiar = o.agente == "claude";
         std::thread::Builder::new().name(format!("pty-{id}")).spawn(move || {
             let mut buf = [0u8; 16 * 1024];
             let mut pendente = Vec::new();
             let mut cursor_respondido = false;
+            let mut confiar_avisado = !olhar_confiar;
+            let mut recente = String::new();
             loop {
                 match leitor.read(&mut buf) {
                     Ok(0) | Err(_) => break,
@@ -171,6 +221,30 @@ impl Terminais {
                         }
                         if texto.is_empty() {
                             continue;
+                        }
+                        if !confiar_avisado {
+                            recente.push_str(&texto);
+                            if recente.len() > 8192 {
+                                let mut c = recente.len() - 4096;
+                                while !recente.is_char_boundary(c) {
+                                    c += 1;
+                                }
+                                recente.drain(..c);
+                            }
+                            if pede_confiar(&recente) {
+                                confiar_avisado = true;
+                                let _ = app2.emit(
+                                    "evento_agente",
+                                    hooks::EventoAgente {
+                                        tipo: "Notification".into(),
+                                        terminal_id: id2.clone(),
+                                        momento: hooks::agora_ms(),
+                                        ferramenta: None,
+                                        mensagem: Some(PEDIDO_CONFIAR.into()),
+                                        subagente_id: None,
+                                    },
+                                );
+                            }
                         }
                         {
                             let mut h = hist2.lock().unwrap();
@@ -196,6 +270,15 @@ impl Terminais {
             let _ = app3.emit("terminal_fim", Fim { id: id3, codigo });
         }).map_err(|e| e.to_string())?;
 
+        if let (false, Some(t)) = (tarefa_no_argumento, o.tarefa.clone()) {
+            let esc = escritor.clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(2500));
+                if let Ok(mut w) = esc.lock() {
+                    let _ = w.write_all(format!("{t}\r").as_bytes()).and_then(|_| w.flush());
+                }
+            });
+        }
         eprintln!("[terminais] criado {id} ({}, \"{}\")", o.agente, o.rotulo);
         self.mapa.lock().unwrap().insert(id.clone(), Terminal { escritor, mestre: par.master, matador, historico, settings });
         Ok(id)
@@ -243,7 +326,14 @@ impl Terminais {
 
 #[cfg(test)]
 mod testes {
-    use super::decodificar;
+    use super::{decodificar, pede_confiar};
+
+    #[test]
+    fn acha_o_pedido_de_confiar() {
+        let tela = "\x1b[1m Quick safety check: Is this a project you created or one you trust?\x1b[0m\r\n \x1b[2m❯\x1b[0m No, exit\r\n   Yes, I trust\x1b[22m this folder";
+        assert!(pede_confiar(tela));
+        assert!(!pede_confiar("Responda só com a palavra OK."));
+    }
 
     #[test]
     fn nao_corta_utf8() {

@@ -313,7 +313,9 @@ export async function criarVertice(
   const worktree = sessao.worktrees && papel !== 'revisor' && papel !== 'lider'
     ? await nativo.processos.criarWorktree(sessao.pasta, nome.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-'))
     : undefined;
-  const terminalId = await nativo.terminais.criar({ agente, pasta: sessao.pasta, rotulo: `${nome} · ${NOME_NIVEL[nivel]}`, worktree });
+  // No app nativo a tarefa vai junto com o terminal (o agente pode abrir pedindo para confiar na pasta).
+  const tarefaNativa = nativo.modo === 'tauri' ? tarefa : undefined;
+  const terminalId = await nativo.terminais.criar({ agente, pasta: sessao.pasta, rotulo: `${nome} · ${NOME_NIVEL[nivel]}`, worktree, tarefa: tarefaNativa });
   const v: Vertice = {
     id: novoId('v'),
     sessaoId,
@@ -336,7 +338,7 @@ export async function criarVertice(
     vertices: [...e.vertices, v],
     ordem: { ...e.ordem, [sessaoId]: [...(e.ordem[sessaoId] ?? []), v.id] },
   }));
-  if (tarefa) window.setTimeout(() => mandar(v.id, tarefa), 120);
+  if (tarefa && !tarefaNativa) window.setTimeout(() => mandar(v.id, tarefa), 120);
   return v;
 }
 
@@ -366,7 +368,17 @@ export function mandarParaTodos(sessaoId: string, texto: string) {
 
 export function responder(verticeId: string, sim: boolean) {
   const v = estado.vertices.find((x) => x.id === verticeId);
-  if (v?.terminalId) nativo.terminais.escrever(v.terminalId, sim ? 's' : 'n');
+  if (!v?.terminalId) return;
+  if (nativo.modo !== 'tauri') {
+    nativo.terminais.escrever(v.terminalId, sim ? 's' : 'n');
+    return;
+  }
+  // Claude Code: o pedido de confiar na pasta é um menu com "No, exit" marcado (seta para baixo + Enter
+  // escolhe "Yes"); os pedidos de permissão aceitam 1 para sim e Esc para não.
+  const confiar = v.pergunta?.startsWith('Confiar nesta pasta');
+  const tecla = confiar ? (sim ? '\x1b[B\r' : '\r') : sim ? '1' : '\x1b';
+  nativo.terminais.escrever(v.terminalId, tecla);
+  atualizarVertice(v.id, () => ({ estado: 'trabalhando', pergunta: undefined, esperandoDesde: undefined, ultimaAcao: sim ? 'Permissão dada' : 'Permissão negada' }));
 }
 
 export function interromper(verticeId: string) {

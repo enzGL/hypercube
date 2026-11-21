@@ -481,6 +481,18 @@ export function Inicio({ nome }: { nome?: string }) {
             {usos.map((u) => (
               <CartaoUso key={u.provedor} uso={u} aoAtualizar={atualizarUso} />
             ))}
+            {!usos.some((u) => u.provedor === 'Claude') && (
+              <article className="ini-uso ini-uso-espera">
+                <header className="ini-uso-topo">
+                  <span className="ini-uso-avatar" style={{ color: COR_AGENTE.claude, borderColor: COR_AGENTE.claude }}>C</span>
+                  <b className="ini-uso-nome">{NOME_AGENTE.claude}</b>
+                  <button className="icone-botao" onClick={atualizarUso} aria-label="Atualizar uso do Claude" title="Atualizar">
+                    <Ic d={IC_ATUALIZAR} tamanho={14} />
+                  </button>
+                </header>
+                <p className="ini-uso-aviso">O uso do plano aparece aqui assim que uma sessão do Claude rodar pelo Hypercube.</p>
+              </article>
+            )}
             <CartaoAtividade dias={dias} aoAtualizar={() => setDias(atividade90Dias())} />
           </div>
         </section>
