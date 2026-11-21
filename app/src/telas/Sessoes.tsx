@@ -3,6 +3,8 @@ import { LogoAgente } from '../componentes/LogoAgente';
 import {
   abrirDialogo,
   definirColunas,
+  definirOrquestracao,
+  temOrquestracao,
   definirLayout,
   encerrar,
   escolherVencedor,
@@ -32,7 +34,7 @@ import { Hiper } from '../componentes/Hiper';
 import { formatarCusto, formatarTokens, Icone, SimboloEstado } from '../componentes/Pecas';
 import { Terminal } from '../componentes/Terminal';
 import { Avisos } from '../componentes/Avisos';
-import { abrirEditarAgente, IconeLapis, MascoteAgente, NomeEditavel } from '../componentes/EditarAgente';
+import { abrirEditarAgente, IconeLapis, MascoteAgente, NomeEditavel, primeiraEntrada } from '../componentes/EditarAgente';
 
 const LAYOUTS: { id: Layout; nome: string }[] = [
   { id: 'auto', nome: 'Automático' },
@@ -87,6 +89,14 @@ export function Sessoes() {
           </button>
         </div>
       )}
+      <button
+        className={`botao ${temOrquestracao(sessao) ? 'ligado' : ''}`}
+        aria-pressed={temOrquestracao(sessao)}
+        title={temOrquestracao(sessao) ? 'Voltar para o terminal padrão (some o painel de orquestração)' : 'Ligar a orquestração nesta sessão'}
+        onClick={() => definirOrquestracao(sessao.id, !temOrquestracao(sessao))}
+      >
+        <Icone nome="orquestracao" /> Orquestração
+      </button>
       <button className="botao primario" onClick={() => abrirDialogo({ tipo: 'novoVertice', sessaoId: sessao.id })}>
         <Icone nome="mais" /> Agente
       </button>
@@ -103,9 +113,9 @@ export function Sessoes() {
         <div className="vazio">
           <Hiper estado="repouso" tamanho={150} />
           <h2>Nenhum agente nesta sessão</h2>
-          <p>Cada agente tem um papel: líder, batedor, construtor ou revisor. Cada um ganha o seu terminal.</p>
+          <p>Cada agente ganha o seu terminal. Use um agente comum ou um predefinido, que já vem com a skill do seu ofício.</p>
           <div className="vazio-acoes">
-            <button className="botao primario" onClick={() => abrirDialogo({ tipo: 'novoVertice', sessaoId: sessao.id, papel: 'lider' })}>
+            <button className="botao primario" onClick={() => abrirDialogo({ tipo: 'novoVertice', sessaoId: sessao.id, papel: 'agente' })}>
               <Icone nome="mais" /> Criar agente
             </button>
           </div>
@@ -162,7 +172,7 @@ function LayoutFoco({ e, visiveis }: { e: Estado; visiveis: Vertice[] }) {
           {outros.map((v) => (
             <button key={v.id} className={`cartao-mini estado-borda-${v.estado}`} onClick={() => focar(v.id)}>
               <div className="cartao-mini-topo">
-                <MascoteAgente cor={corDoAgente(v)} tamanho={18} estado={v.estado} />
+                <MascoteAgente cor={corDoAgente(v)} papel={v.papel} tamanho={18} estado={v.estado} />
                 <b>{nomeDoAgente(v)}</b>
                 <SimboloEstado estado={v.estado} />
               </div>
@@ -180,6 +190,7 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
   const [confirmar, setConfirmar] = useState(false);
   const [arrastandoSobre, setArrastandoSobre] = useState(false);
   const [renomeando, setRenomeando] = useState(false);
+  const [entrada] = useState(() => primeiraEntrada(v.id));
   const nome = nomeDoAgente(v);
   const cor = corDoAgente(v);
   const focado = e.focoId === v.id;
@@ -206,7 +217,7 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
       }}
     >
       <header className="painel-cabeca com-cor-agente" style={{ ['--cor-agente' as string]: cor }}>
-        <MascoteAgente cor={cor} tamanho={20} estado={v.estado} />
+        <MascoteAgente cor={cor} papel={v.papel} tamanho={28} estado={v.estado} entrada={entrada} />
         <div className="painel-nome">
           <span className="painel-nome-linha">
             {renomeando ? (

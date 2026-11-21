@@ -23,7 +23,7 @@ const NOME_MODO: Record<Modo, string> = { normal: 'Normal', planejar: 'Planejar'
 const DICA_MODO: Record<Modo, string> = {
   normal: 'Normal: um agente faz a tarefa.',
   planejar: 'Planejar: o agente só monta o plano, sem mudar arquivos.',
-  equipe: 'Equipe: um líder divide a tarefa com um batedor, um construtor e um revisor.',
+  equipe: 'Equipe: um líder divide a tarefa com um explorador, um construtor e um revisor.',
 };
 const AGENTES_PADRAO: Agente[] = ['claude', 'codex', 'gemini'];
 
@@ -104,7 +104,7 @@ async function novoTerminal() {
     s = criarSessao(nomePasta(pasta), pasta, false);
   }
   selecionarSessao(s.id);
-  await criarVertice(s.id, 'construtor', 'terminal', 'barato', undefined, { nome: 'Terminal' });
+  await criarVertice(s.id, 'agente', 'terminal', 'barato', undefined, { nome: 'Terminal' });
 }
 
 function novoProjeto() {
@@ -218,16 +218,16 @@ function CaixaComando({ pastas }: { pastas: string[] }) {
     setEnviando(true);
     try {
       const nome = t.length > 38 ? `${t.slice(0, 36).trimEnd()}…` : t;
-      const s = criarSessao(nome, pasta, modo === 'equipe');
+      const s = criarSessao(nome, pasta, modo === 'equipe', modo === 'equipe');
       if (modo === 'equipe') {
         await criarVertice(s.id, 'lider', agente, 'forte', `Divida esta tarefa entre os agentes: ${t}`);
         // Só com os agentes instalados: sem Gemini ou Codex, o papel fica com o agente escolhido.
         const tem = (a: Agente) => listaAgentes.includes(a);
         await criarVertice(s.id, 'batedor', tem('gemini') ? 'gemini' : agente, 'barato');
         await criarVertice(s.id, 'construtor', tem('codex') ? 'codex' : agente, 'padrao');
-        await criarVertice(s.id, 'revisor', 'claude', 'padrao');
+        await criarVertice(s.id, 'revisor', agente, 'padrao');
       } else {
-        await criarVertice(s.id, 'lider', agente, 'forte', modo === 'planejar' ? `Só planeje, sem mudar arquivos: ${t}` : t);
+        await criarVertice(s.id, 'agente', agente, 'padrao', modo === 'planejar' ? `Só planeje, sem mudar arquivos: ${t}` : t);
       }
       setTexto('');
     } finally {

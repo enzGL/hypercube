@@ -21,6 +21,7 @@ import {
   mandar,
   NOME_AGENTE,
   nomeDoAgente,
+  ordenados,
   resumoOrquestracao,
   trabalhadoresDoLider,
   useLoja,
@@ -87,7 +88,8 @@ export function PainelOrquestracao({ sessaoId }: Props) {
     if (sid && lider) memoria.aba[sid] = lider.id;
   }, [sid, lider]);
 
-  const workers = trabalhadoresDoLider(e, lider?.id ?? null);
+  // Sem líder, o painel mostra todos os agentes da sessão: dá para orquestrar sem papéis.
+  const workers = lider ? trabalhadoresDoLider(e, lider.id) : ordenados(e, sid ?? '').filter((v) => v.papel !== 'subagente');
   const r = resumoOrquestracao(workers, pref.limite);
   const usoLider = uso.find((u) => u.provedor.toLowerCase() === (lider?.agente ?? 'claude'));
 
@@ -175,7 +177,7 @@ export function PainelOrquestracao({ sessaoId }: Props) {
 // ---------- canvas ----------
 
 function CanvasPlanner({ lider, workers }: { lider: Vertice | null; workers: Vertice[] }) {
-  const vazio = !lider || workers.length === 0;
+  const vazio = workers.length === 0;
   const { nos, arestas } = useMemo(() => (vazio ? { nos: [], arestas: [] } : montarGrafo(lider, workers)), [vazio, lider, workers]);
   const chave = `${lider?.id ?? 'nada'}-${workers.length}`;
   return (
@@ -204,9 +206,9 @@ function CanvasPlanner({ lider, workers }: { lider: Vertice | null; workers: Ver
       {vazio && (
         <div className="po-vazio">
           <HiperMini estado="repouso" tamanho={28} />
-          <b>{lider ? 'Este líder ainda não passou trabalho para ninguém' : 'Nenhum líder nesta sessão'}</b>
+          <b>{lider ? 'Este líder ainda não passou trabalho para ninguém' : 'Nenhum agente nesta sessão'}</b>
           <span className="secundario">
-            {lider ? 'Quando ele chamar outros agentes, eles aparecem aqui ligados a ele.' : 'Use o + nas abas para criar um líder que divide o trabalho.'}
+            {lider ? 'Quando ele chamar outros agentes, eles aparecem aqui ligados a ele.' : 'Crie agentes na sessão. Se quiser que um deles divida o trabalho, use o + para um Líder.'}
           </span>
         </div>
       )}
@@ -237,7 +239,6 @@ function ControlesZoom() {
 }
 
 function montarGrafo(lider: Vertice | null, workers: Vertice[]): { nos: NoVertice[]; arestas: Edge[] } {
-  if (!lider) return { nos: [], arestas: [] };
   const largura = 250;
   const total = workers.length;
   const no = (v: Vertice, x: number, y: number): NoVertice => ({
@@ -246,6 +247,8 @@ function montarGrafo(lider: Vertice | null, workers: Vertice[]): { nos: NoVertic
     position: { x, y },
     data: { papel: v.papel, agente: v.agente, nivel: v.nivel, tarefa: v.tarefa ?? '', v },
   });
+  // Sem líder: os agentes lado a lado, sem ligações.
+  if (!lider) return { nos: workers.map((w, i) => no(w, i * largura, 0)), arestas: [] };
   const nos = [no(lider, ((total - 1) * largura) / 2, 0), ...workers.map((w, i) => no(w, i * largura, 200))];
   const arestas: Edge[] = workers.map((w) => {
     const ativa = w.estado === 'trabalhando';
@@ -308,7 +311,7 @@ function Resumo({ r, workers }: { r: ReturnType<typeof resumoOrquestracao>; work
           {workers.map((w) => (
             <li key={w.id}>
               <button onClick={() => focar(w.id)} title="Abrir o terminal">
-                <MascoteAgente cor={corDoAgente(w)} tamanho={16} estado={w.estado} />
+                <MascoteAgente cor={corDoAgente(w)} papel={w.papel} tamanho={16} estado={w.estado} />
                 <span className="po-exec-texto">
                   <b>{nomeDoAgente(w)}</b>
                   <span className="secundario">{w.estado === 'esperando' ? w.pergunta : w.ultimaAcao ?? w.tarefa}</span>

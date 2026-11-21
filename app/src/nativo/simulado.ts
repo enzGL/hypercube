@@ -104,7 +104,7 @@ function montarRoteiro(agente: Agente, pedido: string): Roteiro {
   if (longo) {
     passos.push(
       { espera: 1400, texto: `${AZUL}◐ Dividindo em 3 tarefas…${FIM}\r\n`, evento: { tipo: 'PreToolUse', ferramenta: 'Plan', tokens: 3200, custo: 0.03 } },
-      { espera: 1300, texto: ferramenta('Task', 'Batedor', 'mapear pontos de cobrança'), evento: { tipo: 'SubagentStart', mensagem: 'Mapear pontos de cobrança', subagenteId: 'sub-1' } },
+      { espera: 1300, texto: ferramenta('Task', 'Explorador', 'mapear pontos de cobrança'), evento: { tipo: 'SubagentStart', mensagem: 'Mapear pontos de cobrança', subagenteId: 'sub-1' } },
       { espera: 1500, texto: ferramenta('Task', 'Construtor', 'nova tentativa sem cobrança dupla') },
       { espera: 1500, texto: ferramenta('Task', 'Revisor', 'revisão cruzada do diff') },
       { espera: 6000, texto: `  ${CINZA}esperando os agentes entregarem resultado.md…${FIM}\r\n`, evento: { tipo: 'SubagentStop', subagenteId: 'sub-1', tokens: 900, custo: 0.004 } },

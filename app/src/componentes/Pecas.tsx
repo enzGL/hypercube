@@ -1,5 +1,6 @@
 // Peças pequenas reaproveitadas: símbolo de estado, mini-mascote dos agentes, ícones.
 import type { ReactNode } from 'react';
+import { MascoteAgente } from './EditarAgente';
 import { COR_PAPEL, ESTADO_INFO, type EstadoVertice, type Papel } from '../estado/loja';
 
 export function SimboloEstado({ estado, comNome = false }: { estado: EstadoVertice; comNome?: boolean }) {
@@ -14,22 +15,9 @@ export function SimboloEstado({ estado, comNome = false }: { estado: EstadoVerti
   );
 }
 
-/** Mini-mascote de cada agente: o cubo numa cor só, com olhos ovais brancos. */
+/** Mini-mascote de cada papel: o cubo na cor do papel, com o acessório dele. */
 export function MiniVertice({ papel, tamanho = 20, estado }: { papel: Papel; tamanho?: number; estado?: EstadoVertice }) {
-  const c = COR_PAPEL[papel];
-  return (
-    <span className={`mini-vertice ${estado === 'trabalhando' ? 'mini-ativo' : ''}`} style={{ width: tamanho, height: tamanho }} aria-hidden="true">
-      <svg viewBox="40 34 120 128" width={tamanho} height={tamanho}>
-        <path d="M100 42 L150 70 L100 98 L50 70 Z" fill={c} stroke={c} strokeWidth="12" strokeLinejoin="round" />
-        <path d="M100 42 L150 70 L100 98 L50 70 Z" fill="#FFFFFF" opacity=".28" />
-        <path d="M50 70 L100 98 L100 154 L50 126 Z" fill={c} stroke={c} strokeWidth="12" strokeLinejoin="round" />
-        <path d="M150 70 L100 98 L100 154 L150 126 Z" fill={c} stroke={c} strokeWidth="12" strokeLinejoin="round" />
-        <path d="M150 70 L100 98 L100 154 L150 126 Z" fill="#000000" opacity=".25" />
-        <ellipse cx="78" cy="114" rx="8" ry="11" fill="#FFFFFF" />
-        <ellipse cx="122" cy="114" rx="8" ry="11" fill="#FFFFFF" />
-      </svg>
-    </span>
-  );
+  return <MascoteAgente cor={COR_PAPEL[papel]} papel={papel} tamanho={tamanho} estado={estado} />;
 }
 
 const caminhos: Record<string, ReactNode> = {

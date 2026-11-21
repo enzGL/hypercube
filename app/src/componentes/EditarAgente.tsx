@@ -27,29 +27,110 @@ import '../agentes.css';
 
 /** Plural do papel para "Usar como padrão para …". */
 const PLURAL_PAPEL: Record<Papel, string> = {
+  agente: 'agentes comuns',
   lider: 'líderes',
-  batedor: 'batedores',
+  batedor: 'exploradores',
   construtor: 'construtores',
   revisor: 'revisores',
-  consertador: 'consertadores',
+  consertador: 'mecânicos',
   subagente: 'subagentes',
 };
 
-/** O mascote do agente (mesmo desenho do MiniVertice), na cor escolhida. */
-export function MascoteAgente({ cor, tamanho = 20, estado }: { cor: string; tamanho?: number; estado?: EstadoVertice }) {
+/** O mascote do agente: o cubo na cor escolhida e o acessório do papel. */
+export function MascoteAgente({
+  cor,
+  tamanho = 20,
+  estado,
+  papel,
+  entrada,
+}: {
+  cor: string;
+  tamanho?: number;
+  estado?: EstadoVertice;
+  papel?: Papel;
+  /** Anima a entrada (as faces se juntam). Só na primeira vez que o agente aparece. */
+  entrada?: boolean;
+}) {
+  const acessorio = papel ? ACESSORIO[papel] : null;
+  // Com acessório a caixa cresce para caber o chapéu, o headset ou a chave.
+  const caixa = acessorio ? '28 38 160 160' : '40 64 120 128';
   return (
-    <span className={`mini-vertice ${estado === 'trabalhando' ? 'mini-ativo' : ''}`} style={{ width: tamanho, height: tamanho }} aria-hidden="true">
-      <svg viewBox="40 34 120 128" width={tamanho} height={tamanho}>
-        <path d="M100 42 L150 70 L100 98 L50 70 Z" fill={cor} stroke={cor} strokeWidth="12" strokeLinejoin="round" />
-        <path d="M100 42 L150 70 L100 98 L50 70 Z" fill="#FFFFFF" opacity=".28" />
-        <path d="M50 70 L100 98 L100 154 L50 126 Z" fill={cor} stroke={cor} strokeWidth="12" strokeLinejoin="round" />
-        <path d="M150 70 L100 98 L100 154 L150 126 Z" fill={cor} stroke={cor} strokeWidth="12" strokeLinejoin="round" />
-        <path d="M150 70 L100 98 L100 154 L150 126 Z" fill="#000000" opacity=".25" />
-        <ellipse cx="78" cy="114" rx="8" ry="11" fill="#FFFFFF" />
-        <ellipse cx="122" cy="114" rx="8" ry="11" fill="#FFFFFF" />
+    <span
+      className={`mini-vertice ${estado === 'trabalhando' ? 'mini-ativo' : ''} ${entrada ? 'mascote-entrada' : ''}`}
+      style={{ width: tamanho, height: tamanho }}
+      aria-hidden="true"
+    >
+      <svg viewBox={caixa} width={tamanho} height={tamanho} overflow="visible">
+        <g className="m-face m-topo">
+          <path d="M100 72 L150 100 L100 128 L50 100 Z" fill={cor} stroke={cor} strokeWidth="12" strokeLinejoin="round" />
+          <path d="M100 72 L150 100 L100 128 L50 100 Z" fill="#FFFFFF" opacity=".28" />
+        </g>
+        <g className="m-face m-esq">
+          <path d="M50 100 L100 128 L100 184 L50 156 Z" fill={cor} stroke={cor} strokeWidth="12" strokeLinejoin="round" />
+        </g>
+        <g className="m-face m-dir">
+          <path d="M150 100 L100 128 L100 184 L150 156 Z" fill={cor} stroke={cor} strokeWidth="12" strokeLinejoin="round" />
+          <path d="M150 100 L100 128 L100 184 L150 156 Z" fill="#000000" opacity=".25" />
+        </g>
+        <g className="m-olhos">
+          <ellipse cx="78" cy="144" rx="8" ry="11" fill="#FFFFFF" />
+          <ellipse cx="122" cy="144" rx="8" ry="11" fill="#FFFFFF" />
+        </g>
+        {acessorio && <g className="m-acessorio">{acessorio}</g>}
       </svg>
     </span>
   );
+}
+
+const CLARO = '#DDE3F5';
+
+/** Um acessório por papel: diz o ofício de longe e continua legível em 14 a 20 px. */
+const ACESSORIO: Partial<Record<Papel, JSX.Element>> = {
+  lider: (
+    <>
+      <path d="M48 130 Q46 56 100 54 Q154 56 152 130" fill="none" stroke={CLARO} strokeWidth="8" strokeLinecap="round" />
+      <rect x="36" y="116" width="20" height="34" rx="8" fill={CLARO} />
+      <rect x="144" y="116" width="20" height="34" rx="8" fill={CLARO} />
+      <path d="M46 150 Q50 178 82 174" fill="none" stroke={CLARO} strokeWidth="5" strokeLinecap="round" />
+      <circle cx="86" cy="173" r="7" fill={CLARO} />
+    </>
+  ),
+  batedor: (
+    <>
+      <ellipse cx="100" cy="94" rx="64" ry="14" fill="#B8935A" stroke="#7A5A2E" strokeWidth="3" />
+      <path d="M68 92 Q70 50 100 48 Q130 50 132 92 Z" fill="#D2B077" stroke="#7A5A2E" strokeWidth="3" strokeLinejoin="round" />
+      <path d="M69 80 L131 80 L132 91 L68 91 Z" fill="#6E4F26" />
+    </>
+  ),
+  construtor: (
+    <>
+      <ellipse cx="100" cy="96" rx="52" ry="12" fill="#F2C230" stroke="#B98A0E" strokeWidth="3" />
+      <path d="M62 95 Q62 48 100 44 Q138 48 138 95 Z" fill="#F2C230" stroke="#B98A0E" strokeWidth="3" strokeLinejoin="round" />
+      <path d="M100 46 L100 93" fill="none" stroke="#B98A0E" strokeWidth="7" strokeLinecap="round" />
+    </>
+  ),
+  revisor: (
+    <>
+      <circle cx="78" cy="144" r="17" fill="none" stroke="#14182E" strokeWidth="5" />
+      <circle cx="122" cy="144" r="17" fill="none" stroke="#14182E" strokeWidth="5" />
+      <path d="M95 142 Q100 136 105 142" fill="none" stroke="#14182E" strokeWidth="4" strokeLinecap="round" />
+      <path d="M61 140 L52 134 M139 140 L148 134" fill="none" stroke="#14182E" strokeWidth="4" strokeLinecap="round" />
+    </>
+  ),
+  consertador: (
+    <g transform="rotate(32 166 140)">
+      <path d="M154 92 L154 114 Q166 128 178 114 L178 92 L170 92 L170 108 L162 108 L162 92 Z" fill={CLARO} stroke="#9AA3C7" strokeWidth="2" strokeLinejoin="round" />
+      <rect x="160" y="120" width="12" height="56" rx="6" fill={CLARO} stroke="#9AA3C7" strokeWidth="2" />
+    </g>
+  ),
+};
+
+/** Agentes que já fizeram a entrada: a animação roda só na primeira vez que cada um aparece. */
+const jaEntraram = new Set<string>();
+export function primeiraEntrada(id: string): boolean {
+  if (jaEntraram.has(id)) return false;
+  jaEntraram.add(id);
+  return true;
 }
 
 // ---------- estado do cartão ----------
@@ -171,7 +252,7 @@ function CartaoEditar({ v, ancora }: { v: Vertice; ancora: Ancora }) {
     >
       <div className="ea-previa" aria-hidden="true">
         <div className="ea-previa-cabeca">
-          <MascoteAgente cor={cor} tamanho={22} estado={v.estado} />
+          <MascoteAgente cor={cor} papel={v.papel} tamanho={22} estado={v.estado} />
           <span className="ea-previa-nome">{apelido.trim() || nomePadraoDoAgente(v)}</span>
           <SimboloEstado estado={v.estado} />
         </div>

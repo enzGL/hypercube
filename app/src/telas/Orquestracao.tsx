@@ -47,7 +47,7 @@ const nomeDoNo = (d: DadosNo) => (d.v ? nomeDoAgente(d.v) : padraoDoPapel(d.pape
 export type DadosNo = { papel: Papel; agente: Agente; nivel: Nivel; tarefa: string; v?: Vertice };
 export type NoVertice = Node<DadosNo, 'vertice'>;
 
-const CONDICOES = ['sempre', 'depois do batedor', 'testes passaram', 'testes falharam', 'revisão pediu mudanças', 'custo < US$ 2', 'cota ok'];
+const CONDICOES = ['sempre', 'depois do explorador', 'testes passaram', 'testes falharam', 'revisão pediu mudanças', 'custo < US$ 2', 'cota ok'];
 
 const aresta = (id: string, source: string, target: string, condicao: string): Edge => ({
   id,
@@ -81,7 +81,7 @@ interface Roteiro {
 const ROTEIROS: Roteiro[] = [
   {
     nome: 'Planejar, construir, revisar',
-    descricao: 'O líder divide, o batedor mapeia, o construtor faz e o revisor confere.',
+    descricao: 'O líder divide, o explorador mapeia, o construtor faz e o revisor confere.',
     nos: [
       no('n1', 200, 0, 'lider', 'claude', 'forte', 'Divida a tarefa entre os agentes'),
       no('n2', 60, 180, 'batedor', 'gemini', 'barato', 'Mapeie os arquivos envolvidos'),
@@ -117,7 +117,7 @@ const ROTEIROS: Roteiro[] = [
   },
   {
     nome: 'Consertar um bug',
-    descricao: 'O batedor acha a causa, o consertador corrige e o revisor confere.',
+    descricao: 'O explorador acha a causa, o mecânico corrige e o revisor confere.',
     nos: [
       no('n1', 0, 0, 'batedor', 'gemini', 'barato', 'Encontre onde o erro acontece'),
       no('n2', 0, 190, 'consertador', 'claude', 'padrao', 'Corrija e escreva um teste'),
@@ -134,7 +134,7 @@ export function NoVerticeView({ data, selected }: NodeProps<NoVertice>) {
     <div className={`no-vertice com-cor-agente ${selected ? 'selecionado' : ''} ${v ? `estado-borda-${estado}` : 'nao-iniciado'}`} style={{ ['--cor-papel' as string]: corDoNo(data), ['--cor-agente' as string]: corDoNo(data) }}>
       <Handle type="target" position={Position.Top} />
       <div className="no-cabeca">
-        <MascoteAgente cor={corDoNo(data)} tamanho={22} estado={estado} />
+        <MascoteAgente cor={corDoNo(data)} papel={data.papel} tamanho={22} estado={estado} />
         <div>
           <b>{nomeDoNo(data)}</b>
           <div className="no-meta">
@@ -324,7 +324,7 @@ export function Orquestracao() {
           {noSel && (
             <section className="inspetor">
               <h3>
-                <MascoteAgente cor={corDoNo(noSel.data)} tamanho={18} /> {nomeDoNo(noSel.data)}
+                <MascoteAgente cor={corDoNo(noSel.data)} papel={noSel.data.papel} tamanho={18} /> {nomeDoNo(noSel.data)}
               </h3>
               {noSel.data.v && (
                 <p className="linha-estado">

@@ -797,3 +797,20 @@ html[data-tauri]:not([data-maximizada]) :is(.fundo-dialogo, .primeira-fundo, .bv
 .pomodoro-alternar { width: 100%; background: transparent; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; text-align: left; }
 .pomodoro-recolhido .pomodoro-cabeca { margin: 0; }
 .linha-dupla .dica-campo { max-width: 260px; }
+
+/* ---------- mascote: entrada (as faces se juntam, os olhos abrem, o acessório cai) ---------- */
+.mini-vertice svg { overflow: visible; }
+.mascote-entrada .m-face, .mascote-entrada .m-olhos, .mascote-entrada .m-acessorio { transform-box: fill-box; transform-origin: 50% 50%; }
+.mascote-entrada .m-topo { animation: mascote-topo .45s cubic-bezier(.2,.9,.3,1.2) both; }
+.mascote-entrada .m-esq { animation: mascote-esq .45s .12s cubic-bezier(.2,.9,.3,1.2) both; }
+.mascote-entrada .m-dir { animation: mascote-dir .45s .24s cubic-bezier(.2,.9,.3,1.2) both; }
+.mascote-entrada .m-olhos { animation: mascote-pop .25s .6s both, mascote-piscar .3s 1.15s; }
+.mascote-entrada .m-acessorio { animation: mascote-acessorio .45s .8s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes mascote-topo { from { transform: translateY(-46px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes mascote-esq { from { transform: translate(-46px, 24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes mascote-dir { from { transform: translate(46px, 24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes mascote-pop { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes mascote-piscar { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.1); } }
+@keyframes mascote-acessorio { from { transform: translateY(-36px); opacity: 0; } to { transform: none; opacity: 1; } }
+.opcao-comum { width: 100%; margin-bottom: 14px; }
+.botao.ligado { border-color: var(--cobalto-claro); color: var(--cobalto-claro); background: color-mix(in srgb, var(--cobalto-claro) 12%, transparent); }

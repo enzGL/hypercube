@@ -15,6 +15,12 @@ export interface OpcoesTerminal {
   rows?: number;
   /** Primeira tarefa: o app nativo entrega ao agente quando ele estiver pronto para receber. */
   tarefa?: string;
+  /** Instrução do papel. No Claude vai como prompt de sistema. */
+  instrucao?: string;
+  /** Modelo do nível, com o nome que o agente entende. */
+  modelo?: string;
+  /** Abre o agente em modo só leitura. */
+  soLeitura?: boolean;
 }
 
 /** Eventos de estado vindos dos hooks HTTP dos agentes (127.0.0.1 + token). */

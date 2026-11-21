@@ -1,8 +1,10 @@
 // Estado do app: sessões, agentes, telas e avisos. Fala com o sistema só por `nativo`.
 import { useSyncExternalStore } from 'react';
 import { nativo, NOME_AGENTE, type Agente, type EventoAgente } from '../nativo';
+import { INSTRUCAO_PAPEL, mensagemComPapel, modeloDoNivel, PRECISA_COPIA, SO_LEITURA } from './papeis';
 
-export type Papel = 'lider' | 'batedor' | 'construtor' | 'revisor' | 'consertador' | 'subagente';
+/** 'agente' é o comum, sem papel. Os outros são agentes predefinidos, opcionais, cada um com a sua skill. */
+export type Papel = 'agente' | 'lider' | 'batedor' | 'construtor' | 'revisor' | 'consertador' | 'subagente';
 export type EstadoVertice = 'trabalhando' | 'esperando' | 'pronto' | 'erro';
 export type Nivel = 'barato' | 'padrao' | 'forte';
 export type Tela = 'inicio' | 'sessoes' | 'orquestracao' | 'imagens' | 'roteador' | 'sobre';
@@ -10,24 +12,27 @@ export type Layout = 'auto' | 'foco' | 'livre';
 export type EstadoHiper = 'repouso' | 'atencao' | 'processando' | 'sucesso' | 'erro';
 
 export const NOME_PAPEL: Record<Papel, string> = {
+  agente: 'Agente',
   lider: 'Líder',
-  batedor: 'Batedor',
+  batedor: 'Explorador',
   construtor: 'Construtor',
   revisor: 'Revisor',
-  consertador: 'Consertador',
+  consertador: 'Mecânico',
   subagente: 'Subagente',
 };
 
 export const DESCRICAO_PAPEL: Record<Papel, string> = {
+  agente: 'Um agente comum, sem skill: faz o que você pedir',
   lider: 'Planeja, divide a tarefa e junta os resultados',
-  batedor: 'Explora o projeto e acha o que importa',
-  construtor: 'Escreve o código no seu worktree',
+  batedor: 'Explora o projeto e acha o que importa, só lendo',
+  construtor: 'Escreve o código na sua cópia do projeto',
   revisor: 'Revisa o diff dos outros, só lendo',
   consertador: 'Corrige o que a revisão ou os testes apontaram',
   subagente: 'Criado por outro agente',
 };
 
 export const COR_PAPEL: Record<Papel, string> = {
+  agente: '#3550E8',
   lider: '#2238C4',
   batedor: '#2E9C8F',
   construtor: '#C27A12',
@@ -119,6 +124,8 @@ export interface Sessao {
   nome: string;
   pasta: string;
   worktrees: boolean;
+  /** Sessão de orquestração (painel com quem divide e quem faz). Sem o campo: sessões antigas, que já tinham o painel. */
+  orquestracao?: boolean;
 }
 
 export interface Corrida {
@@ -355,12 +362,24 @@ export async function criarVertice(
 ): Promise<Vertice> {
   const sessao = estado.sessoes.find((s) => s.id === sessaoId)!;
   const nome = extra.nome ?? nomeLivre(sessaoId, papel);
-  const worktree = sessao.worktrees && papel !== 'revisor' && papel !== 'lider'
+  const worktree = sessao.worktrees && PRECISA_COPIA.has(papel)
     ? await nativo.processos.criarWorktree(sessao.pasta, nome.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-'))
     : undefined;
   // No app nativo a tarefa vai junto com o terminal (o agente pode abrir pedindo para confiar na pasta).
-  const tarefaNativa = nativo.modo === 'tauri' ? tarefa : undefined;
-  const terminalId = await nativo.terminais.criar({ agente, pasta: sessao.pasta, rotulo: `${nome} · ${NOME_NIVEL[nivel]}`, worktree, tarefa: tarefaNativa });
+  // O papel vale de verdade: no Claude vai como prompt de sistema; nos outros, junto da primeira mensagem.
+  const nativoReal = nativo.modo === 'tauri';
+  const comoSistema = agente === 'claude';
+  const tarefaNativa = nativoReal ? (comoSistema ? tarefa : agente === 'terminal' ? tarefa : mensagemComPapel(papel, tarefa)) : undefined;
+  const terminalId = await nativo.terminais.criar({
+    agente,
+    pasta: sessao.pasta,
+    rotulo: `${nome} · ${NOME_NIVEL[nivel]}`,
+    worktree,
+    tarefa: tarefaNativa,
+    instrucao: comoSistema ? INSTRUCAO_PAPEL[papel] : undefined,
+    modelo: modeloDoNivel(agente, nivel),
+    soLeitura: SO_LEITURA.has(papel),
+  });
   const v: Vertice = {
     id: novoId('v'),
     sessaoId,
@@ -387,8 +406,8 @@ export async function criarVertice(
   return v;
 }
 
-export function criarSessao(nome: string, pasta: string, worktrees: boolean): Sessao {
-  const s: Sessao = { id: novoId('s'), nome, pasta, worktrees };
+export function criarSessao(nome: string, pasta: string, worktrees: boolean, orquestracao = false): Sessao {
+  const s: Sessao = { id: novoId('s'), nome, pasta, worktrees, orquestracao };
   mudar((e) => ({
     sessoes: [...e.sessoes, s],
     sessaoAtivaId: s.id,
@@ -397,6 +416,13 @@ export function criarSessao(nome: string, pasta: string, worktrees: boolean): Se
     pastasAbertas: { ...e.pastasAbertas, [pasta]: true },
   }));
   return s;
+}
+
+/** Sessão de orquestração ou terminal padrão. */
+export const temOrquestracao = (s: Sessao | undefined) => !!s && s.orquestracao !== false;
+
+export function definirOrquestracao(sessaoId: string, orquestracao: boolean) {
+  mudar((e) => ({ sessoes: e.sessoes.map((s) => (s.id === sessaoId ? { ...s, orquestracao } : s)) }));
 }
 
 export function mandar(verticeId: string, texto: string) {
@@ -506,7 +532,7 @@ export async function iniciarCorrida(sessaoId: string, tarefa: string, quantos: 
   const ids: string[] = [];
   mudar((e) => ({ corridas: [...e.corridas, { id, sessaoId, tarefa, ids }] }));
   for (let i = 0; i < n; i++) {
-    const v = await criarVertice(sessaoId, 'construtor', agentes[i], 'padrao', tarefa, { nome: `Corrida ${i + 1}`, corridaId: id });
+    const v = await criarVertice(sessaoId, 'agente', agentes[i], 'padrao', tarefa, { nome: `Corrida ${i + 1}`, corridaId: id });
     ids.push(v.id);
   }
   mudar((e) => ({ corridas: e.corridas.map((c) => (c.id === id ? { ...c, ids: [...ids] } : c)), layout: 'auto' }));
@@ -543,7 +569,7 @@ function salvarConfig(c: { modo: 'exemplo' } | { modo: 'vazio'; pasta: string })
 export async function comecarComExemplo(salvar = true) {
   if (salvar) salvarConfig({ modo: 'exemplo' });
   mudar(() => ({ configurado: true }));
-  const loja = criarSessao('Checkout novo', 'C:\\Projetos\\loja-online', true);
+  const loja = criarSessao('Checkout novo', 'C:\\Projetos\\loja-online', true, true);
   const blog = criarSessao('Blog', 'C:\\Projetos\\site-pessoal', false);
   const integra = criarSessao('Testes de integração', 'C:\\Projetos\\loja-online', false);
   criarSessao('Ideias', 'C:\\Projetos\\site-pessoal', false);

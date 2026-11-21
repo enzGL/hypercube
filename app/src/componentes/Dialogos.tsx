@@ -51,14 +51,15 @@ function NovaSessao() {
   const agentes = useAgentes();
   const [nome, setNome] = useState('');
   const [pasta, setPasta] = useState('C:\\Projetos\\loja-online');
-  const [worktrees, setWorktrees] = useState(true);
-  const [inicio, setInicio] = useState<'vazio' | 'lider' | 'equipe'>('lider');
+  const [orquestracao, setOrquestracao] = useState(false);
+  const [worktrees, setWorktrees] = useState(false);
+  const [inicio, setInicio] = useState<'vazio' | 'agente' | 'equipe'>('agente');
   const [agente, setAgente] = useState<Agente>('claude');
 
   const criar = async () => {
-    const s = criarSessao(nome.trim() || 'Nova sessão', pasta, worktrees);
+    const s = criarSessao(nome.trim() || 'Nova sessão', pasta, worktrees, orquestracao);
     abrirDialogo(null);
-    if (inicio === 'lider') await criarVertice(s.id, 'lider', agente, 'forte');
+    if (inicio === 'agente') await criarVertice(s.id, 'agente', agente, 'padrao');
     if (inicio === 'equipe') {
       const instalado = (a: Agente) => agentes.some((d) => d.agente === a && d.instalado);
       for (const p of EQUIPE) {
@@ -83,6 +84,28 @@ function NovaSessao() {
           </button>
         </div>
       </div>
+      <div className="campo">
+        <span>Como usar esta sessão</span>
+        <div className="opcoes">
+          {[
+            { id: false, nome: 'Terminal padrão', desc: 'Os agentes lado a lado, cada um no seu terminal. Você manda em cada um.' },
+            { id: true, nome: 'Orquestração', desc: 'Um painel mostra quem divide e quem faz, com limite de agentes ao mesmo tempo.' },
+          ].map((o) => (
+            <button
+              key={String(o.id)}
+              className={`opcao ${orquestracao === o.id ? 'ativo' : ''}`}
+              onClick={() => {
+                setOrquestracao(o.id);
+                setWorktrees(o.id);
+                if (!o.id && inicio === 'equipe') setInicio('agente');
+              }}
+            >
+              <b>{o.nome}</b>
+              <span>{o.desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
       <label className="interruptor">
         <input type="checkbox" checked={worktrees} onChange={(ev) => setWorktrees(ev.target.checked)} />
         <span className="interruptor-trilho" />
@@ -96,8 +119,8 @@ function NovaSessao() {
         <div className="opcoes">
           {[
             { id: 'vazio', nome: 'Nenhum agente', desc: 'Sessão vazia, você cria depois' },
-            { id: 'lider', nome: 'Só o Líder', desc: 'Ele divide as tarefas quando precisar' },
-            { id: 'equipe', nome: 'Equipe completa', desc: 'Líder, batedor, construtor e revisor' },
+            { id: 'agente', nome: 'Um agente', desc: 'Um agente comum, faz o que você pedir' },
+            ...(orquestracao ? [{ id: 'equipe', nome: 'Equipe predefinida', desc: 'Líder, explorador, construtor e revisor, cada um com a sua skill' }] : []),
           ].map((o) => (
             <button key={o.id} className={`opcao ${inicio === o.id ? 'ativo' : ''}`} onClick={() => setInicio(o.id as typeof inicio)}>
               <b>{o.nome}</b>
@@ -108,7 +131,7 @@ function NovaSessao() {
       </div>
       {inicio !== 'vazio' && (
         <label className="campo">
-          <span>Agente do Líder</span>
+          <span>{inicio === 'equipe' ? 'Agente do Líder' : 'Agente'}</span>
           <select value={agente} onChange={(ev) => setAgente(ev.target.value as Agente)}>
             {agentes.filter((a) => a.instalado && a.agente !== 'terminal').map((a) => (
               <option key={a.agente} value={a.agente}>
@@ -132,9 +155,9 @@ function NovaSessao() {
 
 function NovoVertice({ sessaoId, papelInicial }: { sessaoId: string; papelInicial?: Papel }) {
   const agentes = useAgentes();
-  const [papel, setPapel] = useState<Papel>(papelInicial ?? 'construtor');
-  const [agente, setAgente] = useState<Agente>(AGENTE_PADRAO[papelInicial ?? 'construtor']);
-  const [nivel, setNivel] = useState<Nivel>(NIVEL_PADRAO[papelInicial ?? 'construtor']);
+  const [papel, setPapel] = useState<Papel>(papelInicial ?? 'agente');
+  const [agente, setAgente] = useState<Agente>(AGENTE_PADRAO[papelInicial ?? 'agente'] ?? 'claude');
+  const [nivel, setNivel] = useState<Nivel>(NIVEL_PADRAO[papelInicial ?? 'agente'] ?? 'padrao');
   const [tarefa, setTarefa] = useState('');
   const e = useLoja();
   // O agente sugerido para o papel pode não estar instalado: cai no primeiro que está.
@@ -147,8 +170,23 @@ function NovoVertice({ sessaoId, papelInicial }: { sessaoId: string; papelInicia
 
   return (
     <Moldura titulo="Novo agente">
+      <button
+        className={`opcao opcao-comum ${papel === 'agente' ? 'ativo' : ''}`}
+        onClick={() => {
+          setPapel('agente');
+          setNivel('padrao');
+        }}
+      >
+        <span className="opcao-topo">
+          <MiniVertice papel="agente" tamanho={18} /> <b>Agente comum</b>
+        </span>
+        <span>Abre o agente como ele é, sem skill. Bom para orquestrar do seu jeito.</span>
+      </button>
       <div className="campo">
-        <span>Papel</span>
+        <span>
+          Agentes predefinidos <span className="secundario">(opcional)</span>
+        </span>
+        <p className="dica-campo" style={{ marginTop: -2 }}>Cada um vem com uma skill do seu ofício e trabalha numa área do projeto.</p>
         <div className="opcoes papeis-grade">
           {(['lider', 'batedor', 'construtor', 'revisor', 'consertador'] as Papel[]).map((p) => (
             <button

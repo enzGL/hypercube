@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import { useEffect, type ComponentType } from 'react';
-import { irPara, irParaQuemEspera, nomeUsuario, useLoja } from './estado/loja';
+import { irPara, irParaQuemEspera, nomeUsuario, temOrquestracao, useLoja } from './estado/loja';
 import { Avisos } from './componentes/Avisos';
 import { pedirNovaTarefa, useCasca, type Rota } from './estado/casca';
 import { BarraLateral } from './componentes/BarraLateral';
@@ -61,7 +61,7 @@ export function App() {
             <div className="area-sessoes">
               <Sessoes />
             </div>
-            <PainelOrquestracao />
+            {temOrquestracao(e.sessoes.find((s) => s.id === e.sessaoAtivaId)) && <PainelOrquestracao />}
           </div>
         )}
         {rota === 'orquestracao' && <Orquestracao />}

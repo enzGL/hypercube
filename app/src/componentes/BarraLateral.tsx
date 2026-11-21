@@ -324,7 +324,7 @@ function LinhaTerminal({ e, v, nivel }: { e: Estado; v: Vertice; nivel: number }
         title={`${nome} · ${NOME_AGENTE[v.agente]}${v.oculto ? ' (oculto, ainda rodando)' : ''} · clique direito: apelido e cor`}
       >
         {nivel > 0 && <span className="ramo" aria-hidden="true">└</span>}
-        <MascoteAgente cor={cor} tamanho={14} estado={v.estado} />
+        <MascoteAgente cor={cor} papel={v.papel} tamanho={14} estado={v.estado} />
         <span className="linha-nome">{nome}</span>
         {nivel === 0 && <LogoAgente agente={v.agente} tamanho={14} className="linha-agente-logo" />}
         {v.estado === 'trabalhando' ? <HiperMini estado="trabalhando" tamanho={16} rotulo="Trabalhando" /> : <SimboloEstado estado={v.estado} />}

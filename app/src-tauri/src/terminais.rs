@@ -29,6 +29,16 @@ pub struct OpcoesTerminal {
     /// ser liberada e só então começa); nos outros, é digitada quando o terminal abre.
     #[serde(default)]
     pub tarefa: Option<String>,
+    /// Instrução do papel (o arquivo do papel). No Claude vai como prompt de sistema; nos
+    /// outros a interface já juntou com a primeira tarefa.
+    #[serde(default)]
+    pub instrucao: Option<String>,
+    /// Modelo escolhido pelo nível (cada agente tem os seus nomes).
+    #[serde(default)]
+    pub modelo: Option<String>,
+    /// Papéis que só leem (Batedor, Revisor): o agente abre em modo só leitura.
+    #[serde(default)]
+    pub so_leitura: bool,
 }
 
 /// Texto que o Claude Code mostra quando a pasta ainda não foi liberada.
@@ -106,6 +116,24 @@ fn programa(agente: &str) -> Result<(PathBuf, Vec<String>), String> {
     Ok((p, vec![]))
 }
 
+/// Modelo e modo só leitura, com as opções de cada programa.
+fn papel_e_nivel(o: &OpcoesTerminal, args: &mut Vec<String>) {
+    let modelo = o.modelo.as_deref().filter(|m| !m.is_empty());
+    let (opcao_modelo, leitura): (&str, &[&str]) = match o.agente.as_str() {
+        "claude" => ("--model", &["--permission-mode", "plan"]),
+        "codex" => ("-m", &["-s", "read-only"]),
+        "gemini" => ("-m", &["--approval-mode", "plan"]),
+        _ => return,
+    };
+    if let Some(m) = modelo {
+        args.push(opcao_modelo.into());
+        args.push(m.into());
+    }
+    if o.so_leitura {
+        args.extend(leitura.iter().map(|x| x.to_string()));
+    }
+}
+
 fn pasta_de_trabalho(o: &OpcoesTerminal) -> PathBuf {
     for c in [o.worktree.as_deref(), Some(o.pasta.as_str())].into_iter().flatten() {
         let p = PathBuf::from(c);
@@ -157,7 +185,14 @@ impl Terminais {
             args.push("--settings".into());
             args.push(p.to_string_lossy().into_owned());
             settings = Some(p);
+            if let Some(texto) = o.instrucao.as_deref().filter(|t| !t.trim().is_empty()) {
+                let arq = dir.join(format!("{id}-papel.md"));
+                std::fs::write(&arq, texto).map_err(|e| format!("Não consegui preparar o papel: {e}"))?;
+                args.push("--append-system-prompt-file".into());
+                args.push(arq.to_string_lossy().into_owned());
+            }
         }
+        papel_e_nivel(&o, &mut args);
 
         let mut cmd = if processos::precisa_cmd(&prog) {
             let mut c = CommandBuilder::new("cmd.exe");

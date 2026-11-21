@@ -4,7 +4,7 @@
 // e `evento_agente` (EventoAgente).
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import type { Desligar, EventoAgente, Nativo, SaidaGerada } from './tipos';
+import type { AgenteDetectado, Desligar, EventoAgente, Nativo, SaidaGerada } from './tipos';
 
 /** Liga um ouvinte de evento do Tauri e devolve um desligar síncrono. */
 function ouvir<T>(canal: string, ouvinte: (dado: T) => void): Desligar {
@@ -80,7 +80,7 @@ export function criarNativoTauri(): Nativo {
       },
     },
     processos: {
-      detectarAgentes: () => invoke('processos_detectar_agentes'),
+      detectarAgentes: () => detectarComCache(),
       usoDoPlano: () => invoke('processos_uso_do_plano'),
       criarWorktree: (pasta, ramo) => invoke<string>('processos_criar_worktree', { pasta, ramo }),
     },
@@ -97,4 +97,23 @@ export function criarNativoTauri(): Nativo {
       salvarCadeia: (nivel, provedores) => invoke('roteador_salvar_cadeia', { nivel, provedores }),
     },
   };
+}
+
+// A procura roda `--version` em cada agente e leva alguns segundos: guarda a primeira.
+// Se falhar ou não achar nenhum agente, a próxima chamada procura de novo.
+let procura: Promise<AgenteDetectado[]> | null = null;
+function detectarComCache(): Promise<AgenteDetectado[]> {
+  if (!procura) {
+    procura = invoke<AgenteDetectado[]>('processos_detectar_agentes').then(
+      (lista) => {
+        if (!lista.some((a) => a.instalado && a.agente !== 'terminal')) procura = null;
+        return lista;
+      },
+      (erro) => {
+        procura = null;
+        throw erro;
+      },
+    );
+  }
+  return procura;
 }
