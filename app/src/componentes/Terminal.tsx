@@ -37,7 +37,7 @@ export function Terminal({ terminalId, focado, aoFocar }: { terminalId: string; 
     const term = new XTerm({
       theme: temaXterm(),
       fontFamily: '"Geist Mono", ui-monospace, Consolas, monospace',
-      fontSize: 12.5,
+      fontSize: 14,
       lineHeight: 1.25,
       cursorBlink: true,
       scrollback: 5000,

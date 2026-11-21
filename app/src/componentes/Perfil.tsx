@@ -188,7 +188,7 @@ export function CampoGitHub({ github, aoConfirmar, aoRemover, focar }: CampoGitH
         </div>
       )}
       <p className="pf-nota">
-        Por enquanto o app só lê o seu perfil público (foto e nome). O login completo com o GitHub vem depois.
+        Só usamos o seu perfil público.
       </p>
     </div>
   );

@@ -58,7 +58,7 @@ const aresta = (id: string, source: string, target: string, condicao: string): E
   data: { condicao },
   markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--borda-forte)' },
   style: { stroke: 'var(--borda-forte)', strokeWidth: 1.6 },
-  labelStyle: { fill: 'var(--texto-2)', fontSize: 11, fontFamily: 'Geist Mono, monospace' },
+  labelStyle: { fill: 'var(--texto-2)', fontSize: 13, fontFamily: 'Geist Mono, monospace' },
   labelBgStyle: { fill: 'var(--fundo)' },
   labelBgPadding: [6, 3],
   labelBgBorderRadius: 4,

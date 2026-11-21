@@ -21,11 +21,11 @@ type Passo = 'nome' | 'foto' | 'github' | 'tema' | 'agentes';
 
 /** IAs que valem a pena e como instalar (comandos oficiais pelo npm). */
 const SUGESTAO: Partial<Record<Agente, { desc: string; comando?: string; site: string }>> = {
-  claude: { desc: 'Da Anthropic. Bom para planejar e mexer em projetos grandes.', comando: 'npm install -g @anthropic-ai/claude-code', site: 'https://docs.anthropic.com/en/docs/claude-code' },
-  codex: { desc: 'Da OpenAI. Rápido para escrever e corrigir código.', comando: 'npm install -g @openai/codex', site: 'https://github.com/openai/codex' },
-  gemini: { desc: 'Do Google. Tem cota grátis generosa e lê muito contexto.', comando: 'npm install -g @google/gemini-cli', site: 'https://github.com/google-gemini/gemini-cli' },
-  opencode: { desc: 'Aberto. Funciona com vários modelos, até locais.', comando: 'npm install -g opencode-ai', site: 'https://opencode.ai' },
-  kiro: { desc: 'Da AWS. Trabalha a partir de especificações.', site: 'https://kiro.dev' },
+  claude: { desc: 'Da Anthropic. Ótimo para planejar.', comando: 'npm install -g @anthropic-ai/claude-code', site: 'https://docs.anthropic.com/en/docs/claude-code' },
+  codex: { desc: 'Da OpenAI. Rápido no código.', comando: 'npm install -g @openai/codex', site: 'https://github.com/openai/codex' },
+  gemini: { desc: 'Do Google. Tem cota grátis.', comando: 'npm install -g @google/gemini-cli', site: 'https://github.com/google-gemini/gemini-cli' },
+  opencode: { desc: 'Aberto. Usa vários modelos.', comando: 'npm install -g opencode-ai', site: 'https://opencode.ai' },
+  kiro: { desc: 'Da AWS. Parte de especificações.', site: 'https://kiro.dev' },
 };
 
 function passoInicial(total: number): number {
@@ -61,6 +61,9 @@ export function PrimeiraAbertura() {
   const copiar = (t: string) => {
     navigator.clipboard?.writeText(t).then(() => setCopiado(t), () => undefined);
   };
+
+  const instaladas = (agentes ?? []).filter((a) => a.instalado && a.agente !== 'terminal');
+  const faltando = (agentes ?? []).filter((a) => !a.instalado && SUGESTAO[a.agente]);
 
   const nomeOk = p.nome.trim().length > 0;
   const podeSeguir = passo !== 'nome' || nomeOk;
@@ -111,11 +114,11 @@ export function PrimeiraAbertura() {
             </h1>
             <p className="secundario">
               {passo === 'nome' &&
-                'Abra aqui os seus agentes de IA, cada um no seu terminal. Eu aviso quando algum precisa de você. Como devo te chamar?'}
-              {passo === 'foto' && 'Quer pôr uma foto? Ela aparece no seu cartão, na lateral. Dá para pular.'}
-              {passo === 'github' && 'Opcional. Traz a sua foto e o seu nome do perfil público do GitHub.'}
-              {passo === 'tema' && 'Dá para trocar depois em Sobre e ajustes, na aba Aparência.'}
-              {passo === 'agentes' && 'Li as IAs instaladas no seu computador e separei outras que valem a pena. Abra uma pasta de projeto para começar.'}
+                'Eu organizo os seus agentes de IA e aviso quando algum precisa de você. Como devo te chamar?'}
+              {passo === 'foto' && 'Ela aparece na lateral. Dá para pular.'}
+              {passo === 'github' && 'Opcional. Traz a sua foto e o seu nome.'}
+              {passo === 'tema' && 'Dá para trocar depois.'}
+              {passo === 'agentes' && 'Estas eu achei no seu computador.'}
             </p>
           </div>
         </div>
@@ -166,64 +169,67 @@ export function PrimeiraAbertura() {
 
           {passo === 'agentes' && (
             <>
-              <div className="detectados">
-                <h3>{agentes ? 'Agentes neste computador' : erroBusca ? 'Não consegui procurar os agentes' : 'Procurando agentes instalados…'}</h3>
+              <div className="ia-passo">
+                {!agentes && !erroBusca && <p className="ia-procurando">Procurando as IAs do computador…</p>}
                 {erroBusca && (
-                  <p className="detectados-erro">
-                    Algo falhou na procura. Dá para tentar de novo ou seguir sem a lista.
-                    <button className="botao pequeno" onClick={() => procurar(true)}>
+                  <div className="ia-aviso">
+                    <span>Não consegui procurar.</span>
+                    <button className="botao" onClick={() => procurar(true)}>
                       Tentar de novo
                     </button>
-                  </p>
-                )}
-                {agentes && !agentes.some((a) => a.instalado && a.agente !== 'terminal') && (
-                  <p className="detectados-erro">
-                    Nenhum agente de IA encontrado. Instale o Claude Code, o Codex ou o Gemini e procure de novo.
-                    <button className="botao pequeno" onClick={() => procurar(true)}>
-                      Procurar de novo
-                    </button>
-                  </p>
-                )}
-                <ul>
-                  {(agentes ?? []).filter((a) => a.instalado && a.agente !== 'terminal').map((a) => (
-                    <li key={a.agente}>
-                      <span style={{ color: 'var(--pronto)' }}>●</span>
-                      <span className="detectado-nome"><LogoAgente agente={a.agente} tamanho={15} /> {NOME_AGENTE[a.agente]}</span>
-                      <span className="mono secundario">{`${a.comando} ${a.versao ?? ''}`}</span>
-                    </li>
-                  ))}
-                </ul>
-                {agentes && agentes.some((a) => !a.instalado && SUGESTAO[a.agente]) && (
-                  <div className="sugeridos">
-                    <h3>Outras que você pode instalar</h3>
-                    <ul>
-                      {agentes.filter((a) => !a.instalado && SUGESTAO[a.agente]).map((a) => {
-                        const s = SUGESTAO[a.agente]!;
-                        return (
-                          <li key={a.agente} className="sugerido">
-                            <span className="detectado-nome"><LogoAgente agente={a.agente} tamanho={15} /> {NOME_AGENTE[a.agente]}</span>
-                            <span className="secundario sugerido-desc">{s.desc}</span>
-                            <span className="sugerido-acoes">
-                              {s.comando && (
-                                <button className="botao pequeno mono" title="Copiar o comando de instalação" onClick={() => copiar(s.comando!)}>
-                                  {copiado === s.comando ? 'Copiado' : s.comando}
-                                </button>
-                              )}
-                              <button className="botao pequeno" onClick={() => nativo.sistema.abrirLink(s.site)}>
-                                Site
-                              </button>
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                    <p className="secundario sugerido-rodape">
-                      Instalou alguma?
-                      <button className="botao pequeno" onClick={() => procurar(true)}>
-                        Procurar de novo
-                      </button>
-                    </p>
                   </div>
+                )}
+                {agentes && (
+                  <>
+                    <h3 className="ia-titulo">Instaladas</h3>
+                    {instaladas.length === 0 ? (
+                      <div className="ia-aviso">
+                        <span>Nenhuma IA encontrada.</span>
+                      </div>
+                    ) : (
+                      <ul className="ia-grade">
+                        {instaladas.map((a) => (
+                          <li key={a.agente} className="ia-cartao ia-instalada" title={`${a.comando} ${a.versao ?? ''}`}>
+                            <LogoAgente agente={a.agente} tamanho={28} />
+                            <b>{NOME_AGENTE[a.agente]}</b>
+                            <span className="ia-ok" aria-label="Instalada">✓</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {faltando.length > 0 && (
+                      <>
+                        <h3 className="ia-titulo">Vale instalar</h3>
+                        <ul className="ia-grade">
+                          {faltando.map((a) => {
+                            const s = SUGESTAO[a.agente]!;
+                            return (
+                              <li key={a.agente} className="ia-cartao ia-sugerida">
+                                <LogoAgente agente={a.agente} tamanho={28} />
+                                <span className="ia-texto">
+                                  <b>{NOME_AGENTE[a.agente]}</b>
+                                  <span>{s.desc}</span>
+                                </span>
+                                <span className="ia-acoes">
+                                  {s.comando && (
+                                    <button className="botao" title={s.comando} onClick={() => copiar(s.comando!)}>
+                                      {copiado === s.comando ? 'Copiado ✓' : 'Copiar comando'}
+                                    </button>
+                                  )}
+                                  <button className="botao" onClick={() => nativo.sistema.abrirLink(s.site)}>
+                                    Site
+                                  </button>
+                                </span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                        <button className="botao ia-procurar" onClick={() => procurar(true)}>
+                          Já instalei, procurar de novo
+                        </button>
+                      </>
+                    )}
+                  </>
                 )}
               </div>
               <div className="primeira-acoes">

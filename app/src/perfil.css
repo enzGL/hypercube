@@ -4,13 +4,13 @@
 .pf-avatar-inicial { display: grid; place-items: center; background: var(--cobalto); border-color: var(--cobalto); color: var(--sobre-cobalto, var(--texto)); font-weight: 600; line-height: 1; user-select: none; }
 
 /* ---------- campos ---------- */
-.pf-rotulo { display: block; margin: 14px 0 6px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--texto-2); font-weight: 600; }
-.pf-campo { width: 100%; height: 34px; padding: 0 10px; border-radius: 8px; background: var(--fundo); border: 1px solid var(--borda-forte); color: var(--texto); font: inherit; font-size: 13px; outline: none; }
+.pf-rotulo { display: block; margin: 14px 0 6px; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--texto-2); font-weight: 600; }
+.pf-campo { width: 100%; height: 34px; padding: 0 10px; border-radius: 8px; background: var(--fundo); border: 1px solid var(--borda-forte); color: var(--texto); font: inherit; font-size: 15px; outline: none; }
 .pf-campo:focus { border-color: var(--cobalto-claro); }
 .pf-campo::placeholder { color: var(--texto-2); }
 .pf-campo-grande { height: 42px; font-size: 15px; border-radius: 10px; }
-.pf-nota { margin: 6px 0 0; font-size: 11.5px; line-height: 1.45; color: var(--texto-2); }
-.pf-erro { margin: 6px 0 0; font-size: 12px; color: var(--erro); }
+.pf-nota { margin: 6px 0 0; font-size: 13px; line-height: 1.45; color: var(--texto-2); }
+.pf-erro { margin: 6px 0 0; font-size: 14px; color: var(--erro); }
 .pf-erro::before { content: '✕ '; }
 .botao.pf-link { border-color: transparent; background: transparent; color: var(--texto-2); }
 .botao.pf-link:hover:not(:disabled) { color: var(--texto); border-color: var(--borda-forte); }
@@ -27,8 +27,8 @@
 .pf-gh-achado, .pf-gh-ligado { display: flex; align-items: center; gap: 12px; margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--fundo); border: 1px solid var(--borda); }
 .pf-gh-ligado { margin-top: 0; }
 .pf-gh-quem { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
-.pf-gh-quem b { font-weight: 600; font-size: 13.5px; color: var(--texto); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pf-gh-quem span { font-size: 11.5px; color: var(--texto-2); }
+.pf-gh-quem b { font-weight: 600; font-size: 15px; color: var(--texto); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-gh-quem span { font-size: 13px; color: var(--texto-2); }
 .pf-sub { margin-top: 4px; }
 
 /* ---------- introdução em passos ---------- */
@@ -62,3 +62,29 @@
 .pf-bv-foto { position: absolute; right: -6px; bottom: -6px; border-radius: 50%; padding: 2px; background: var(--cartao); }
 
 @media (prefers-reduced-motion: reduce) { .pf-cartao { animation: none; } .pf-bolinhas span { transition: none; } }
+
+/* ---------- introdução: letras maiores ---------- */
+.pf-intro .sobretitulo { font-size: 15px; letter-spacing: .12em; }
+.pf-intro h1 { font-size: 30px; }
+.pf-intro .primeira-topo .secundario { font-size: 16px; line-height: 1.45; }
+.pf-intro .pf-rotulo { font-size: 15px; letter-spacing: 0; text-transform: none; color: var(--texto); margin: 16px 0 8px; }
+.pf-intro .pf-campo { height: 46px; font-size: 16px; padding: 0 14px; border-radius: 10px; }
+.pf-intro .pf-gh-arroba { font-size: 17px; }
+.pf-intro .pf-gh-busca .botao, .pf-intro .pf-navegacao .botao, .pf-intro .pf-foto-acoes .botao { height: 44px; font-size: 15px; padding: 0 18px; }
+.pf-intro .pf-nota, .pf-intro .pf-erro { font-size: 14px; }
+.pf-intro .pf-gh-quem b { font-size: 16px; }
+.pf-intro .pf-gh-quem span { font-size: 14px; }
+
+/* ---------- introdução: cartão centrado, fundo calmo ---------- */
+.primeira-fundo { background: color-mix(in srgb, var(--fundo) 82%, transparent); backdrop-filter: blur(10px); }
+.pf-intro { width: 600px; padding: 36px 40px 28px; border-radius: 20px; }
+.pf-intro .primeira-topo { flex-direction: column; text-align: center; gap: 14px; }
+.pf-intro .primeira-hiper { width: 112px; height: 112px; }
+.pf-intro .primeira-topo h1 { font-size: 34px; margin-top: 6px; }
+.pf-intro .primeira-topo .secundario { max-width: 440px; margin: 8px auto 0; }
+.pf-intro .pf-passo { margin-top: 26px; }
+.pf-intro .pf-navegacao { border-top: 0; margin-top: 26px; padding-top: 0; }
+.pf-intro .pf-bolinhas span { width: 8px; height: 8px; }
+.pf-intro .pf-bolinhas span.atual { width: 24px; }
+.pf-intro .pf-nav-botoes .botao.primario { min-width: 150px; }
+.pf-intro .pf-passo { min-height: 0; }
