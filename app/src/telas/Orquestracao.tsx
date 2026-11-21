@@ -20,7 +20,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import {
   avisar,
-  COR_PAPEL,
+  corDoAgente,
   criarVertice,
   DESCRICAO_PAPEL,
   ESTADO_INFO,
@@ -28,6 +28,8 @@ import {
   NOME_AGENTE,
   NOME_NIVEL,
   NOME_PAPEL,
+  nomeDoAgente,
+  padraoDoPapel,
   useLoja,
   type Nivel,
   type Papel,
@@ -36,6 +38,11 @@ import {
 import { nativo, type Agente } from '../nativo';
 import { BarraTopo } from '../componentes/BarraTopo';
 import { formatarCusto, formatarTokens, Icone, MiniVertice, SimboloEstado } from '../componentes/Pecas';
+import { MascoteAgente } from '../componentes/EditarAgente';
+
+/** Cor e nome de um nó: os do agente vivo ou, sem agente, os padrões do papel. */
+const corDoNo = (d: DadosNo) => (d.v ? corDoAgente(d.v) : padraoDoPapel(d.papel).cor);
+const nomeDoNo = (d: DadosNo) => (d.v ? nomeDoAgente(d.v) : padraoDoPapel(d.papel).apelido);
 
 export type DadosNo = { papel: Papel; agente: Agente; nivel: Nivel; tarefa: string; v?: Vertice };
 export type NoVertice = Node<DadosNo, 'vertice'>;
@@ -124,12 +131,12 @@ export function NoVerticeView({ data, selected }: NodeProps<NoVertice>) {
   const v = data.v;
   const estado = v?.estado;
   return (
-    <div className={`no-vertice ${selected ? 'selecionado' : ''} ${v ? `estado-borda-${estado}` : 'nao-iniciado'}`} style={{ ['--cor-papel' as string]: COR_PAPEL[data.papel] }}>
+    <div className={`no-vertice com-cor-agente ${selected ? 'selecionado' : ''} ${v ? `estado-borda-${estado}` : 'nao-iniciado'}`} style={{ ['--cor-papel' as string]: corDoNo(data), ['--cor-agente' as string]: corDoNo(data) }}>
       <Handle type="target" position={Position.Top} />
       <div className="no-cabeca">
-        <MiniVertice papel={data.papel} tamanho={22} estado={estado} />
+        <MascoteAgente cor={corDoNo(data)} tamanho={22} estado={estado} />
         <div>
-          <b>{v?.nome ?? NOME_PAPEL[data.papel]}</b>
+          <b>{nomeDoNo(data)}</b>
           <div className="no-meta">
             <LogoAgente agente={data.agente} tamanho={12} /> {NOME_AGENTE[data.agente]} · {NOME_NIVEL[data.nivel]}
           </div>
@@ -267,7 +274,7 @@ export function Orquestracao() {
           >
             <Background color="var(--borda)" gap={22} size={1.4} />
             <Controls showInteractive={false} />
-            <MiniMap pannable zoomable nodeColor={(n) => COR_PAPEL[(n.data as DadosNo).papel]} maskColor="color-mix(in srgb, var(--terminal) 70%, transparent)" style={{ background: 'var(--fundo-lateral)', width: 150, height: 96 }} />
+            <MiniMap pannable zoomable nodeColor={(n) => corDoNo(n.data as DadosNo)} maskColor="color-mix(in srgb, var(--terminal) 70%, transparent)" style={{ background: 'var(--fundo-lateral)', width: 150, height: 96 }} />
           </ReactFlow>
         </div>
 
@@ -317,7 +324,7 @@ export function Orquestracao() {
           {noSel && (
             <section className="inspetor">
               <h3>
-                <MiniVertice papel={noSel.data.papel} tamanho={18} /> {noSel.data.v?.nome ?? NOME_PAPEL[noSel.data.papel]}
+                <MascoteAgente cor={corDoNo(noSel.data)} tamanho={18} /> {nomeDoNo(noSel.data)}
               </h3>
               {noSel.data.v && (
                 <p className="linha-estado">

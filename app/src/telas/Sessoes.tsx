@@ -19,6 +19,8 @@ import {
   responder,
   revisaoCruzada,
   avisar,
+  corDoAgente,
+  nomeDoAgente,
   useLoja,
   type Estado,
   type Layout,
@@ -26,8 +28,9 @@ import {
 } from '../estado/loja';
 import { BarraTopo } from '../componentes/BarraTopo';
 import { Hiper } from '../componentes/Hiper';
-import { formatarCusto, formatarTokens, Icone, MiniVertice, SimboloEstado } from '../componentes/Pecas';
+import { formatarCusto, formatarTokens, Icone, SimboloEstado } from '../componentes/Pecas';
 import { Terminal } from '../componentes/Terminal';
+import { abrirEditarAgente, IconeLapis, MascoteAgente, NomeEditavel } from '../componentes/EditarAgente';
 
 const LAYOUTS: { id: Layout; nome: string }[] = [
   { id: 'auto', nome: 'Automático' },
@@ -115,7 +118,7 @@ export function Sessoes() {
               </span>
               {ocultos.map((v) => (
                 <button key={v.id} className="chip" onClick={() => ocultar(v.id, false)}>
-                  <SimboloEstado estado={v.estado} /> {v.nome} <Icone nome="olho" tamanho={12} />
+                  <SimboloEstado estado={v.estado} /> {nomeDoAgente(v)} <Icone nome="olho" tamanho={12} />
                 </button>
               ))}
             </div>
@@ -156,8 +159,8 @@ function LayoutFoco({ e, visiveis }: { e: Estado; visiveis: Vertice[] }) {
           {outros.map((v) => (
             <button key={v.id} className={`cartao-mini estado-borda-${v.estado}`} onClick={() => focar(v.id)}>
               <div className="cartao-mini-topo">
-                <MiniVertice papel={v.papel} tamanho={18} estado={v.estado} />
-                <b>{v.nome}</b>
+                <MascoteAgente cor={corDoAgente(v)} tamanho={18} estado={v.estado} />
+                <b>{nomeDoAgente(v)}</b>
                 <SimboloEstado estado={v.estado} />
               </div>
               <div className="cartao-mini-linha">{NOME_AGENTE[v.agente]} · {v.ultimaAcao}</div>
@@ -173,6 +176,9 @@ function LayoutFoco({ e, visiveis }: { e: Estado; visiveis: Vertice[] }) {
 function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: boolean }) {
   const [confirmar, setConfirmar] = useState(false);
   const [arrastandoSobre, setArrastandoSobre] = useState(false);
+  const [renomeando, setRenomeando] = useState(false);
+  const nome = nomeDoAgente(v);
+  const cor = corDoAgente(v);
   const focado = e.focoId === v.id;
   const filhos = e.vertices.filter((f) => f.paiId === v.id);
   const corrida = v.corridaId ? e.corridas.find((c) => c.id === v.corridaId) : undefined;
@@ -180,7 +186,7 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
   return (
     <article
       className={`painel estado-borda-${v.estado} ${focado ? 'focado' : ''} ${arrastandoSobre ? 'alvo-soltar' : ''}`}
-      aria-label={`${v.nome}, ${v.estado}`}
+      aria-label={`${nome}, ${v.estado}`}
       draggable={arrastavel}
       onDragStart={(ev) => ev.dataTransfer.setData('text/vertice', v.id)}
       onDragOver={(ev) => {
@@ -196,10 +202,35 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
         if (de) mover(v.sessaoId, de, v.id);
       }}
     >
-      <header className="painel-cabeca">
-        <MiniVertice papel={v.papel} tamanho={20} estado={v.estado} />
+      <header className="painel-cabeca com-cor-agente" style={{ ['--cor-agente' as string]: cor }}>
+        <MascoteAgente cor={cor} tamanho={20} estado={v.estado} />
         <div className="painel-nome">
-          <b>{v.nome}</b>
+          <span className="painel-nome-linha">
+            {renomeando ? (
+              <NomeEditavel v={v} editando={renomeando} aoTerminar={() => setRenomeando(false)} />
+            ) : (
+              <b
+                tabIndex={0}
+                title="Duplo clique: apelido e cor · F2 ou clique direito: renomear aqui"
+                onDoubleClick={(ev) => abrirEditarAgente(v.id, ev.currentTarget)}
+                onContextMenu={(ev) => {
+                  ev.preventDefault();
+                  setRenomeando(true);
+                }}
+                onKeyDown={(ev) => {
+                  if (ev.key === 'F2') setRenomeando(true);
+                  if (ev.key === 'Enter') abrirEditarAgente(v.id, ev.currentTarget);
+                }}
+              >
+                {nome}
+              </b>
+            )}
+            {!renomeando && (
+              <button className="lapis-agente" title="Apelido e cor" aria-label={`Apelido e cor de ${nome}`} onClick={(ev) => abrirEditarAgente(v.id, ev.currentTarget)}>
+                <IconeLapis />
+              </button>
+            )}
+          </span>
           <span className="painel-meta">
             <LogoAgente agente={v.agente} tamanho={13} /> {NOME_AGENTE[v.agente]} · {NOME_NIVEL[v.nivel]}
             {v.worktree && <span className="mono"> · {v.worktree.split('\\').pop()}</span>}
@@ -250,7 +281,7 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
 
       {confirmar && (
         <div className="faixa faixa-erro">
-          <span>Encerrar o processo de {v.nome}? O histórico do terminal fica salvo.</span>
+          <span>Encerrar o processo de {nome}? O histórico do terminal fica salvo.</span>
           <button className="botao perigo pequeno" onClick={() => encerrar(v.id)}>
             Encerrar
           </button>
@@ -264,7 +295,7 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
         <div className="faixa faixa-espera" role="alert">
           <span className="estado-simbolo">◆</span>
           <span>
-            <b>{v.nome} pede permissão:</b> {v.pergunta}
+            <b>{nome} pede permissão:</b> {v.pergunta}
           </span>
           <button className="botao primario pequeno" onClick={() => responder(v.id, true)}>
             Permitir
@@ -282,7 +313,7 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
           <span>Subagentes:</span>
           {filhos.slice(-4).map((f) => (
             <span key={f.id} className="chip pequeno">
-              <SimboloEstado estado={f.estado} /> {f.nome}
+              <SimboloEstado estado={f.estado} /> {nomeDoAgente(f)}
             </span>
           ))}
         </footer>
@@ -303,7 +334,7 @@ function FaixaCorrida({ e, corridaId }: { e: Estado; corridaId: string }) {
       </span>
       {vs.map((v) => (
         <button key={v.id} className="botao pequeno" disabled={!todosProntos} onClick={() => escolherVencedor(c.id, v.id)} title={`${formatarCusto(v.custo)} · +${v.diff.mais} −${v.diff.menos}`}>
-          <SimboloEstado estado={v.estado} /> {v.nome} <span className="mono">+{v.diff.mais} −{v.diff.menos}</span>
+          <SimboloEstado estado={v.estado} /> {nomeDoAgente(v)} <span className="mono">+{v.diff.mais} −{v.diff.menos}</span>
         </button>
       ))}
     </div>
@@ -354,7 +385,7 @@ function CampoComando({ e, sessaoId, vertices }: { e: Estado; sessaoId: string; 
         <select value={alvoId} onChange={(ev) => setAlvo(ev.target.value)} aria-label="Mandar para">
           {vertices.map((v) => (
             <option key={v.id} value={v.id}>
-              {v.nome}
+              {nomeDoAgente(v)}
             </option>
           ))}
           {vertices.length > 1 && <option value="todos">Todos os agentes</option>}
@@ -368,7 +399,7 @@ function CampoComando({ e, sessaoId, vertices }: { e: Estado; sessaoId: string; 
             ? 'Crie um agente para mandar tarefas'
             : alvoId === 'todos'
               ? 'Escreva uma tarefa para todos os agentes…'
-              : `Escreva uma tarefa para o ${alvoV?.nome ?? 'agente'}…  (/corrida, /revisar)`
+              : `Escreva uma tarefa para o ${alvoV ? nomeDoAgente(alvoV) : 'agente'}…  (/corrida, /revisar)`
         }
         aria-label="Comando"
       />

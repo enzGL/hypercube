@@ -5,10 +5,12 @@ import {
   abrirDialogo,
   alternarPasta,
   contar,
+  corDoAgente,
   definirLayout,
   estadoHiper,
   focar,
   NOME_AGENTE,
+  nomeDoAgente,
   selecionarSessao,
   useLoja,
   type Estado,
@@ -19,7 +21,8 @@ import { definirModoLateral, irParaRota, listarProjetos, projetoAtivo, useCasca,
 import { FRASE_HIPER, Hiper } from './Hiper';
 import { AvatarProjeto, IconeCasca } from './IconesCasca';
 import { HiperMini } from './HiperMini';
-import { MiniVertice, SimboloEstado } from './Pecas';
+import { SimboloEstado } from './Pecas';
+import { abrirEditarAgente, MascoteAgente } from './EditarAgente';
 
 function abrirSessao(id: string, rota: 'sessoes' | 'orquestracao' = 'sessoes') {
   selecionarSessao(id);
@@ -314,17 +317,23 @@ function LinhaTerminal({ e, v, nivel }: { e: Estado; v: Vertice; nivel: number }
   const rota = e.tela as Rota;
   const filhos = e.vertices.filter((f) => f.paiId === v.id).slice(-3);
   const ativo = e.focoId === v.id && rota === 'sessoes';
+  const nome = nomeDoAgente(v);
+  const cor = corDoAgente(v);
   return (
     <li>
       <button
-        className={`linha-terminal ${ativo ? 'ativo' : ''} ${v.oculto ? 'oculto' : ''}`}
-        style={nivel ? { paddingLeft: 12 + nivel * 16 } : undefined}
+        className={`linha-terminal com-cor-agente ${ativo ? 'ativo' : ''} ${v.oculto ? 'oculto' : ''}`}
+        style={{ ['--cor-agente' as string]: cor, ...(nivel ? { paddingLeft: 12 + nivel * 16 } : {}) }}
         onClick={() => focar(v.id)}
-        title={`${v.nome} · ${NOME_AGENTE[v.agente]}${v.oculto ? ' (oculto, ainda rodando)' : ''}`}
+        onContextMenu={(ev) => {
+          ev.preventDefault();
+          abrirEditarAgente(v.id, { x: ev.clientX, y: ev.clientY });
+        }}
+        title={`${nome} · ${NOME_AGENTE[v.agente]}${v.oculto ? ' (oculto, ainda rodando)' : ''} · clique direito: apelido e cor`}
       >
         {nivel > 0 && <span className="ramo" aria-hidden="true">└</span>}
-        <MiniVertice papel={v.papel} tamanho={14} estado={v.estado} />
-        <span className="linha-nome">{v.nome}</span>
+        <MascoteAgente cor={cor} tamanho={14} estado={v.estado} />
+        <span className="linha-nome">{nome}</span>
         {nivel === 0 && <LogoAgente agente={v.agente} tamanho={14} className="linha-agente-logo" />}
         {v.estado === 'trabalhando' ? <HiperMini estado="trabalhando" tamanho={16} rotulo="Trabalhando" /> : <SimboloEstado estado={v.estado} />}
       </button>
