@@ -13,12 +13,14 @@ import {
 import '@xyflow/react/dist/style.css';
 import {
   avisar,
+  corDoAgente,
   criarVertice,
   ESTADO_INFO,
   focar,
   lideresDaSessao,
   mandar,
   NOME_AGENTE,
+  nomeDoAgente,
   resumoOrquestracao,
   trabalhadoresDoLider,
   useLoja,
@@ -26,9 +28,10 @@ import {
 } from '../estado/loja';
 import { nativo, type UsoDoPlano } from '../nativo';
 import { NoVerticeView, type NoVertice } from '../telas/Orquestracao';
-import { formatarCusto, formatarTokens, Icone, MiniVertice, SimboloEstado } from './Pecas';
+import { formatarCusto, formatarTokens, Icone, SimboloEstado } from './Pecas';
 import { HiperMini } from './HiperMini';
 import '../orquestracao.css';
+import { MascoteAgente } from './EditarAgente';
 
 const tiposNo = { vertice: NoVerticeView };
 
@@ -136,10 +139,10 @@ export function PainelOrquestracao({ sessaoId }: Props) {
                 setAbaId(l.id);
                 if (!pref.aberto) setPref((p) => ({ ...p, aberto: true }));
               }}
-              title={l.tarefa ?? l.nome}
+              title={l.tarefa ?? nomeDoAgente(l)}
             >
               <HiperMini estado={l.estado} tamanho={12} />
-              {l.nome}
+              {nomeDoAgente(l)}
             </button>
           ))}
           <button className="po-aba po-mais" onClick={novoPlanner} disabled={!sid} title="Novo planner" aria-label="Novo planner">
@@ -297,9 +300,9 @@ function Resumo({ r, workers }: { r: ReturnType<typeof resumoOrquestracao>; work
           {workers.map((w) => (
             <li key={w.id}>
               <button onClick={() => focar(w.id)} title="Abrir o terminal">
-                <MiniVertice papel={w.papel} tamanho={16} estado={w.estado} />
+                <MascoteAgente cor={corDoAgente(w)} tamanho={16} estado={w.estado} />
                 <span className="po-exec-texto">
-                  <b>{w.nome}</b>
+                  <b>{nomeDoAgente(w)}</b>
                   <span className="secundario">{w.estado === 'esperando' ? w.pergunta : w.ultimaAcao ?? w.tarefa}</span>
                 </span>
                 <span className="po-exec-num mono">
@@ -328,7 +331,7 @@ function Rodape({ workers, lider }: { workers: Vertice[]; lider: Vertice | null 
     const t = texto.trim();
     if (!alvo || !t) return;
     mandar(alvo.id, t);
-    avisar(`Mais trabalho mandado para ${alvo.nome}.`, 'trabalhando', alvo.id);
+    avisar(`Mais trabalho mandado para ${nomeDoAgente(alvo)}.`, 'trabalhando', alvo.id);
     setTexto('');
   };
 
@@ -342,17 +345,17 @@ function Rodape({ workers, lider }: { workers: Vertice[]; lider: Vertice | null 
     >
       <select value={alvo ? alvo.id : ''} onChange={(ev) => setAlvoId(ev.target.value)} aria-label="Worker que recebe o trabalho">
         <option value="">Escolha um worker…</option>
-        {lider && <option value={lider.id}>{lider.nome} (planner)</option>}
+        {lider && <option value={lider.id}>{nomeDoAgente(lider)} (planner)</option>}
         {workers.map((w) => (
           <option key={w.id} value={w.id}>
-            {ESTADO_INFO[w.estado].simbolo} {w.nome}
+            {ESTADO_INFO[w.estado].simbolo} {nomeDoAgente(w)}
           </option>
         ))}
       </select>
       <input
         value={texto}
         onChange={(ev) => setTexto(ev.target.value)}
-        placeholder={alvo ? `Dar mais trabalho a ${alvo.nome}…` : 'Dar mais trabalho a ele…'}
+        placeholder={alvo ? `Dar mais trabalho a ${nomeDoAgente(alvo)}…` : 'Dar mais trabalho a ele…'}
         disabled={!alvo}
         aria-label="Trabalho novo"
       />

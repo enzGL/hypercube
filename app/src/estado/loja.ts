@@ -67,6 +67,10 @@ export interface Vertice {
   tarefa?: string;
   corridaId?: string;
   atualizadoEm: number;
+  /** Apelido dado pela pessoa (ver `renomearAgente`). */
+  apelido?: string;
+  /** Cor escolhida pela pessoa (ver `definirCorAgente`). */
+  cor?: string;
 }
 
 export interface Sessao {
@@ -237,7 +241,7 @@ function aoEvento(ev: EventoAgente) {
       break;
     case 'Notification': {
       atualizarVertice(v.id, (x) => ({ ...soma(x), estado: 'esperando', pergunta: ev.mensagem, esperandoDesde: ev.momento, ultimaAcao: 'Pediu permissão' }));
-      const texto = `${v.nome} está esperando você: ${ev.mensagem}`;
+      const texto = `${nomeDoAgente(v)} está esperando você: ${ev.mensagem}`;
       avisar(texto, 'esperando', v.id);
       nativo.sistema.notificar('Hypercube', texto);
       nativo.sistema.tocarSom();
@@ -251,15 +255,15 @@ function aoEvento(ev: EventoAgente) {
         const visivel = estado.tela === 'sessoes' && estado.sessaoAtivaId === v.sessaoId && !v.oculto;
         if (!visivel && ev.mensagem !== 'Interrompido') {
           const sessao = estado.sessoes.find((s) => s.id === v.sessaoId);
-          avisar(`${v.nome} terminou${sessao && sessao.id !== estado.sessaoAtivaId ? ` em “${sessao.nome}”` : ''}.`, 'pronto', v.id);
+          avisar(`${nomeDoAgente(v)} terminou${sessao && sessao.id !== estado.sessaoAtivaId ? ` em “${sessao.nome}”` : ''}.`, 'pronto', v.id);
         }
       }
       window.setTimeout(() => mudar(() => ({})), 3600);
       break;
     case 'Erro':
       atualizarVertice(v.id, () => ({ estado: 'erro', ultimaAcao: ev.mensagem }));
-      avisar(`${v.nome}: ${ev.mensagem}`, 'erro', v.id);
-      nativo.sistema.notificar('Hypercube', `${v.nome}: ${ev.mensagem}`);
+      avisar(`${nomeDoAgente(v)}: ${ev.mensagem}`, 'erro', v.id);
+      nativo.sistema.notificar('Hypercube', `${nomeDoAgente(v)}: ${ev.mensagem}`);
       break;
     case 'SubagentStart': {
       const filho: Vertice = {
@@ -643,4 +647,144 @@ export function resumoOrquestracao(ws: Vertice[], limite: number): ResumoOrquest
     vagasEmUso: Math.min(limite, rodando + esperando),
     limite,
   };
+}
+
+// ---------- agentes do jeito da pessoa (acrescentado pelo agente agentes) ----------
+
+/** Personalização de um agente ou de um papel. Campo ausente = usa o padrão. */
+export interface Personalizacao {
+  apelido?: string;
+  cor?: string;
+}
+
+interface Personalizacoes {
+  porAgente: Record<string, Personalizacao>;
+  porPapel: Partial<Record<Papel, Personalizacao>>;
+}
+
+const CHAVE_AGENTES = 'hypercube.agentes';
+
+/** 10 cores que conversam com a identidade Noite e ficam longe das cores de estado. */
+export const PALETA_AGENTES: { cor: string; nome: string }[] = [
+  { cor: '#2238C4', nome: 'Cobalto' },
+  { cor: '#5468E0', nome: 'Anil' },
+  { cor: '#93A4FF', nome: 'Lavanda' },
+  { cor: '#3B8FC4', nome: 'Céu' },
+  { cor: '#2E9C8F', nome: 'Petróleo' },
+  { cor: '#8A5BD6', nome: 'Violeta' },
+  { cor: '#B5579E', nome: 'Ameixa' },
+  { cor: '#C2475A', nome: 'Framboesa' },
+  { cor: '#C27A12', nome: 'Cobre' },
+  { cor: '#4B5A93', nome: 'Ardósia' },
+];
+
+function lerPersonalizacoes(): Personalizacoes {
+  try {
+    const p = JSON.parse(localStorage.getItem(CHAVE_AGENTES) ?? 'null');
+    if (p && typeof p === 'object') return { porAgente: p.porAgente ?? {}, porPapel: p.porPapel ?? {} };
+  } catch {
+    /* sem armazenamento ou JSON quebrado */
+  }
+  return { porAgente: {}, porPapel: {} };
+}
+
+let personalizacoes: Personalizacoes = lerPersonalizacoes();
+
+function gravarPersonalizacoes() {
+  try {
+    localStorage.setItem(CHAVE_AGENTES, JSON.stringify(personalizacoes));
+  } catch {
+    /* sem armazenamento: vale só nesta abertura */
+  }
+}
+
+/**
+ * Chave estável do agente entre aberturas: o id muda a cada vez que o app abre,
+ * então a personalização fica presa à pasta, à sessão e ao nome original.
+ */
+export function chaveAgente(v: Vertice): string {
+  const s = estado.sessoes.find((x) => x.id === v.sessaoId);
+  return `${s?.pasta ?? ''}|${s?.nome ?? ''}|${v.nome}`;
+}
+
+const corValida = (c: string | undefined) => (c && /^#[0-9a-f]{6}$/i.test(c) ? c : undefined);
+
+/** Apelido e cor padrão de um papel (o que a pessoa escolheu ou o de fábrica). */
+export function padraoDoPapel(papel: Papel): { apelido: string; cor: string } {
+  const p = personalizacoes.porPapel[papel] ?? {};
+  return { apelido: p.apelido?.trim() || NOME_PAPEL[papel], cor: corValida(p.cor) ?? COR_PAPEL[papel] };
+}
+
+/** Nome que aparece para a pessoa: apelido do agente, depois o padrão do papel, depois o nome. */
+export function nomeDoAgente(v: Vertice): string {
+  const proprio = v.apelido?.trim() || personalizacoes.porAgente[chaveAgente(v)]?.apelido?.trim();
+  return proprio || nomePadraoDoAgente(v);
+}
+
+/** Nome que o agente teria sem apelido próprio (segue o padrão do papel). */
+export function nomePadraoDoAgente(v: Vertice): string {
+  const doPapel = personalizacoes.porPapel[v.papel]?.apelido?.trim();
+  const base = NOME_PAPEL[v.papel];
+  // "Batedor 2" com o padrão "Olheiro" vira "Olheiro 2"; nomes próprios ("Corrida 1") ficam.
+  if (doPapel && v.nome.startsWith(base)) return doPapel + v.nome.slice(base.length);
+  return v.nome;
+}
+
+/** Cor do agente: a dele, depois a do papel. */
+export function corDoAgente(v: Vertice): string {
+  return corValida(v.cor) ?? corValida(personalizacoes.porAgente[chaveAgente(v)]?.cor) ?? padraoDoPapel(v.papel).cor;
+}
+
+/** Se o agente tem apelido ou cor só dele. */
+export function agentePersonalizado(v: Vertice): boolean {
+  const p = personalizacoes.porAgente[chaveAgente(v)];
+  return !!(v.apelido || v.cor || p?.apelido || p?.cor);
+}
+
+function guardarDoAgente(id: string, f: (p: Personalizacao) => Personalizacao) {
+  const v = estado.vertices.find((x) => x.id === id);
+  if (!v) return;
+  const chave = chaveAgente(v);
+  const novo = f({ ...personalizacoes.porAgente[chave] });
+  const porAgente = { ...personalizacoes.porAgente };
+  if (novo.apelido || novo.cor) porAgente[chave] = novo;
+  else delete porAgente[chave];
+  personalizacoes = { ...personalizacoes, porAgente };
+  gravarPersonalizacoes();
+  atualizarVertice(id, () => ({ apelido: novo.apelido, cor: novo.cor }));
+}
+
+/** Dá um apelido ao agente. Vazio volta ao nome padrão. */
+export function renomearAgente(id: string, apelido: string) {
+  const a = apelido.trim().slice(0, 40);
+  guardarDoAgente(id, (p) => ({ ...p, apelido: a || undefined }));
+}
+
+/** Troca a cor do agente (#rrggbb). Vazio volta à cor do papel. */
+export function definirCorAgente(id: string, cor: string) {
+  guardarDoAgente(id, (p) => ({ ...p, cor: corValida(cor) }));
+}
+
+/** Tira o apelido e a cor do agente: volta ao padrão do papel. */
+export function restaurarAgente(id: string) {
+  guardarDoAgente(id, () => ({}));
+}
+
+/** Define o padrão de um papel (vale para todos os agentes desse papel sem apelido ou cor próprios). */
+export function definirPadraoPapel(papel: Papel, p: Personalizacao) {
+  const apelido = p.apelido?.trim().slice(0, 40);
+  const cor = corValida(p.cor);
+  const porPapel = { ...personalizacoes.porPapel };
+  const valeApelido = apelido && apelido !== NOME_PAPEL[papel] ? apelido : undefined;
+  const valeCor = cor && cor.toLowerCase() !== COR_PAPEL[papel].toLowerCase() ? cor : undefined;
+  if (valeApelido || valeCor) porPapel[papel] = { apelido: valeApelido, cor: valeCor };
+  else delete porPapel[papel];
+  personalizacoes = { ...personalizacoes, porPapel };
+  gravarPersonalizacoes();
+  mudar((e) => ({ vertices: e.vertices.map((v) => (v.papel === papel ? { ...v } : v)) }));
+}
+
+/** Volta o papel ao apelido e à cor de fábrica. */
+export function restaurarPadraoPapel(papel: Papel) {
+  definirPadraoPapel(papel, {});
 }
