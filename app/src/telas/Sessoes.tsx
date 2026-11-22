@@ -18,6 +18,8 @@ import {
   NOME_NIVEL,
   ocultar,
   ordenados,
+  reabrir,
+  reabrirTodos,
   responder,
   revisaoCruzada,
   avisar,
@@ -67,6 +69,7 @@ export function Sessoes() {
   const todos = ordenados(e, sessao.id);
   const visiveis = todos.filter((v) => !v.oculto);
   const ocultos = todos.filter((v) => v.oculto);
+  const encerrados = todos.filter((v) => v.encerrado);
   const corrida = e.corridas.find((c) => c.sessaoId === sessao.id && !c.escolhido && c.ids.length > 0);
 
   const acoes = (
@@ -122,6 +125,17 @@ export function Sessoes() {
         </div>
       ) : (
         <>
+          {encerrados.length > 1 && (
+            <div className="faixa-ocultos">
+              <Icone nome="parar" tamanho={14} />
+              <span>
+                {encerrados.length} agentes estão fechados. Eles abrem sem tarefa e esperam você.
+              </span>
+              <button className="botao pequeno" onClick={() => reabrirTodos(sessao.id)}>
+                Abrir todos de novo
+              </button>
+            </div>
+          )}
           {ocultos.length > 0 && (
             <div className="faixa-ocultos">
               <Icone nome="ocultar" tamanho={14} />
@@ -306,6 +320,17 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
       )}
 
       {v.estado === 'esperando' && v.pergunta && <FaixaPermissao v={v} nome={nome} />}
+
+      {v.encerrado && (
+        <div className="faixa" role="status">
+          <span>
+            {v.terminalId ? 'O processo terminou.' : 'Este agente fechou junto com o app.'} Abrir de novo começa uma conversa nova, sem tarefa.
+          </span>
+          <button className="botao primario pequeno" onClick={() => reabrir(v.id)}>
+            Abrir de novo
+          </button>
+        </div>
+      )}
 
       {v.terminalId && <Terminal terminalId={v.terminalId} focado={focado} aoFocar={() => e.focoId !== v.id && focar(v.id)} />}
 

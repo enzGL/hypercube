@@ -38,6 +38,12 @@ export function modeloDoNivel(agente: Agente, nivel: Nivel): string | undefined 
   return MODELO[agente]?.[nivel];
 }
 
+/** No Codex os nomes dos modelos mudam de conta para conta: o nível vira o esforço de raciocínio. */
+export function esforcoDoNivel(agente: Agente, nivel: Nivel): 'low' | 'medium' | 'high' | undefined {
+  if (agente !== 'codex') return undefined;
+  return nivel === 'barato' ? 'low' : nivel === 'forte' ? 'high' : 'medium';
+}
+
 /**
  * Para agentes sem opção de prompt de sistema, a instrução vai junto da primeira mensagem,
  * numa linha só (no terminal, uma quebra de linha mandaria a mensagem antes da hora).

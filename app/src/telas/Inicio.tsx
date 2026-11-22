@@ -24,7 +24,7 @@ const NOME_MODO: Record<Modo, string> = { normal: 'Normal', planejar: 'Planejar'
 const DICA_MODO: Record<Modo, string> = {
   normal: 'Normal: um agente faz a tarefa.',
   planejar: 'Planejar: o agente só monta o plano, sem mudar arquivos.',
-  equipe: 'Equipe: um líder divide a tarefa com um explorador, um construtor e um revisor.',
+  equipe: 'Equipe: um líder divide a tarefa e chama um explorador, um construtor e um revisor.',
 };
 const AGENTES_PADRAO: Agente[] = ['claude', 'codex', 'gemini'];
 
@@ -222,14 +222,12 @@ function CaixaComando({ pastas }: { pastas: string[] }) {
       const nome = t.length > 38 ? `${t.slice(0, 36).trimEnd()}…` : t;
       const s = criarSessao(nome, pasta, modo === 'equipe', modo === 'equipe');
       if (modo === 'equipe') {
-        await criarVertice(s.id, 'lider', agente, 'forte', `Divida esta tarefa entre os agentes: ${t}`);
-        // Só com os agentes instalados: sem Gemini ou Codex, o papel fica com o agente escolhido.
-        const tem = (a: Agente) => listaAgentes.includes(a);
-        await criarVertice(s.id, 'batedor', tem('gemini') ? 'gemini' : agente, 'barato');
-        await criarVertice(s.id, 'construtor', tem('codex') ? 'codex' : agente, 'padrao');
-        await criarVertice(s.id, 'revisor', agente, 'padrao');
+        // O líder cria a equipe com as ferramentas do Hypercube, cada um já com a sua parte da tarefa.
+        await criarVertice(s.id, 'lider', agente, 'forte', `Divida esta tarefa entre os agentes do Hypercube (Explorador, Construtor, Revisor e, se precisar, Mecânico) e feche o pedido: ${t}`);
+      } else if (modo === 'planejar') {
+        await criarVertice(s.id, 'agente', agente, 'padrao', `Só planeje, sem mudar arquivos: ${t}`, { soLeitura: true });
       } else {
-        await criarVertice(s.id, 'agente', agente, 'padrao', modo === 'planejar' ? `Só planeje, sem mudar arquivos: ${t}` : t);
+        await criarVertice(s.id, 'agente', agente, 'padrao', t);
       }
       setTexto('');
     } finally {

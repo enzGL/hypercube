@@ -48,7 +48,37 @@ async fn terminal_historico(estado: State<'_, Estado>, id: String) -> R<String> 
     Ok(estado.terminais.historico(&id))
 }
 
+/// Texto e depois o Enter (para mandar mensagens ao agente).
+#[tauri::command]
+async fn terminal_enviar(estado: State<'_, Estado>, id: String, texto: String) -> R<()> {
+    estado.terminais.enviar(&id, &texto)
+}
+
+#[tauri::command]
+async fn terminal_resultado(estado: State<'_, Estado>, id: String) -> R<String> {
+    Ok(estado.terminais.resultado(&estado.hooks, &id))
+}
+
+/// Milissegundos sem nada novo no terminal (`None` se ele não existe mais).
+#[tauri::command]
+async fn terminal_ocioso(estado: State<'_, Estado>, id: String) -> R<Option<u64>> {
+    Ok(estado.terminais.ocioso_ms(&id))
+}
+
+// ---------- orquestrador (ferramentas do Líder) ----------
+
+#[tauri::command]
+async fn orquestrador_responder(estado: State<'_, Estado>, pedido: u64, texto: String, erro: bool) -> R<()> {
+    hooks::responder_pedido(&estado.hooks.pedidos, pedido, if erro { Err(texto) } else { Ok(texto) });
+    Ok(())
+}
+
 // ---------- processos ----------
+
+#[tauri::command]
+async fn processos_resumo_mudancas(worktree: String, pasta: String) -> R<String> {
+    em_fundo(move || processos::resumo_mudancas(&worktree, &pasta)).await?
+}
 
 #[tauri::command]
 async fn processos_detectar_agentes() -> R<Vec<processos::AgenteDetectado>> {
@@ -192,6 +222,11 @@ pub fn run() {
             terminal_redimensionar,
             terminal_encerrar,
             terminal_historico,
+            terminal_enviar,
+            terminal_resultado,
+            terminal_ocioso,
+            orquestrador_responder,
+            processos_resumo_mudancas,
             processos_detectar_agentes,
             processos_criar_worktree,
             processos_uso_do_plano,
