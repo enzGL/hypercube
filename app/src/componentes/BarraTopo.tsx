@@ -49,12 +49,12 @@ export function CabecalhoTela({ titulo, subtitulo, acoes }: PropsCabecalho) {
     <header className="topo">
       <div className="topo-linha">
         <div className="topo-titulo">
-          <h1>{titulo}</h1>
+          <h1 title={titulo}>{titulo}</h1>
           {subtitulo && <span className="caminho">{subtitulo}</span>}
         </div>
         <div className="contadores" role="status" aria-label="Estado dos agentes desta sessão">
           <span className="contador-item">
-            <b>{c.agentes}</b> agentes
+            <b>{c.agentes}</b> {c.agentes === 1 ? 'agente' : 'agentes'}
           </span>
           <span className="contador-item" title="Trabalhando">
             <SimboloEstado estado="trabalhando" /> <b>{c.trabalhando}</b>
