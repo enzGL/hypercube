@@ -4,7 +4,7 @@
 // e `evento_agente` (EventoAgente).
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import type { AgenteDetectado, Desligar, EventoAgente, Nativo, SaidaGerada } from './tipos';
+import type { AgenteDetectado, Desligar, EventoAgente, FimTerminal, Nativo, PedidoOrquestrador, SaidaGerada } from './tipos';
 
 /** Liga um ouvinte de evento do Tauri e devolve um desligar síncrono. */
 function ouvir<T>(canal: string, ouvinte: (dado: T) => void): Desligar {
@@ -54,6 +54,9 @@ export function criarNativoTauri(): Nativo {
     terminais: {
       criar: (opcoes) => invoke<string>('terminal_criar', { opcoes }),
       escrever: (id, dados) => invoke('terminal_escrever', { id, dados }),
+      enviar: (id, texto) => invoke('terminal_enviar', { id, texto }),
+      resultado: (id) => invoke<string>('terminal_resultado', { id }),
+      ocioso: (id) => invoke<number | null>('terminal_ocioso', { id }),
       redimensionar: (id, cols, rows) => invoke('terminal_redimensionar', { id, cols, rows }),
       encerrar: (id) => invoke('terminal_encerrar', { id }),
       historico: (id) => invoke<string>('terminal_historico', { id }),
@@ -70,6 +73,11 @@ export function criarNativoTauri(): Nativo {
     },
     eventos: {
       aoEvento: (ouvinte) => ouvir<EventoAgente>('evento_agente', ouvinte),
+      aoFim: (ouvinte) => ouvir<FimTerminal>('terminal_fim', ouvinte),
+    },
+    orquestrador: {
+      aoPedido: (ouvinte) => ouvir<PedidoOrquestrador>('pedido_orquestrador', ouvinte),
+      responder: (pedido, texto, erro = false) => invoke('orquestrador_responder', { pedido, texto, erro }),
     },
     arquivos: {
       escolherPasta: () => invoke<string | null>('arquivos_escolher_pasta'),
@@ -86,6 +94,7 @@ export function criarNativoTauri(): Nativo {
       },
       usoDoPlano: () => invoke('processos_uso_do_plano'),
       criarWorktree: (pasta, ramo) => invoke<string>('processos_criar_worktree', { pasta, ramo }),
+      resumoMudancas: (worktree, pasta) => invoke<string>('processos_resumo_mudancas', { worktree, pasta }),
     },
     sistema: {
       notificar: (titulo, corpo) => invoke('sistema_notificar', { titulo, corpo }),

@@ -342,6 +342,15 @@ export function criarNativoSimulado(): Nativo {
       async escrever(id, dados) {
         terminais.get(id)?.escrever(dados);
       },
+      async enviar(id, texto) {
+        terminais.get(id)?.escrever(`${texto}\r`);
+      },
+      async ocioso(id) {
+        return terminais.has(id) ? 10_000 : null;
+      },
+      async resultado(id) {
+        return (terminais.get(id)?.historico ?? '').slice(-2000);
+      },
       async redimensionar() {},
       async encerrar(id) {
         terminais.get(id)?.encerrar();
@@ -362,6 +371,15 @@ export function criarNativoSimulado(): Nativo {
         ouvintesEvento.add(ouvinte);
         return () => ouvintesEvento.delete(ouvinte);
       },
+      aoFim() {
+        return () => {};
+      },
+    },
+    orquestrador: {
+      aoPedido() {
+        return () => {};
+      },
+      async responder() {},
     },
     arquivos: {
       async escolherPasta() {
@@ -410,6 +428,9 @@ export function criarNativoSimulado(): Nativo {
           { provedor: 'Claude', cincoHoras: 42, semana: 18, renovaEm: '2 h 10 min' },
           { provedor: 'Codex', cincoHoras: 11, semana: 6, renovaEm: '4 h 02 min' },
         ];
+      },
+      async resumoMudancas(worktree) {
+        return `Pasta: ${worktree}\nBranch: v/simulado\nCommits novos:\n(nenhum)`;
       },
       async criarWorktree(pasta, ramo) {
         return `${pasta}\\.hypercube\\worktrees\\${ramo}`;

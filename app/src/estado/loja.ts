@@ -1,7 +1,7 @@
 // Estado do app: sessões, agentes, telas e avisos. Fala com o sistema só por `nativo`.
 import { useSyncExternalStore } from 'react';
-import { nativo, NOME_AGENTE, type Agente, type EventoAgente } from '../nativo';
-import { INSTRUCAO_PAPEL, mensagemComPapel, modeloDoNivel, PRECISA_COPIA, SO_LEITURA } from './papeis';
+import { nativo, NOME_AGENTE, type Agente, type EventoAgente, type PedidoOrquestrador } from '../nativo';
+import { esforcoDoNivel, INSTRUCAO_PAPEL, mensagemComPapel, modeloDoNivel, PRECISA_COPIA, SO_LEITURA } from './papeis';
 
 /** 'agente' é o comum, sem papel. Os outros são agentes predefinidos, opcionais, cada um com a sua skill. */
 export type Papel = 'agente' | 'lider' | 'batedor' | 'construtor' | 'revisor' | 'consertador' | 'subagente';
@@ -117,6 +117,12 @@ export interface Vertice {
   apelido?: string;
   /** Cor escolhida pela pessoa (ver `definirCorAgente`). */
   cor?: string;
+  /** Líder que criou este agente pelas ferramentas do Hypercube. */
+  criadoPor?: string;
+  /** Abre em modo só leitura (os papéis que só leem, ou o modo Planejar). */
+  soLeitura?: boolean;
+  /** O processo terminou (ou o app foi fechado): dá para abrir de novo. */
+  encerrado?: boolean;
 }
 
 export interface Sessao {
@@ -163,6 +169,8 @@ export interface Estado {
 }
 
 const CHAVE_CONFIG = 'hypercube.config';
+/** Sessões, abas e agentes, para voltarem quando o app abrir de novo. */
+const CHAVE_SESSOES = 'hypercube.sessoes';
 
 let estado: Estado = {
   configurado: false,
@@ -187,6 +195,63 @@ function mudar(f: (e: Estado) => Partial<Estado>) {
   estado = { ...estado, ...f(estado) };
   ouvintes.forEach((o) => o());
   atualizarTitulo();
+  gravarSessoes();
+}
+
+let relogioGravar: number | undefined;
+/** Guarda as sessões e os agentes (sem o que só vale com o processo rodando). */
+function gravarSessoes() {
+  if (typeof window === 'undefined') return;
+  window.clearTimeout(relogioGravar);
+  relogioGravar = window.setTimeout(() => {
+    if (!estado.configurado) return;
+    const vertices = estado.vertices
+      .filter((v) => v.papel !== 'subagente')
+      .map(({ terminalId: _t, pergunta: _p, esperandoDesde: _e, ...v }) => v);
+    const { sessoes, ordem, sessaoAtivaId, pastasAbertas } = estado;
+    try {
+      localStorage.setItem(CHAVE_SESSOES, JSON.stringify({ versao: 1, sessoes, vertices, ordem, sessaoAtivaId, pastasAbertas }));
+    } catch {
+      /* sem armazenamento: vale só nesta abertura */
+    }
+  }, 300);
+}
+
+/**
+ * Volta as sessões e os agentes da última vez. Os processos não sobrevivem ao fechar o app:
+ * cada agente volta encerrado, com o botão para abrir de novo (sem tarefa, ninguém começa sozinho).
+ */
+function restaurarSessoes(): boolean {
+  try {
+    const g = JSON.parse(localStorage.getItem(CHAVE_SESSOES) ?? 'null');
+    if (!g || !Array.isArray(g.sessoes) || !g.sessoes.length || !Array.isArray(g.vertices)) return false;
+    const sessoes: Sessao[] = g.sessoes.filter((s: Sessao) => s && typeof s.id === 'string' && typeof s.pasta === 'string');
+    const ids = new Set(sessoes.map((s) => s.id));
+    const vertices: Vertice[] = g.vertices
+      .filter((v: Vertice) => v && typeof v.id === 'string' && ids.has(v.sessaoId) && v.papel !== 'subagente')
+      .map((v: Vertice) => ({
+        ...v,
+        terminalId: undefined,
+        pergunta: undefined,
+        esperandoDesde: undefined,
+        corridaId: undefined,
+        encerrado: true,
+        estado: 'pronto' as const,
+        ultimaAcao: 'Fechado junto com o app',
+        atualizadoEm: Date.now(),
+      }));
+    mudar(() => ({
+      configurado: true,
+      sessoes,
+      vertices,
+      ordem: g.ordem && typeof g.ordem === 'object' ? g.ordem : {},
+      sessaoAtivaId: ids.has(g.sessaoAtivaId) ? g.sessaoAtivaId : sessoes[0].id,
+      pastasAbertas: g.pastasAbertas && typeof g.pastasAbertas === 'object' ? g.pastasAbertas : {},
+    }));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function useLoja(): Estado {
@@ -288,6 +353,15 @@ function aoEvento(ev: EventoAgente) {
       atualizarVertice(v.id, (x) => ({ ...soma(x), estado: 'trabalhando', ultimaAcao: `Usando ${ev.ferramenta}` }));
       break;
     case 'Notification': {
+      // Agente criado pelo Líder numa cópia do mesmo projeto: a pessoa já confiou na pasta do Líder.
+      if (ev.mensagem?.startsWith('Confiar nesta pasta') && v.criadoPor) {
+        atualizarVertice(v.id, () => ({ estado: 'esperando', pergunta: ev.mensagem }));
+        window.setTimeout(() => {
+          responder(v.id, true);
+          atualizarVertice(v.id, () => ({ ultimaAcao: 'Pasta confiada (cópia do projeto do Líder)' }));
+        }, 400);
+        break;
+      }
       atualizarVertice(v.id, (x) => ({ ...soma(x), estado: 'esperando', pergunta: ev.mensagem, esperandoDesde: ev.momento, ultimaAcao: 'Pediu permissão' }));
       const texto = `${nomeDoAgente(v)} está esperando você: ${ev.mensagem}`;
       avisar(texto, 'esperando', v.id);
@@ -344,6 +418,30 @@ function aoEvento(ev: EventoAgente) {
 
 nativo.eventos.aoEvento(aoEvento);
 
+nativo.eventos.aoFim(({ id, codigo }) => {
+  const v = estado.vertices.find((x) => x.terminalId === id);
+  if (!v) return;
+  atualizarVertice(v.id, () => ({
+    encerrado: true,
+    estado: codigo === 0 ? 'pronto' : 'erro',
+    pergunta: undefined,
+    esperandoDesde: undefined,
+    ultimaAcao: codigo === 0 ? 'Processo encerrado' : `Processo encerrado (código ${codigo})`,
+  }));
+});
+
+// Agentes sem hooks (Gemini, OpenCode, Kiro): param de trabalhar quando a tela fica parada um tempo.
+const SEM_HOOKS: ReadonlySet<Agente> = new Set<Agente>(['gemini', 'opencode', 'kiro']);
+window.setInterval(async () => {
+  for (const v of estado.vertices) {
+    if (v.estado !== 'trabalhando' || !v.terminalId || !SEM_HOOKS.has(v.agente)) continue;
+    const ms = await nativo.terminais.ocioso(v.terminalId);
+    if (ms !== null && ms > 7000 && Date.now() - v.atualizadoEm > 7000) {
+      atualizarVertice(v.id, () => ({ estado: 'pronto', ultimaAcao: 'Parou (tela sem mudar)' }));
+    }
+  }
+}, 2000);
+
 // ---------- ações ----------
 
 function nomeLivre(sessaoId: string, papel: Papel): string {
@@ -362,24 +460,19 @@ export async function criarVertice(
 ): Promise<Vertice> {
   const sessao = estado.sessoes.find((s) => s.id === sessaoId)!;
   const nome = extra.nome ?? nomeLivre(sessaoId, papel);
-  const worktree = sessao.worktrees && PRECISA_COPIA.has(papel)
-    ? await nativo.processos.criarWorktree(sessao.pasta, nome.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-'))
-    : undefined;
+  let worktree: string | undefined = extra.worktree;
+  if (!worktree && sessao.worktrees && PRECISA_COPIA.has(papel)) {
+    try {
+      worktree = await nativo.processos.criarWorktree(sessao.pasta, nome.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-'));
+    } catch (erro) {
+      // Sem git na pasta: o agente trabalha na pasta do projeto mesmo, e a pessoa fica sabendo.
+      avisar(`${nome} vai trabalhar direto na pasta do projeto: não deu para criar a cópia separada (${String(erro)}).`, 'erro');
+    }
+  }
   // No app nativo a tarefa vai junto com o terminal (o agente pode abrir pedindo para confiar na pasta).
   // O papel vale de verdade: no Claude vai como prompt de sistema; nos outros, junto da primeira mensagem.
-  const nativoReal = nativo.modo === 'tauri';
-  const comoSistema = agente === 'claude';
-  const tarefaNativa = nativoReal ? (comoSistema ? tarefa : agente === 'terminal' ? tarefa : mensagemComPapel(papel, tarefa)) : undefined;
-  const terminalId = await nativo.terminais.criar({
-    agente,
-    pasta: sessao.pasta,
-    rotulo: `${nome} · ${NOME_NIVEL[nivel]}`,
-    worktree,
-    tarefa: tarefaNativa,
-    instrucao: comoSistema ? INSTRUCAO_PAPEL[papel] : undefined,
-    modelo: modeloDoNivel(agente, nivel),
-    soLeitura: SO_LEITURA.has(papel),
-  });
+  const soLeitura = extra.soLeitura ?? SO_LEITURA.has(papel);
+  const { terminalId, tarefaNativa } = await abrirTerminal({ sessao, nome, papel, agente, nivel, worktree, soLeitura }, tarefa);
   const v: Vertice = {
     id: novoId('v'),
     sessaoId,
@@ -394,9 +487,13 @@ export async function criarVertice(
     tokens: 0,
     diff: { mais: 0, menos: 0 },
     oculto: false,
-    ultimaAcao: 'Aberto',
+    ultimaAcao: tarefa && tarefaNativa ? 'Recebeu a tarefa' : 'Aberto',
+    tarefa,
     atualizadoEm: Date.now(),
     ...extra,
+    soLeitura,
+    // Com a tarefa já na abertura, o agente começa trabalhando (o Codex e o Gemini não avisam o começo).
+    ...(tarefa && tarefaNativa ? { estado: 'trabalhando' as const } : {}),
   };
   mudar((e) => ({
     vertices: [...e.vertices, v],
@@ -404,6 +501,55 @@ export async function criarVertice(
   }));
   if (tarefa && !tarefaNativa) window.setTimeout(() => mandar(v.id, tarefa), 120);
   return v;
+}
+
+interface AberturaTerminal {
+  sessao: Sessao;
+  nome: string;
+  papel: Papel;
+  agente: Agente;
+  nivel: Nivel;
+  worktree?: string;
+  soLeitura: boolean;
+}
+
+/** Abre o terminal do agente com o papel, o nível e o modo dele. */
+async function abrirTerminal(a: AberturaTerminal, tarefa?: string): Promise<{ terminalId: string; tarefaNativa?: string }> {
+  // No app nativo a tarefa vai junto com o terminal (o agente pode abrir pedindo para confiar na pasta).
+  // O papel vale de verdade: no Claude vai como prompt de sistema; nos outros, junto da primeira mensagem.
+  const nativoReal = nativo.modo === 'tauri';
+  const comoSistema = a.agente === 'claude';
+  const tarefaNativa = nativoReal ? (comoSistema || a.agente === 'terminal' ? tarefa : mensagemComPapel(a.papel, tarefa)) : undefined;
+  const terminalId = await nativo.terminais.criar({
+    agente: a.agente,
+    pasta: a.sessao.pasta,
+    rotulo: `${a.nome} · ${NOME_NIVEL[a.nivel]}`,
+    worktree: a.worktree,
+    tarefa: tarefaNativa,
+    instrucao: comoSistema ? INSTRUCAO_PAPEL[a.papel] : undefined,
+    modelo: modeloDoNivel(a.agente, a.nivel),
+    esforco: esforcoDoNivel(a.agente, a.nivel),
+    soLeitura: a.soLeitura,
+    orquestrar: a.papel === 'lider',
+  });
+  return { terminalId, tarefaNativa };
+}
+
+/** Abre de novo o terminal de um agente encerrado (sem tarefa: ele espera você). */
+export async function reabrir(verticeId: string) {
+  const v = estado.vertices.find((x) => x.id === verticeId);
+  const sessao = v && estado.sessoes.find((s) => s.id === v.sessaoId);
+  if (!v || !sessao) return;
+  try {
+    const { terminalId } = await abrirTerminal({ sessao, nome: v.nome, papel: v.papel, agente: v.agente, nivel: v.nivel, worktree: v.worktree, soLeitura: !!v.soLeitura });
+    atualizarVertice(v.id, () => ({ terminalId, encerrado: false, estado: 'pronto', pergunta: undefined, ultimaAcao: 'Aberto de novo' }));
+  } catch (erro) {
+    avisar(`Não deu para abrir ${nomeDoAgente(v)}: ${String(erro)}`, 'erro', v.id);
+  }
+}
+
+export async function reabrirTodos(sessaoId: string) {
+  for (const v of estado.vertices.filter((x) => x.sessaoId === sessaoId && x.encerrado && !x.paiId)) await reabrir(v.id);
 }
 
 export function criarSessao(nome: string, pasta: string, worktrees: boolean, orquestracao = false): Sessao {
@@ -427,13 +573,17 @@ export function definirOrquestracao(sessaoId: string, orquestracao: boolean) {
 
 export function mandar(verticeId: string, texto: string) {
   const v = estado.vertices.find((x) => x.id === verticeId);
-  if (!v?.terminalId) return;
-  nativo.terminais.escrever(v.terminalId, `${texto}\r`);
+  if (!v?.terminalId || v.encerrado) return;
+  nativo.terminais.enviar(v.terminalId, texto);
+  // O Claude avisa pelo hook; os outros começam a trabalhar aqui (o Codex avisa o fim, os demais param quando a tela para).
+  if (v.agente !== 'claude' && v.agente !== 'terminal') {
+    atualizarVertice(v.id, () => ({ estado: 'trabalhando', tarefa: texto, ultimaAcao: 'Recebeu a tarefa' }));
+  }
 }
 
 export function mandarParaTodos(sessaoId: string, texto: string) {
   estado.vertices
-    .filter((v) => v.sessaoId === sessaoId && v.terminalId && !v.corridaId)
+    .filter((v) => v.sessaoId === sessaoId && v.terminalId && !v.encerrado && !v.corridaId)
     .forEach((v) => mandar(v.id, texto));
 }
 
@@ -444,10 +594,15 @@ export function responder(verticeId: string, sim: boolean) {
     nativo.terminais.escrever(v.terminalId, sim ? 's' : 'n');
     return;
   }
-  // Claude Code: o pedido de confiar na pasta é um menu com "No, exit" marcado (seta para baixo + Enter
-  // escolhe "Yes"); os pedidos de permissão aceitam 1 para sim e Esc para não.
+  // Confiar na pasta: no Claude o menu abre com "No, exit" marcado (seta para baixo + Enter escolhe "Yes");
+  // no Codex e no Gemini a primeira opção já é confiar (Enter) e Esc recusa.
+  // Os pedidos de permissão do Claude aceitam 1 para sim e Esc para não.
   const confiar = v.pergunta?.startsWith('Confiar nesta pasta');
-  const tecla = confiar ? (sim ? '\x1b[B\r' : '\r') : sim ? '1' : '\x1b';
+  const tecla = confiar
+    ? v.agente === 'claude'
+      ? sim ? '\x1b[B\r' : '\r'
+      : sim ? '\r' : '\x1b'
+    : sim ? '1' : '\x1b';
   nativo.terminais.escrever(v.terminalId, tecla);
   atualizarVertice(v.id, () => ({ estado: 'trabalhando', pergunta: undefined, esperandoDesde: undefined, ultimaAcao: sim ? 'Permissão dada' : 'Permissão negada' }));
 }
@@ -593,6 +748,7 @@ export function comecarVazio(pasta: string) {
 export function refazerPrimeiraAbertura() {
   try {
     localStorage.removeItem(CHAVE_CONFIG);
+    localStorage.removeItem(CHAVE_SESSOES);
   } catch {
     /* ignorar */
   }
@@ -612,6 +768,7 @@ export function restaurarConfig() {
     });
     return;
   }
+  if (restaurarSessoes()) return;
   try {
     const c = JSON.parse(localStorage.getItem(CHAVE_CONFIG) ?? 'null');
     if (c?.modo === 'exemplo') comecarComExemplo(false);
@@ -673,9 +830,11 @@ export function trabalhadoresDoLider(e: Estado, liderId: string | null): Vertice
   const lider = e.vertices.find((v) => v.id === liderId);
   if (!lider) return [];
   const primeiro = lideresDaSessao(e, lider.sessaoId)[0]?.id === lider.id;
-  const principais = primeiro ? ordenados(e, lider.sessaoId).filter((v) => v.papel !== 'lider') : [];
+  const criados = ordenados(e, lider.sessaoId).filter((v) => v.criadoPor === lider.id);
+  // O primeiro líder também mostra os agentes que ninguém criou (é ele quem divide o trabalho entre eles).
+  const principais = primeiro ? ordenados(e, lider.sessaoId).filter((v) => v.papel !== 'lider' && !v.criadoPor) : [];
   const filhos = e.vertices.filter((v) => v.paiId === lider.id);
-  return [...principais, ...filhos];
+  return [...criados, ...principais, ...filhos];
 }
 
 export interface ResumoOrquestracao {
@@ -855,3 +1014,134 @@ export function definirPadraoPapel(papel: Papel, p: Personalizacao) {
 export function restaurarPadraoPapel(papel: Papel) {
   definirPadraoPapel(papel, {});
 }
+
+// ---------- ferramentas do Líder (servidor MCP local do Hypercube) ----------
+
+const PAPEIS_DO_LIDER: Papel[] = ['agente', 'batedor', 'construtor', 'revisor', 'consertador'];
+const NIVEIS: Nivel[] = ['barato', 'padrao', 'forte'];
+
+/** Limite de agentes rodando ao mesmo tempo (o mesmo do painel de orquestração). */
+function limiteDaOrquestracao(): number {
+  try {
+    const p = JSON.parse(localStorage.getItem('hypercube.orquestracao') ?? 'null');
+    if (p && typeof p.limite === 'number') return Math.max(1, Math.min(8, p.limite));
+  } catch {
+    /* sem armazenamento */
+  }
+  return 4;
+}
+
+function estadoParaLider(v: Vertice): string {
+  return v.encerrado ? 'encerrado' : v.estado;
+}
+
+function linhaAgente(v: Vertice, lider: Vertice): string {
+  const quem = v.id === lider.id ? ' (você)' : v.criadoPor === lider.id ? ' (criado por você)' : '';
+  return `- id ${v.id} · ${nomeDoAgente(v)}${quem} · papel ${NOME_PAPEL[v.papel]} (${v.papel}) · ${NOME_AGENTE[v.agente]} · nível ${v.nivel} · ${estadoParaLider(v)} · ${v.ultimaAcao ?? ''}`;
+}
+
+const texto = (x: unknown) => (typeof x === 'string' ? x.trim() : '');
+
+async function atenderLider(p: PedidoOrquestrador): Promise<string> {
+  const lider = estado.vertices.find((x) => x.terminalId === p.terminalId);
+  if (!lider) throw new Error('Este terminal não é de um agente do Hypercube.');
+  const daSessao = () => estado.vertices.filter((x) => x.sessaoId === lider.sessaoId && x.papel !== 'subagente');
+  const achar = (id: string) => {
+    const alvo = daSessao().find((x) => x.id === id);
+    if (!alvo) throw new Error(`Não existe agente com id ${id} nesta sessão. Use listar_agentes.`);
+    return alvo;
+  };
+  const a = p.argumentos ?? {};
+
+  switch (p.ferramenta) {
+    case 'listar_agentes':
+      return daSessao().map((v) => linhaAgente(v, lider)).join('\n') || 'Nenhum agente.';
+
+    case 'criar_agente': {
+      const papel = texto(a.papel) as Papel;
+      if (!PAPEIS_DO_LIDER.includes(papel)) throw new Error(`Papel inválido. Use um destes: ${PAPEIS_DO_LIDER.join(', ')}.`);
+      const tarefa = texto(a.tarefa);
+      if (!tarefa) throw new Error('Falta a tarefa.');
+      const nivel = (NIVEIS.includes(texto(a.nivel) as Nivel) ? texto(a.nivel) : 'padrao') as Nivel;
+      const pedido = texto(a.agente) as Agente;
+      const instalados = (await nativo.processos.detectarAgentes()).filter((d) => d.instalado && d.agente !== 'terminal').map((d) => d.agente);
+      const agente: Agente = pedido
+        ? pedido
+        : instalados.includes(lider.agente) ? lider.agente : (instalados[0] ?? 'claude');
+      if (!instalados.includes(agente)) throw new Error(`${NOME_AGENTE[agente] ?? agente} não está instalado. Instalados: ${instalados.join(', ')}.`);
+      const ativos = daSessao().filter((x) => !x.encerrado);
+      if (ativos.filter((x) => x.estado === 'trabalhando' && x.id !== lider.id).length >= limiteDaOrquestracao()) {
+        throw new Error(`Limite de ${limiteDaOrquestracao()} agentes trabalhando ao mesmo tempo. Espere um terminar (ferramenta esperar) ou encerre um.`);
+      }
+      if (ativos.filter((x) => !x.paiId).length >= 8) throw new Error('A sessão já tem 8 agentes abertos (o limite).');
+      const nome = texto(a.nome).slice(0, 40) || undefined;
+      // Trabalhar na cópia de outro agente (ex.: o Mecânico corrige direto na branch do Construtor).
+      const deQuem = texto(a.na_copia_de) ? achar(texto(a.na_copia_de)) : undefined;
+      if (deQuem && !deQuem.worktree) throw new Error(`${nomeDoAgente(deQuem)} não tem cópia própria: ele trabalha na pasta do projeto.`);
+      const v = await criarVertice(lider.sessaoId, papel, agente, nivel, tarefa, {
+        criadoPor: lider.id,
+        ...(nome ? { nome } : {}),
+        ...(deQuem ? { worktree: deQuem.worktree } : {}),
+      });
+      avisar(`${nomeDoAgente(lider)} criou ${nomeDoAgente(v)}.`, 'trabalhando', v.id);
+      return `Criado: ${nomeDoAgente(v)} (id ${v.id}), ${NOME_PAPEL[papel]} no ${NOME_AGENTE[agente]}, nível ${nivel}${v.worktree ? `, na cópia ${v.worktree}` : ''}. Já recebeu a tarefa. Use esperar e depois ler_resultado.`;
+    }
+
+    case 'mandar_tarefa': {
+      const alvo = achar(texto(a.id));
+      const tarefa = texto(a.tarefa);
+      if (!tarefa) throw new Error('Falta a tarefa.');
+      if (alvo.id === lider.id) throw new Error('Esse id é o seu.');
+      if (alvo.encerrado || !alvo.terminalId) throw new Error(`${nomeDoAgente(alvo)} está encerrado. Crie outro agente.`);
+      mandar(alvo.id, tarefa);
+      atualizarVertice(alvo.id, () => ({ estado: 'trabalhando', tarefa, ultimaAcao: `Tarefa de ${nomeDoAgente(lider)}` }));
+      return `Mandado para ${nomeDoAgente(alvo)}.`;
+    }
+
+    case 'esperar': {
+      const ids = Array.isArray(a.ids) ? a.ids.map(texto).filter(Boolean) : [];
+      const alvos = () =>
+        ids.length ? ids.map(achar) : daSessao().filter((x) => x.criadoPor === lider.id);
+      if (!alvos().length) return 'Você ainda não criou nenhum agente.';
+      const limite = Math.max(5, Math.min(300, Number(a.segundos) || 120)) * 1000;
+      const inicio = Date.now();
+      // Dá um instante para quem acabou de receber tarefa começar.
+      await new Promise((r) => window.setTimeout(r, 1500));
+      while (Date.now() - inicio < limite && alvos().some((x) => x.estado === 'trabalhando' && !x.encerrado)) {
+        await new Promise((r) => window.setTimeout(r, 1000));
+      }
+      const vs = alvos();
+      const ainda = vs.filter((x) => x.estado === 'trabalhando' && !x.encerrado).length;
+      const esperando = vs.filter((x) => x.estado === 'esperando').length;
+      return [
+        ...vs.map((v) => linhaAgente(v, lider)),
+        ainda ? `${ainda} ainda trabalhando: chame esperar de novo.` : 'Nenhum está trabalhando.',
+        ...(esperando ? [`${esperando} esperando a pessoa responder um pedido de permissão no Hypercube.`] : []),
+      ].join('\n');
+    }
+
+    case 'ler_resultado': {
+      const alvo = achar(texto(a.id));
+      const partes = [`${nomeDoAgente(alvo)} · ${NOME_PAPEL[alvo.papel]} · ${estadoParaLider(alvo)}`];
+      if (alvo.pergunta) partes.push(`Esperando a pessoa: ${alvo.pergunta}`);
+      if (alvo.terminalId) partes.push(`Última resposta:\n${(await nativo.terminais.resultado(alvo.terminalId)).trim() || '(nada ainda)'}`);
+      const sessao = estado.sessoes.find((s) => s.id === alvo.sessaoId);
+      if (alvo.worktree && sessao) {
+        try {
+          partes.push(`Mudanças na cópia dele:\n${await nativo.processos.resumoMudancas(alvo.worktree, sessao.pasta)}`);
+        } catch (erro) {
+          partes.push(`Não deu para ler as mudanças: ${String(erro)}`);
+        }
+      }
+      return partes.join('\n\n');
+    }
+  }
+  throw new Error(`Ferramenta desconhecida: ${p.ferramenta}`);
+}
+
+nativo.orquestrador.aoPedido((p) => {
+  atenderLider(p).then(
+    (r) => nativo.orquestrador.responder(p.pedido, r),
+    (erro) => nativo.orquestrador.responder(p.pedido, erro instanceof Error ? erro.message : String(erro), true),
+  );
+});
