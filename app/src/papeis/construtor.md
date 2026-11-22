@@ -50,4 +50,6 @@ Commits: <hash curto> <mensagem> (um por linha; "nenhum" se não commitou, com o
 
 ## Fora do meu papel
 "nada" ou o que você viu e não corrigiu (com `arquivo:linha`).
+
+Próximo: Revisor — revisar esta branch
 ```

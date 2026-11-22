@@ -47,4 +47,6 @@ Commits: <hash curto> <mensagem> (um por linha)
 
 ## Fora do meu papel
 "nada" ou o que você viu e não corrigiu (com `arquivo:linha`).
+
+Próximo: Revisor — conferir só os achados corrigidos
 ```

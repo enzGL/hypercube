@@ -23,7 +23,7 @@ export const NOME_PAPEL: Record<Papel, string> = {
 
 export const DESCRICAO_PAPEL: Record<Papel, string> = {
   agente: 'Um agente comum, sem skill: faz o que você pedir',
-  lider: 'Planeja, divide a tarefa e junta os resultados',
+  lider: 'Põe o pedido numa lista, chama a equipe e entrega o pull request',
   batedor: 'Explora o projeto e acha o que importa, só lendo',
   construtor: 'Escreve o código na sua cópia do projeto',
   revisor: 'Revisa o diff dos outros, só lendo',

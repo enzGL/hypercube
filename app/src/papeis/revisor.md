@@ -52,4 +52,6 @@ Veredito: pode juntar | juntar depois de corrigir | não juntar
 
 ## Fora do meu papel
 "nada" ou problemas que já existiam fora do diff (com `arquivo:linha`).
+
+Próximo: Mecânico — corrigir os achados acima, ou nenhum se o veredito for aprovado
 ```

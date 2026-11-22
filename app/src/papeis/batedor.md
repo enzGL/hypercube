@@ -47,4 +47,6 @@ Passos numerados para quem vai implementar: arquivo, função, o que mudar e o t
 
 ## Fora do meu papel
 "nada" ou o que você viu e não era seu.
+
+Próximo: Construtor — fazer a mudança a partir do "Por onde começar"
 ```
