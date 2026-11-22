@@ -115,10 +115,10 @@ export function PrimeiraAbertura() {
             <p className="secundario">
               {passo === 'nome' &&
                 'Eu organizo os seus agentes de IA e aviso quando algum precisa de você. Como devo te chamar?'}
-              {passo === 'foto' && 'Ela aparece na lateral. Dá para pular.'}
+              {passo === 'foto' && 'Quer pôr uma foto? Ela aparece na lateral. Dá para pular.'}
               {passo === 'github' && 'Opcional. Traz a sua foto e o seu nome.'}
               {passo === 'tema' && 'Dá para trocar depois.'}
-              {passo === 'agentes' && 'Estas eu achei no seu computador.'}
+              {passo === 'agentes' && 'Estes eu achei no seu computador.'}
             </p>
           </div>
         </div>
@@ -170,7 +170,7 @@ export function PrimeiraAbertura() {
           {passo === 'agentes' && (
             <>
               <div className="ia-passo">
-                {!agentes && !erroBusca && <p className="ia-procurando">Procurando as IAs do computador…</p>}
+                {!agentes && !erroBusca && <p className="ia-procurando">Procurando os agentes do computador…</p>}
                 {erroBusca && (
                   <div className="ia-aviso">
                     <span>Não consegui procurar.</span>
@@ -181,10 +181,10 @@ export function PrimeiraAbertura() {
                 )}
                 {agentes && (
                   <>
-                    <h3 className="ia-titulo">Instaladas</h3>
+                    <h3 className="ia-titulo">Instalados</h3>
                     {instaladas.length === 0 ? (
                       <div className="ia-aviso">
-                        <span>Nenhuma IA encontrada.</span>
+                        <span>Nenhum agente encontrado.</span>
                       </div>
                     ) : (
                       <ul className="ia-grade">
@@ -192,7 +192,7 @@ export function PrimeiraAbertura() {
                           <li key={a.agente} className="ia-cartao ia-instalada" title={`${a.comando} ${a.versao ?? ''}`}>
                             <LogoAgente agente={a.agente} tamanho={28} />
                             <b>{NOME_AGENTE[a.agente]}</b>
-                            <span className="ia-ok" aria-label="Instalada">✓</span>
+                            <span className="ia-ok" aria-label="Instalado">✓</span>
                           </li>
                         ))}
                       </ul>
