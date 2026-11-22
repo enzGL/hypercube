@@ -210,6 +210,7 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
   const focado = e.focoId === v.id;
   const filhos = e.vertices.filter((f) => f.paiId === v.id);
   const corrida = v.corridaId ? e.corridas.find((c) => c.id === v.corridaId) : undefined;
+  const lider = v.criadoPor ? e.vertices.find((x) => x.id === v.criadoPor) : undefined;
 
   return (
     <article
@@ -262,9 +263,17 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
           <span className="painel-meta">
             <LogoAgente agente={v.agente} tamanho={13} /> {NOME_AGENTE[v.agente]} · {NOME_NIVEL[v.nivel]}
             {v.worktree && <span className="mono"> · {v.worktree.split('\\').pop()}</span>}
+            {lider && <span title={`Criado por ${nomeDoAgente(lider)}`}> · de {nomeDoAgente(lider)}</span>}
           </span>
         </div>
-        <SimboloEstado estado={v.estado} comNome />
+        {v.encerrado ? (
+          <span className="estado estado-fechado" title="Fechado" aria-label="Fechado">
+            <span className="estado-simbolo" aria-hidden="true">○</span>
+            <span className="estado-nome">Fechado</span>
+          </span>
+        ) : (
+          <SimboloEstado estado={v.estado} comNome />
+        )}
         <div className="painel-numeros mono" title="Custo, tokens e diff">
           <span>{formatarCusto(v.custo)}</span>
           <span>{formatarTokens(v.tokens)} tk</span>
@@ -301,9 +310,11 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
           <button className="icone-botao" title="Ocultar (o processo continua rodando)" onClick={() => ocultar(v.id)}>
             <Icone nome="ocultar" tamanho={14} />
           </button>
-          <button className="icone-botao perigo" title="Encerrar o processo" onClick={() => setConfirmar(true)}>
-            <Icone nome="fechar" tamanho={14} />
-          </button>
+          {!v.encerrado && (
+            <button className="icone-botao perigo" title="Encerrar o processo" onClick={() => setConfirmar(true)}>
+              <Icone nome="fechar" tamanho={14} />
+            </button>
+          )}
         </div>
       </header>
 
@@ -324,7 +335,7 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
       {v.encerrado && (
         <div className="faixa" role="status">
           <span>
-            {v.terminalId ? 'O processo terminou.' : 'Este agente fechou junto com o app.'} Abrir de novo começa uma conversa nova, sem tarefa.
+            {v.terminalId ? 'O processo terminou.' : 'Fechou junto com o app.'} Abre de novo sem tarefa, esperando você.
           </span>
           <button className="botao primario pequeno" onClick={() => reabrir(v.id)}>
             Abrir de novo

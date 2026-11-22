@@ -23,7 +23,7 @@ export const NOME_PAPEL: Record<Papel, string> = {
 
 export const DESCRICAO_PAPEL: Record<Papel, string> = {
   agente: 'Um agente comum, sem skill: faz o que você pedir',
-  lider: 'Põe o pedido numa lista, chama a equipe e entrega o pull request',
+  lider: 'Divide o pedido em itens, chama a equipe e prepara o pull request',
   batedor: 'Explora o projeto e acha o que importa, só lendo',
   construtor: 'Escreve o código na sua cópia do projeto',
   revisor: 'Revisa o diff dos outros, só lendo',
@@ -309,7 +309,7 @@ export function contar(vs: Vertice[]) {
     agentes: principais.length,
     trabalhando: principais.filter((v) => v.estado === 'trabalhando').length,
     esperando: vs.filter((v) => v.estado === 'esperando').length,
-    prontos: principais.filter((v) => v.estado === 'pronto').length,
+    prontos: principais.filter((v) => v.estado === 'pronto' && !v.encerrado).length,
     erros: vs.filter((v) => v.estado === 'erro').length,
   };
 }

@@ -45,7 +45,8 @@ function lerPreferencias(): { aberto: boolean; limite: number } {
   } catch {
     /* sem armazenamento */
   }
-  return { aberto: true, limite: 4 };
+  // Em tela baixa o painel começa recolhido, para os terminais não ficarem com duas linhas.
+  return { aberto: window.innerHeight >= 860, limite: 4 };
 }
 
 function salvarPreferencias(p: { aberto: boolean; limite: number }) {
@@ -277,7 +278,7 @@ function Resumo({ r, workers }: { r: ReturnType<typeof resumoOrquestracao>; work
     { chave: 'fila', nome: 'na fila', valor: r.naFila, simbolo: '◌', cor: 'var(--texto-2)' },
     { chave: 'interrompidos', nome: 'interrompidos', valor: r.interrompidos, simbolo: '◇', cor: 'var(--esperando)' },
     { chave: 'falhou', nome: 'falhou', valor: r.falhou, simbolo: ESTADO_INFO.erro.simbolo, cor: 'var(--erro)' },
-    { chave: 'encerrados', nome: 'encerrados', valor: r.encerrados, simbolo: ESTADO_INFO.pronto.simbolo, cor: 'var(--pronto)' },
+    { chave: 'encerrados', nome: 'prontos', valor: r.encerrados, simbolo: ESTADO_INFO.pronto.simbolo, cor: 'var(--pronto)' },
     { chave: 'vagas', nome: 'vagas em uso', valor: `${r.vagasEmUso}/${r.limite}`, simbolo: '▣', cor: 'var(--cobalto-claro)' },
   ];
   return (
