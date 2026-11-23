@@ -315,6 +315,28 @@ const novoId = (prefixo: string) => `${prefixo}-${Date.now().toString(36)}-${(co
 export function criarNativoSimulado(): Nativo {
   const terminais = new Map<string, TerminalSimulado>();
   const ouvintesEvento = new Set<(e: EventoAgente) => void>();
+  const ouvintesFim = new Set<(f: { id: string; codigo: number }) => void>();
+  /** Agentes "instalados" pelo botão Instalar nesta abertura. */
+  const instaladosAqui = new Set<string>();
+  /** Finge a instalação: mostra o npm trabalhando, marca o agente como instalado e termina com 0. */
+  const fingirInstalacao = (id: string, agente: string, linha: string) => {
+    const t = terminais.get(id);
+    const pacote = /npm install -g (\S+)/.exec(linha)?.[1] ?? agente;
+    const passos: [number, string][] = [
+      [400, `${CINZA}PS> npm install -g ${pacote}${FIM}\r\n`],
+      [1200, `${CINZA}added 1 package in 2s${FIM}\r\n`],
+      [400, `${VERDE}✓ ${pacote} instalado${FIM}\r\n`],
+    ];
+    let ms = 0;
+    for (const [espera, texto] of passos) {
+      ms += espera;
+      window.setTimeout(() => t?.anotar(texto), ms);
+    }
+    window.setTimeout(() => {
+      instaladosAqui.add(agente);
+      ouvintesFim.forEach((o) => o({ id, codigo: 0 }));
+    }, ms + 300);
+  };
   const emitir = (e: Omit<EventoAgente, 'momento'>) => {
     const evento = { ...e, momento: Date.now() };
     ouvintesEvento.forEach((o) => o(evento));
@@ -382,6 +404,8 @@ export function criarNativoSimulado(): Nativo {
         // Só o pedido do modo Equipe dispara o roteiro com as ferramentas (o exemplo já tem a equipe pronta).
         const lider = opcoes.orquestrar ? (texto: string) => texto.startsWith('Divida esta tarefa') && roteiroLider(id, texto) : undefined;
         terminais.set(id, new TerminalSimulado(id, opcoes, emitir, lider));
+        const instalar = /^Instalar (\w+)$/.exec(opcoes.rotulo);
+        if (opcoes.agente === 'terminal' && instalar && opcoes.tarefa) fingirInstalacao(id, instalar[1], opcoes.tarefa);
         return id;
       },
       async escrever(id, dados) {
@@ -416,8 +440,9 @@ export function criarNativoSimulado(): Nativo {
         ouvintesEvento.add(ouvinte);
         return () => ouvintesEvento.delete(ouvinte);
       },
-      aoFim() {
-        return () => {};
+      aoFim(ouvinte) {
+        ouvintesFim.add(ouvinte);
+        return () => ouvintesFim.delete(ouvinte);
       },
     },
     orquestrador: {
@@ -467,8 +492,8 @@ export function criarNativoSimulado(): Nativo {
           { agente: 'claude', instalado: true, versao: '2.1', comando: 'claude' },
           { agente: 'codex', instalado: true, versao: '0.9', comando: 'codex' },
           { agente: 'gemini', instalado: true, versao: '1.4', comando: 'gemini' },
-          { agente: 'kiro', instalado: false, comando: 'kiro' },
-          { agente: 'opencode', instalado: false, comando: 'opencode' },
+          { agente: 'kiro', instalado: instaladosAqui.has('kiro'), comando: 'kiro' },
+          { agente: 'opencode', instalado: instaladosAqui.has('opencode'), versao: instaladosAqui.has('opencode') ? '1.0' : undefined, comando: 'opencode' },
           { agente: 'terminal', instalado: true, comando: 'pwsh' },
         ];
       },

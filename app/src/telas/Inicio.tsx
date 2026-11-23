@@ -14,9 +14,10 @@ import {
   useLoja,
   type Estado,
 } from '../estado/loja';
-import { nativo, NOME_AGENTE, type Agente, type AgenteDetectado, type UsoDoPlano } from '../nativo';
+import { nativo, NOME_AGENTE, type Agente, type UsoDoPlano } from '../nativo';
 import { FundoDither } from '../componentes/FundoDither';
 import { Icone } from '../componentes/Pecas';
+import { AgentesQueFaltam, useAgentesDetectados } from '../componentes/InstalarAgente';
 import '../inicio.css';
 
 type Modo = 'normal' | 'planejar' | 'equipe';
@@ -182,7 +183,7 @@ function Seletor<T extends string>({
 
 function CaixaComando({ pastas }: { pastas: string[] }) {
   const [texto, setTexto] = useState('');
-  const [agentes, setAgentes] = useState<AgenteDetectado[]>([]);
+  const agentes = useAgentesDetectados();
   const [agente, setAgente] = useState<Agente>('claude');
   const [pasta, setPasta] = useState<string>(() => pastaAtual() ?? pastas[0] ?? '');
   const [extras, setExtras] = useState<string[]>([]);
@@ -190,9 +191,6 @@ function CaixaComando({ pastas }: { pastas: string[] }) {
   const [enviando, setEnviando] = useState(false);
   const campo = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    nativo.processos.detectarAgentes().then(setAgentes);
-  }, []);
   useEffect(() => {
     if (!pasta && pastas[0]) setPasta(pastas[0]);
   }, [pastas, pasta]);
@@ -292,6 +290,7 @@ function CaixaComando({ pastas }: { pastas: string[] }) {
         </button>
       </div>
       <p className="ini-dica-modo">{DICA_MODO[modo]}</p>
+      <AgentesQueFaltam agentes={agentes} />
     </div>
   );
 }

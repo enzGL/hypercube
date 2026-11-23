@@ -876,3 +876,22 @@ span.ll-pergunta { font-size: 13px; color: var(--texto); padding: 6px 8px; borde
 .ll-responder { align-self: flex-start; margin-top: 2px; }
 .ll-resposta { display: flex; gap: 6px; margin-top: 2px; }
 .ll-resposta .campo { flex: 1; min-width: 0; height: 32px; font-size: 14px; }
+
+/* Instalar agentes que faltam. */
+.inst { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.inst-acoes { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.inst-comando { font-size: 13px; color: var(--texto-2); overflow-wrap: anywhere; user-select: all; }
+.inst-nota { font-size: 13px; color: var(--texto-2); }
+.inst-andando { font-size: 14px; color: var(--trabalhando); min-height: 32px; display: inline-flex; align-items: center; }
+.inst-ok { font-size: 14px; color: var(--pronto); font-weight: 600; }
+.inst-aviso { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: var(--esperando); }
+.inst-erro { margin: 0; font-size: 13px; color: var(--erro); }
+.inst-terminal { height: 140px; border: 1px solid var(--borda-forte); border-radius: 8px; overflow: hidden; display: flex; }
+.inst-terminal > * { flex: 1; min-width: 0; }
+.inst-faltam { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 6px; padding-top: 8px; border-top: 1px dashed var(--borda); }
+.inst-faltam-titulo { font-size: 13px; color: var(--texto-2); }
+.inst-faltam ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.inst-faltam li { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; }
+.inst-nome { display: inline-flex; align-items: center; gap: 6px; min-width: 110px; min-height: 32px; font-size: 14px; }
+.inst-faltam .inst { flex: 1; }
+

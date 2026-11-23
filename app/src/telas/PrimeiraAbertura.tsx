@@ -1,10 +1,12 @@
 // Introdução: um cartão por cima do app, em passos (nome, foto, GitHub, tema, agentes).
 // Esc não fecha: é o começo. Em dev, `?passo=N` abre direto no passo N (1 em diante).
+import { INSTALACAO, aoTerminarInstalacao } from '../estado/instalacao';
+import { InstalarAgente } from '../componentes/InstalarAgente';
 import { marcarBoasVindasVista } from '../componentes/BoasVindas';
 import { useCallback, useEffect, useMemo, useState, type ComponentType } from 'react';
 import { LogoAgente } from '../componentes/LogoAgente';
 import { comecarComExemplo, comecarVazio } from '../estado/loja';
-import { nativo, NOME_AGENTE, type Agente, type AgenteDetectado } from '../nativo';
+import { nativo, NOME_AGENTE, type AgenteDetectado } from '../nativo';
 import { Hiper } from '../componentes/Hiper';
 import { Icone } from '../componentes/Pecas';
 import { AvatarPerfil, CampoFoto, CampoGitHub } from '../componentes/Perfil';
@@ -19,14 +21,6 @@ const EscolherTema = Object.values(modulosTema)[0]?.EscolherTema;
 
 type Passo = 'nome' | 'foto' | 'github' | 'tema' | 'agentes';
 
-/** IAs que valem a pena e como instalar (comandos oficiais pelo npm). */
-const SUGESTAO: Partial<Record<Agente, { desc: string; comando?: string; site: string }>> = {
-  claude: { desc: 'Da Anthropic. Ótimo para planejar.', comando: 'npm install -g @anthropic-ai/claude-code', site: 'https://docs.anthropic.com/en/docs/claude-code' },
-  codex: { desc: 'Da OpenAI. Rápido no código.', comando: 'npm install -g @openai/codex', site: 'https://github.com/openai/codex' },
-  gemini: { desc: 'Do Google. Tem cota grátis.', comando: 'npm install -g @google/gemini-cli', site: 'https://github.com/google-gemini/gemini-cli' },
-  opencode: { desc: 'Aberto. Usa vários modelos.', comando: 'npm install -g opencode-ai', site: 'https://opencode.ai' },
-  kiro: { desc: 'Da AWS. Parte de especificações.', site: 'https://kiro.dev' },
-};
 
 function passoInicial(total: number): number {
   if (!import.meta.env.DEV) return 0;
@@ -56,14 +50,11 @@ export function PrimeiraAbertura() {
       .catch(() => setErroBusca(true));
   }, []);
   useEffect(() => procurar(), [procurar]);
-
-  const [copiado, setCopiado] = useState<string | null>(null);
-  const copiar = (t: string) => {
-    navigator.clipboard?.writeText(t).then(() => setCopiado(t), () => undefined);
-  };
+  // Quando uma instalação termina, a lista se atualiza sem piscar "procurando".
+  useEffect(() => aoTerminarInstalacao(() => nativo.processos.detectarAgentes(true).then(setAgentes)), []);
 
   const instaladas = (agentes ?? []).filter((a) => a.instalado && a.agente !== 'terminal');
-  const faltando = (agentes ?? []).filter((a) => !a.instalado && SUGESTAO[a.agente]);
+  const faltando = (agentes ?? []).filter((a) => !a.instalado && INSTALACAO[a.agente]);
 
   const nomeOk = p.nome.trim().length > 0;
   const podeSeguir = passo !== 'nome' || nomeOk;
@@ -202,7 +193,7 @@ export function PrimeiraAbertura() {
                         <h3 className="ia-titulo">Vale instalar</h3>
                         <ul className="ia-grade">
                           {faltando.map((a) => {
-                            const s = SUGESTAO[a.agente]!;
+                            const s = INSTALACAO[a.agente]!;
                             return (
                               <li key={a.agente} className="ia-cartao ia-sugerida">
                                 <LogoAgente agente={a.agente} tamanho={28} />
@@ -210,16 +201,7 @@ export function PrimeiraAbertura() {
                                   <b>{NOME_AGENTE[a.agente]}</b>
                                   <span>{s.desc}</span>
                                 </span>
-                                <span className="ia-acoes">
-                                  {s.comando && (
-                                    <button className="botao" title={s.comando} onClick={() => copiar(s.comando!)}>
-                                      {copiado === s.comando ? 'Copiado ✓' : 'Copiar comando'}
-                                    </button>
-                                  )}
-                                  <button className="botao" onClick={() => nativo.sistema.abrirLink(s.site)}>
-                                    Site
-                                  </button>
-                                </span>
+                                <InstalarAgente agente={a.agente} />
                               </li>
                             );
                           })}

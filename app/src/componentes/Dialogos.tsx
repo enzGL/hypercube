@@ -11,16 +11,12 @@ import {
   type Nivel,
   type Papel,
 } from '../estado/loja';
-import { nativo, NOME_AGENTE, type Agente, type AgenteDetectado } from '../nativo';
+import { nativo, NOME_AGENTE, type Agente } from '../nativo';
 import { Icone, MiniVertice } from './Pecas';
+import { AgentesQueFaltam, useAgentesDetectados } from './InstalarAgente';
 
-function useAgentes() {
-  const [a, setA] = useState<AgenteDetectado[]>([]);
-  useEffect(() => {
-    nativo.processos.detectarAgentes().then(setA);
-  }, []);
-  return a;
-}
+/** Agentes do computador; a lista se atualiza quando uma instalação termina. */
+const useAgentes = useAgentesDetectados;
 
 function Moldura({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   useEffect(() => {
@@ -231,6 +227,7 @@ function NovoVertice({ sessaoId, papelInicial }: { sessaoId: string; papelInicia
           <p className="dica-campo">{DESCRICAO_NIVEL[nivel]}</p>
         </div>
       </div>
+      <AgentesQueFaltam agentes={agentes} />
       <label className="campo">
         <span>Primeira tarefa (opcional)</span>
         <textarea rows={2} value={tarefa} onChange={(ev) => setTarefa(ev.target.value)} placeholder="Ex.: Mapeie onde o pedido é cobrado" />
