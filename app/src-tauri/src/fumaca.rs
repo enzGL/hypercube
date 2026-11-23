@@ -26,6 +26,28 @@ pub fn registrar(linha: &str) {
     }
 }
 
+/// Corta um texto para o log (sem quebrar caracteres), numa linha só.
+pub fn curto(t: &str, max: usize) -> String {
+    let t = t.replace('\r', "").replace('\n', " ⏎ ");
+    if t.chars().count() <= max { t } else { format!("{}…", t.chars().take(max).collect::<String>()) }
+}
+
+/// Teste do Líder de ponta a ponta: a interface abre uma sessão de equipe na pasta e com a
+/// tarefa destas variáveis e aceita sozinha os pedidos de permissão (só para projeto de teste).
+pub fn lider() -> Option<serde_json::Value> {
+    if !ligada() {
+        return None;
+    }
+    let pasta = std::env::var("HYPERCUBE_FUMACA_LIDER_PASTA").ok()?;
+    let tarefa = std::env::var("HYPERCUBE_FUMACA_LIDER_TAREFA").ok()?;
+    let agente = std::env::var("HYPERCUBE_FUMACA_LIDER_AGENTE").unwrap_or_else(|_| "claude".into());
+    let nivel = std::env::var("HYPERCUBE_FUMACA_LIDER_NIVEL").unwrap_or_else(|_| "padrao".into());
+    let mensagens = std::env::var("HYPERCUBE_FUMACA_LIDER_DEPOIS").ok();
+    // Outro papel no lugar do Líder (para testar um agente sozinho dentro do app).
+    let papel = std::env::var("HYPERCUBE_FUMACA_LIDER_PAPEL").unwrap_or_else(|_| "lider".into());
+    Some(serde_json::json!({ "pasta": pasta, "tarefa": tarefa, "agente": agente, "nivel": nivel, "depois": mensagens, "papel": papel }))
+}
+
 /// A interface chamou um comando Rust: prova de que o front carregou dentro do Tauri.
 pub fn interface_chamou(chamada: &str) {
     if ligada() {
