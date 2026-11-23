@@ -328,6 +328,30 @@ pub fn ferramentas() -> Value {
             "name": "ler_resultado",
             "description": "Lê a última resposta de um agente (pelo id) e o estado dele.",
             "inputSchema": { "type": "object", "properties": { "id": { "type": "string" } }, "required": ["id"] }
+        },
+        {
+            "name": "atualizar_lista",
+            "description": "Mostra para a pessoa a sua lista de trabalho no Hypercube. Mande a lista inteira sempre que um item mudar. Estados: aberto, em_andamento, fechado, pergunta (falta a resposta da pessoa; diga a pergunta) e parado.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "itens": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "n": { "type": "number" },
+                                "titulo": { "type": "string" },
+                                "estado": { "type": "string", "enum": ["aberto", "em_andamento", "fechado", "pergunta", "parado"] },
+                                "quem": { "type": "string", "description": "Nome do agente que está no item (opcional)." },
+                                "pergunta": { "type": "string", "description": "A pergunta para a pessoa, quando o estado é pergunta; o motivo, quando é parado." }
+                            },
+                            "required": ["n", "titulo", "estado"]
+                        }
+                    }
+                },
+                "required": ["itens"]
+            }
         }
     ])
 }
@@ -572,7 +596,7 @@ mod testes_mcp {
         assert_eq!(ini["result"]["protocolVersion"], "2025-03-26");
         assert!(responder_mcp(&serde_json::json!({ "jsonrpc": "2.0", "method": "notifications/initialized" }), nada).is_none());
         let l = responder_mcp(&serde_json::json!({ "jsonrpc": "2.0", "id": 2, "method": "tools/list" }), nada).unwrap();
-        assert_eq!(l["result"]["tools"].as_array().unwrap().len(), 5);
+        assert_eq!(l["result"]["tools"].as_array().unwrap().len(), 6);
         let c = responder_mcp(
             &serde_json::json!({ "jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": { "name": "listar_agentes", "arguments": {} } }),
             |n, _| if n == "listar_agentes" { Ok("lista".into()) } else { Err("?".into()) },
@@ -583,6 +607,22 @@ mod testes_mcp {
         let conh: HashSet<String> = ["t1".to_string()].into_iter().collect();
         assert_eq!(avaliar("POST", "/mcp/t1", false, Some("abc"), "abc", &conh), Ok("t1".into()));
         assert_eq!(avaliar("POST", "/codex/t1", false, Some("abc"), "abc", &conh), Ok("t1".into()));
+    }
+
+    #[test]
+    fn ferramenta_atualizar_lista() {
+        let l = responder_mcp(&serde_json::json!({ "jsonrpc": "2.0", "id": 1, "method": "tools/list" }), |_: &str, _: &Value| Ok::<String, String>("x".into())).unwrap();
+        let t = l["result"]["tools"].as_array().unwrap().iter().find(|t| t["name"] == "atualizar_lista").expect("atualizar_lista na lista").clone();
+        assert_eq!(t["inputSchema"]["required"][0], "itens");
+        assert_eq!(t["inputSchema"]["properties"]["itens"]["items"]["properties"]["estado"]["enum"].as_array().unwrap().len(), 5);
+        let itens = serde_json::json!([{ "n": 1, "titulo": "Cupom", "estado": "pergunta", "pergunta": "Vale para frete?" }]);
+        let c = responder_mcp(
+            &serde_json::json!({ "jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": { "name": "atualizar_lista", "arguments": { "itens": itens.clone() } } }),
+            |n, a| if n == "atualizar_lista" && a["itens"] == itens { Ok("Lista atualizada: 1 itens.".into()) } else { Err("?".into()) },
+        )
+        .unwrap();
+        assert_eq!(c["result"]["content"][0]["text"], "Lista atualizada: 1 itens.");
+        assert_eq!(c["result"]["isError"], false);
     }
 
     #[test]

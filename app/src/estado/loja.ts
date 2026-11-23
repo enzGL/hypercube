@@ -123,6 +123,10 @@ export interface Vertice {
   soLeitura?: boolean;
   /** O processo terminou (ou o app foi fechado): dá para abrir de novo. */
   encerrado?: boolean;
+  /** Líder: a lista de trabalho que ele mostra pela ferramenta atualizar_lista. */
+  lista?: ItemLista[];
+  /** Líder do modo Equipe: papéis que ele ainda vai chamar (vagas na tela). */
+  vagas?: Papel[];
 }
 
 export interface Sessao {
@@ -1120,6 +1124,12 @@ async function atenderLider(p: PedidoOrquestrador): Promise<string> {
       ].join('\n');
     }
 
+    case 'atualizar_lista': {
+      const lista = lerLista(a.itens);
+      atualizarVertice(lider.id, () => ({ lista }));
+      return `Lista atualizada: ${lista.length} itens.`;
+    }
+
     case 'ler_resultado': {
       const alvo = achar(texto(a.id));
       const partes = [`${nomeDoAgente(alvo)} · ${NOME_PAPEL[alvo.papel]} · ${estadoParaLider(alvo)}`];
@@ -1144,4 +1154,60 @@ nativo.orquestrador.aoPedido((p) => {
     (r) => nativo.orquestrador.responder(p.pedido, r),
     (erro) => nativo.orquestrador.responder(p.pedido, erro instanceof Error ? erro.message : String(erro), true),
   );
+});
+
+// ---------- lista de trabalho do Líder e vagas da equipe ----------
+
+export type EstadoItem = 'aberto' | 'em_andamento' | 'fechado' | 'pergunta' | 'parado';
+
+export interface ItemLista {
+  n: number;
+  titulo: string;
+  estado: EstadoItem;
+  quem?: string;
+  pergunta?: string;
+}
+
+const ESTADOS_ITEM: EstadoItem[] = ['aberto', 'em_andamento', 'fechado', 'pergunta', 'parado'];
+
+/** Confere o que o Líder mandou: só itens com número, título e estado válidos (no máximo 30). */
+function lerLista(x: unknown): ItemLista[] {
+  if (!Array.isArray(x)) throw new Error('Falta itens: uma lista de { n, titulo, estado }.');
+  const itens = x
+    .filter((i): i is Record<string, unknown> => !!i && typeof i === 'object')
+    .map((i, k) => ({
+      n: Number.isFinite(Number(i.n)) ? Number(i.n) : k + 1,
+      titulo: texto(i.titulo).slice(0, 140),
+      estado: (ESTADOS_ITEM.includes(texto(i.estado) as EstadoItem) ? texto(i.estado) : 'aberto') as EstadoItem,
+      ...(texto(i.quem) ? { quem: texto(i.quem).slice(0, 40) } : {}),
+      ...(texto(i.pergunta) ? { pergunta: texto(i.pergunta).slice(0, 400) } : {}),
+    }))
+    .filter((i) => i.titulo)
+    .slice(0, 30);
+  if (!itens.length) throw new Error('A lista veio vazia. Mande cada item com n, titulo e estado.');
+  return itens;
+}
+
+/** Resposta da pessoa a um item da lista: vai para o Líder como "item N: texto". */
+export function responderItem(liderId: string, n: number, resposta: string) {
+  const t = resposta.trim();
+  if (!t) return;
+  mandar(liderId, `item ${n}: ${t}`);
+}
+
+/** Vagas que ainda faltam: os papéis pedidos que o Líder não criou. Somem quando ele fecha ou encerra. */
+export function vagasDaEquipe(e: Estado, liderId: string): Papel[] {
+  const lider = e.vertices.find((v) => v.id === liderId);
+  if (!lider?.vagas?.length || lider.encerrado) return [];
+  const criados = new Set(e.vertices.filter((v) => v.criadoPor === lider.id).map((v) => v.papel));
+  return lider.vagas.filter((p) => !criados.has(p));
+}
+
+/** O Líder fechou o pedido (a entrega final começa por "Estado:"): as vagas que sobraram somem. */
+nativo.eventos.aoEvento(async (ev) => {
+  if (ev.tipo !== 'Stop') return;
+  const lider = estado.vertices.find((v) => v.terminalId === ev.terminalId && v.papel === 'lider' && v.vagas?.length);
+  if (!lider?.terminalId) return;
+  const fim = `${ev.mensagem ?? ''}\n${await nativo.terminais.resultado(lider.terminalId)}`;
+  if (/Estado:\s*(concluído|concluido|parcial|bloqueado)/i.test(fim)) atualizarVertice(lider.id, () => ({ vagas: [] }));
 });

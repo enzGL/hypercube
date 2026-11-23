@@ -9,6 +9,7 @@ import type {
   EventoAgente,
   Nativo,
   OpcoesTerminal,
+  PedidoOrquestrador,
   SaidaGerada,
   UsoDoPlano,
 } from './tipos';
@@ -148,6 +149,8 @@ class TerminalSimulado {
     readonly id: string,
     readonly opcoes: OpcoesTerminal,
     private readonly emitir: (e: Omit<EventoAgente, 'momento'>) => void,
+    /** Líder: recebe a tarefa também por aqui, para usar as ferramentas do Hypercube. */
+    private readonly aoTarefa?: (texto: string) => void,
   ) {
     const nome = NOME_AGENTE[opcoes.agente];
     const local = opcoes.worktree ? opcoes.worktree.replace(opcoes.pasta, '.') : opcoes.pasta;
@@ -159,6 +162,11 @@ class TerminalSimulado {
     }
     this.prompt();
     this.agendar(50, () => this.emitir({ tipo: 'SessionStart', terminalId: id }));
+  }
+
+  /** Linha escrita por fora do roteiro (ex.: ferramenta do Hypercube chamada pelo Líder). */
+  anotar(t: string) {
+    this.saida(t);
   }
 
   private saida(t: string) {
@@ -216,6 +224,7 @@ class TerminalSimulado {
   private executar(texto: string) {
     this.ocupado = true;
     this.emitir({ tipo: 'UserPromptSubmit', terminalId: this.id, mensagem: texto });
+    this.aoTarefa?.(texto);
     const roteiro = montarRoteiro(this.opcoes.agente, texto);
     this.rodar(roteiro.passos, () => {
       if (roteiro.pergunta) {
@@ -311,6 +320,40 @@ export function criarNativoSimulado(): Nativo {
     ouvintesEvento.forEach((o) => o(evento));
   };
 
+  // Ferramentas do Hypercube no simulado: o Líder roteirizado chama a interface como o de verdade.
+  const ouvintesPedido = new Set<(p: PedidoOrquestrador) => void>();
+  const pendentes = new Map<number, (texto: string) => void>();
+  let proximoPedido = 1;
+  const pedir = (terminalId: string, ferramenta: string, argumentos: Record<string, unknown>) =>
+    new Promise<string>((resolve) => {
+      const pedido = proximoPedido++;
+      pendentes.set(pedido, (texto) => {
+        terminais.get(terminalId)?.anotar(`  ${AZUL}hypercube${FIM} ${ferramenta} ${CINZA}→ ${texto.split('\n')[0]}${FIM}\r\n`);
+        resolve(texto);
+      });
+      ouvintesPedido.forEach((o) => o({ pedido, terminalId, ferramenta, argumentos }));
+    });
+  const pausa = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
+  /** Roteiro do Líder: monta a lista, chama Explorador e Construtor e deixa uma pergunta no item 3. */
+  async function roteiroLider(id: string, texto: string) {
+    const pedido = texto.replace(/^.*?:\s*/, '').slice(0, 60) || 'o pedido';
+    const lista = (estados: string[], extra: Record<number, Record<string, string>> = {}) => ({
+      itens: [
+        { n: 1, titulo: `Mapear onde mexer para: ${pedido}`, estado: estados[0], quem: 'Explorador' },
+        { n: 2, titulo: 'Fazer a mudança com testes', estado: estados[1], quem: 'Construtor' },
+        { n: 3, titulo: 'Revisar a branch e abrir o pull request', estado: estados[2], quem: 'Revisor' },
+      ].map((i) => ({ ...i, ...(extra[i.n] ?? {}) })),
+    });
+    await pausa(1200);
+    await pedir(id, 'atualizar_lista', lista(['aberto', 'aberto', 'aberto']));
+    await pausa(1500);
+    await pedir(id, 'criar_agente', { papel: 'batedor', agente: 'gemini', nivel: 'barato', tarefa: `Mapeie onde mexer para: ${pedido}. Entregue no formato do seu papel.` });
+    await pedir(id, 'atualizar_lista', lista(['em_andamento', 'aberto', 'aberto']));
+    await pausa(3500);
+    await pedir(id, 'criar_agente', { papel: 'construtor', agente: 'codex', nivel: 'padrao', tarefa: `Faça a mudança: ${pedido}. Entregue no formato do seu papel.` });
+    await pedir(id, 'atualizar_lista', lista(['fechado', 'em_andamento', 'pergunta'], { 3: { pergunta: 'Abro o pull request quando a revisão passar, ou só deixo a branch pronta?' } }));
+  }
+
   const roteador: EstadoRoteador = {
     endereco: '127.0.0.1:8765',
     ligado: true,
@@ -336,7 +379,9 @@ export function criarNativoSimulado(): Nativo {
     terminais: {
       async criar(opcoes) {
         const id = novoId('pty');
-        terminais.set(id, new TerminalSimulado(id, opcoes, emitir));
+        // Só o pedido do modo Equipe dispara o roteiro com as ferramentas (o exemplo já tem a equipe pronta).
+        const lider = opcoes.orquestrar ? (texto: string) => texto.startsWith('Divida esta tarefa') && roteiroLider(id, texto) : undefined;
+        terminais.set(id, new TerminalSimulado(id, opcoes, emitir, lider));
         return id;
       },
       async escrever(id, dados) {
@@ -376,10 +421,14 @@ export function criarNativoSimulado(): Nativo {
       },
     },
     orquestrador: {
-      aoPedido() {
-        return () => {};
+      aoPedido(ouvinte) {
+        ouvintesPedido.add(ouvinte);
+        return () => ouvintesPedido.delete(ouvinte);
       },
-      async responder() {},
+      async responder(pedido, texto, erro) {
+        pendentes.get(pedido)?.(erro ? `erro: ${texto}` : texto);
+        pendentes.delete(pedido);
+      },
     },
     arquivos: {
       async escolherPasta() {
