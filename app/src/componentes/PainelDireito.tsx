@@ -24,6 +24,7 @@ import {
   type FiltroTarefas,
 } from '../estado/casca';
 import { IconeCasca } from './IconesCasca';
+import { ListaDoLider } from './ListaDoLider';
 
 const ABAS: { id: AbaPainel; nome: string; icone: string }[] = [
   { id: 'notas', nome: 'Notas', icone: 'notas' },
@@ -53,7 +54,12 @@ export function PainelDireito() {
       </div>
       <div className="pd-corpo" role="tabpanel">
         {casca.aba === 'notas' && <Notas />}
-        {casca.aba === 'tarefas' && <Tarefas />}
+        {casca.aba === 'tarefas' && (
+          <>
+            <ListaDoLider />
+            <Tarefas />
+          </>
+        )}
         {casca.aba === 'plugins' && <Vazio icone="plugins" titulo="Nenhum plugin ainda" texto="Plugins vão somar ferramentas aos agentes. Eles chegam numa próxima versão." />}
         {casca.aba === 'git' && <Vazio icone="git" titulo="Nada para mostrar" texto="As mudanças do projeto aberto vão aparecer aqui quando o app nativo estiver ligado." />}
       </div>

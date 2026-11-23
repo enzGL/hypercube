@@ -846,3 +846,33 @@ html[data-tauri]:not([data-maximizada]) :is(.fundo-dialogo, .primeira-fundo, .bv
 .ia-aviso { display: flex; align-items: center; gap: 12px; font-size: 15px; padding: 12px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--esperando) 40%, transparent); }
 .primeira-acoes .botao { height: 44px; font-size: 15px; padding: 0 18px; }
 @media (max-width: 640px) { .ia-grade { grid-template-columns: 1fr; } }
+
+/* Vaga da equipe (modo Equipe): papel que o Líder ainda vai chamar. */
+.painel.vaga {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 140px;
+  border: 1.5px dashed var(--borda-forte); background: transparent; color: var(--texto-2); font-size: 14px; opacity: .85;
+}
+.painel.vaga b { color: var(--texto); font-weight: 600; font-size: 15px; }
+
+/* Lista de trabalho do Líder (painel direito). */
+.ll { display: flex; flex-direction: column; gap: 8px; padding: 12px; margin-bottom: 14px; border: 1px solid var(--borda-forte); border-radius: 10px; background: var(--cartao); }
+.ll-cabeca { display: flex; align-items: center; gap: 8px; }
+.ll-titulo { font-family: var(--f-titulo); font-size: 15px; color: var(--texto); text-align: left; min-height: 32px; flex: 1; }
+.ll-titulo:hover { color: var(--cobalto-claro); }
+.ll-conta { font-size: 13px; color: var(--texto-2); }
+.ll-aviso { margin: 0; font-size: 13px; color: var(--esperando); }
+.ll-itens { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ll-item { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; }
+.ll-simbolo { width: 16px; flex-shrink: 0; text-align: center; color: var(--texto-2); line-height: 20px; }
+.ll-em_andamento .ll-simbolo { color: var(--trabalhando); }
+.ll-fechado .ll-simbolo { color: var(--pronto); }
+.ll-pergunta .ll-simbolo, .ll-item.ll-pergunta .ll-simbolo { color: var(--esperando); }
+.ll-parado .ll-simbolo { color: var(--erro); }
+.ll-fechado .ll-texto { color: var(--texto-2); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--texto-2) 50%, transparent); }
+.ll-corpo { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.ll-texto { line-height: 20px; overflow-wrap: anywhere; }
+.ll-meta { font-size: 13px; color: var(--texto-2); }
+span.ll-pergunta { font-size: 13px; color: var(--texto); padding: 6px 8px; border-left: 2px solid var(--esperando); background: color-mix(in srgb, var(--esperando) 8%, transparent); border-radius: 0 6px 6px 0; }
+.ll-responder { align-self: flex-start; margin-top: 2px; }
+.ll-resposta { display: flex; gap: 6px; margin-top: 2px; }
+.ll-resposta .campo { flex: 1; min-width: 0; height: 32px; font-size: 14px; }

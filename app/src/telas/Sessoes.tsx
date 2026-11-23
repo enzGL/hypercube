@@ -30,6 +30,10 @@ import {
   type Estado,
   type Layout,
   type Vertice,
+  COR_PAPEL,
+  NOME_PAPEL,
+  vagasDaEquipe,
+  type Papel,
 } from '../estado/loja';
 import { BarraTopo } from '../componentes/BarraTopo';
 import { Hiper } from '../componentes/Hiper';
@@ -71,6 +75,8 @@ export function Sessoes() {
   const ocultos = todos.filter((v) => v.oculto);
   const encerrados = todos.filter((v) => v.encerrado);
   const corrida = e.corridas.find((c) => c.sessaoId === sessao.id && !c.escolhido && c.ids.length > 0);
+  // Modo Equipe: papéis que o Líder ainda vai chamar aparecem como vagas tracejadas.
+  const vagas = todos.filter((v) => v.papel === 'lider').flatMap((l) => vagasDaEquipe(e, l.id).map((papel) => ({ papel, lider: l })));
 
   const acoes = (
     <>
@@ -159,10 +165,13 @@ export function Sessoes() {
           ) : (
             <div
               className="grade"
-              style={{ gridTemplateColumns: `repeat(${e.layout === 'livre' ? e.colunasLivres : colunasAuto(visiveis.length)}, minmax(0, 1fr))` }}
+              style={{ gridTemplateColumns: `repeat(${e.layout === 'livre' ? e.colunasLivres : colunasAuto(visiveis.length + vagas.length)}, minmax(0, 1fr))` }}
             >
               {visiveis.map((v) => (
                 <Painel key={v.id} v={v} e={e} arrastavel={e.layout === 'livre'} />
+              ))}
+              {vagas.map(({ papel, lider }) => (
+                <Vaga key={`${lider.id}-${papel}`} papel={papel} lider={lider} />
               ))}
             </div>
           )}
@@ -172,6 +181,17 @@ export function Sessoes() {
       <Avisos emLinha />
       <CampoComando e={e} sessaoId={sessao.id} vertices={todos} />
     </div>
+  );
+}
+
+/** Vaga da equipe: o papel que o Líder ainda vai chamar. Some quando ele cria o agente. */
+function Vaga({ papel, lider }: { papel: Papel; lider: Vertice }) {
+  return (
+    <article className="painel vaga" aria-label={`Vaga: ${NOME_PAPEL[papel]}, o Líder vai chamar`}>
+      <MascoteAgente cor={COR_PAPEL[papel]} papel={papel} tamanho={34} estado="pronto" />
+      <b>{NOME_PAPEL[papel]}</b>
+      <span>{nomeDoAgente(lider)} vai chamar</span>
+    </article>
   );
 }
 

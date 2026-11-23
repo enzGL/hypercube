@@ -223,7 +223,10 @@ function CaixaComando({ pastas }: { pastas: string[] }) {
       const s = criarSessao(nome, pasta, modo === 'equipe', modo === 'equipe');
       if (modo === 'equipe') {
         // O líder cria a equipe com as ferramentas do Hypercube, cada um já com a sua parte da tarefa.
-        await criarVertice(s.id, 'lider', agente, 'forte', `Divida esta tarefa entre os agentes do Hypercube (Explorador, Construtor, Revisor e, se precisar, Mecânico) e feche o pedido: ${t}`);
+        await criarVertice(s.id, 'lider', agente, 'forte', `Divida esta tarefa entre os agentes do Hypercube (Explorador, Construtor, Revisor e, se precisar, Mecânico) e feche o pedido: ${t}`, {
+          // Vagas na tela até o Líder chamar cada papel.
+          vagas: ['batedor', 'construtor', 'revisor'],
+        });
       } else if (modo === 'planejar') {
         await criarVertice(s.id, 'agente', agente, 'padrao', `Só planeje, sem mudar arquivos: ${t}`, { soLeitura: true });
       } else {
