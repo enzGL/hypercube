@@ -533,6 +533,9 @@ export function criarNativoSimulado(): Nativo {
       definirTitulo(titulo) {
         document.title = titulo;
       },
+      async abrirPasta(caminho) {
+        console.info('[simulado] abrir pasta', caminho);
+      },
       abrirLink(url) {
         window.open(url, '_blank', 'noopener');
       },

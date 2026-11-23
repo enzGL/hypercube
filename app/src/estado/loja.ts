@@ -153,7 +153,7 @@ export interface Aviso {
   verticeId?: string;
 }
 
-export type Dialogo = null | { tipo: 'novaSessao' } | { tipo: 'novoVertice'; sessaoId: string; papel?: Papel };
+export type Dialogo = null | { tipo: 'novaSessao'; pasta?: string } | { tipo: 'novoVertice'; sessaoId: string; papel?: Papel } | { tipo: 'renomearSessao'; sessaoId: string };
 
 export interface Estado {
   configurado: boolean;
@@ -1211,3 +1211,27 @@ nativo.eventos.aoEvento(async (ev) => {
   const fim = `${ev.mensagem ?? ''}\n${await nativo.terminais.resultado(lider.terminalId)}`;
   if (/Estado:\s*(concluído|concluido|parcial|bloqueado)/i.test(fim)) atualizarVertice(lider.id, () => ({ vagas: [] }));
 });
+
+// ---------- ações do menu do clique direito ----------
+
+export function renomearSessao(sessaoId: string, nome: string) {
+  const n = nome.trim();
+  if (!n) return;
+  mudar((e) => ({ sessoes: e.sessoes.map((s) => (s.id === sessaoId ? { ...s, nome: n } : s)) }));
+}
+
+/** Encerra os processos da sessão e tira a sessão da lista (as cópias e branches ficam no disco). */
+export async function encerrarSessao(sessaoId: string) {
+  for (const v of estado.vertices.filter((x) => x.sessaoId === sessaoId && x.terminalId)) {
+    await nativo.terminais.encerrar(v.terminalId!).catch(() => {});
+  }
+  mudar((e) => {
+    const sessoes = e.sessoes.filter((s) => s.id !== sessaoId);
+    return {
+      sessoes,
+      vertices: e.vertices.filter((v) => v.sessaoId !== sessaoId),
+      sessaoAtivaId: e.sessaoAtivaId === sessaoId ? sessoes[0]?.id ?? null : e.sessaoAtivaId,
+      focoId: null,
+    };
+  });
+}

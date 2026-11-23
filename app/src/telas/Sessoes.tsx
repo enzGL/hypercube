@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { abrirMenu } from '../componentes/MenuContexto';
+import { EVENTO_CAMPO, EVENTO_RENOMEAR, menuAgente } from '../estado/menus';
 import { LogoAgente } from '../componentes/LogoAgente';
 import {
   abrirDialogo,
@@ -231,6 +233,16 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
   const filhos = e.vertices.filter((f) => f.paiId === v.id);
   const corrida = v.corridaId ? e.corridas.find((c) => c.id === v.corridaId) : undefined;
   const lider = v.criadoPor ? e.vertices.find((x) => x.id === v.criadoPor) : undefined;
+  // "Renomear" no menu do clique direito abre a edição do nome aqui no painel.
+  useEffect(() => {
+    const f = (ev: Event) => (ev as CustomEvent<string>).detail === v.id && setRenomeando(true);
+    window.addEventListener(EVENTO_RENOMEAR, f);
+    return () => window.removeEventListener(EVENTO_RENOMEAR, f);
+  }, [v.id]);
+  const menu = (ev: React.MouseEvent<HTMLElement>) => {
+    const ponto = ev.currentTarget;
+    abrirMenu(ev, menuAgente(v, () => abrirEditarAgente(v.id, ponto)), nome);
+  };
 
   return (
     <article
@@ -251,7 +263,7 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
         if (de) mover(v.sessaoId, de, v.id);
       }}
     >
-      <header className="painel-cabeca com-cor-agente" style={{ ['--cor-agente' as string]: cor }}>
+      <header className="painel-cabeca com-cor-agente" style={{ ['--cor-agente' as string]: cor }} onContextMenu={menu}>
         <MascoteAgente cor={cor} papel={v.papel} tamanho={28} estado={v.estado} entrada={entrada} />
         <div className="painel-nome">
           <span className="painel-nome-linha">
@@ -260,12 +272,8 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
             ) : (
               <b
                 tabIndex={0}
-                title="Duplo clique: apelido e cor · F2 ou clique direito: renomear aqui"
+                title="Duplo clique: apelido e cor · F2: renomear aqui · clique direito: opções do agente"
                 onDoubleClick={(ev) => abrirEditarAgente(v.id, ev.currentTarget)}
-                onContextMenu={(ev) => {
-                  ev.preventDefault();
-                  setRenomeando(true);
-                }}
                 onKeyDown={(ev) => {
                   if (ev.key === 'F2') setRenomeando(true);
                   if (ev.key === 'Enter') abrirEditarAgente(v.id, ev.currentTarget);
@@ -429,6 +437,19 @@ function CampoComando({ e, sessaoId, vertices }: { e: Estado; sessaoId: string; 
   const alvoId = alvo || padrao?.id || '';
   const alvoV = vertices.find((v) => v.id === alvoId);
 
+  // Menu do clique direito: "Mandar tarefa" e "Mandar para todos" miram o campo e dão o foco.
+  const campoRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    const f = (ev: Event) => {
+      const d = (ev as CustomEvent<{ sessaoId: string; alvo: string }>).detail;
+      if (d.sessaoId !== sessaoId) return;
+      setAlvo(d.alvo);
+      window.setTimeout(() => campoRef.current?.focus(), 30);
+    };
+    window.addEventListener(EVENTO_CAMPO, f);
+    return () => window.removeEventListener(EVENTO_CAMPO, f);
+  }, [sessaoId]);
+
   const enviar = () => {
     const t = texto.trim();
     if (!t) return;
@@ -506,6 +527,7 @@ function CampoComando({ e, sessaoId, vertices }: { e: Estado; sessaoId: string; 
         </select>
       </label>
       <input
+        ref={campoRef}
         value={texto}
         onChange={(ev) => {
           setTexto(ev.target.value);

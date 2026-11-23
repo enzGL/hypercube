@@ -137,6 +137,22 @@ async fn sistema_abrir_link(url: String) -> R<()> {
     r.map(|_| ()).map_err(|e| e.to_string())
 }
 
+/// Abre uma pasta no explorador de arquivos (só pastas que existem).
+#[tauri::command]
+async fn sistema_abrir_pasta(caminho: String) -> R<()> {
+    let p = std::path::PathBuf::from(&caminho);
+    if !p.is_dir() {
+        return Err(format!("A pasta não existe: {caminho}"));
+    }
+    #[cfg(windows)]
+    let r = std::process::Command::new("explorer.exe").arg(&p).spawn();
+    #[cfg(target_os = "macos")]
+    let r = std::process::Command::new("open").arg(&p).spawn();
+    #[cfg(all(unix, not(target_os = "macos")))]
+    let r = std::process::Command::new("xdg-open").arg(&p).spawn();
+    r.map(|_| ()).map_err(|e| e.to_string())
+}
+
 /// O servidor do canvas de imagens ainda não existe no Tauri.
 #[tauri::command]
 async fn sistema_porta_canvas() -> R<u16> {
@@ -234,6 +250,7 @@ pub fn run() {
             sistema_notificar,
             sistema_tocar_som,
             sistema_abrir_link,
+            sistema_abrir_pasta,
             sistema_porta_canvas,
             arquivos_escolher_pasta,
             arquivos_ler,

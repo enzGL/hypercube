@@ -24,6 +24,9 @@ import { HiperMini } from './HiperMini';
 import { SimboloEstado } from './Pecas';
 import { abrirEditarAgente, MascoteAgente } from './EditarAgente';
 import { CartaoUsuario } from './Perfil';
+import { PilulasDeUso } from './PilulasDeUso';
+import { abrirMenu } from './MenuContexto';
+import { menuAgente, menuProjeto, menuSessao } from '../estado/menus';
 
 function abrirSessao(id: string, rota: 'sessoes' | 'orquestracao' = 'sessoes') {
   selecionarSessao(id);
@@ -119,6 +122,8 @@ export function BarraLateral() {
             </button>
           </>
         )}
+
+        <PilulasDeUso compacta={recolhida} />
 
         <CartaoUsuario recolhida={recolhida}>
           <button className="faixa-botao" onClick={() => irParaRota('sobre')} title="Sobre e ajustes" aria-label="Sobre e ajustes">
@@ -260,7 +265,17 @@ function ArvoreProjeto({
   return (
     <section className="projeto">
       <div className={`linha-projeto ${ativo ? 'ativo' : ''}`}>
-        <button className="linha-projeto-corpo" onClick={() => p.sessoes[0] && abrirSessao(p.sessoes.find((s) => s.id === e.sessaoAtivaId)?.id ?? p.sessoes[0].id)} title={p.pasta}>
+        <button
+          className="linha-projeto-corpo"
+          onContextMenu={(ev) =>
+            abrirMenu(
+              ev,
+              // Projeto com uma sessão só: as opções da sessão vêm junto (não há linha própria dela).
+              [...menuProjeto(p.pasta, aberta), ...(p.sessoes.length === 1 ? (['separador', ...menuSessao(p.sessoes[0])] as const) : [])],
+              p.nome,
+            )
+          }
+          onClick={() => p.sessoes[0] && abrirSessao(p.sessoes.find((s) => s.id === e.sessaoAtivaId)?.id ?? p.sessoes[0].id)} title={p.pasta}>
           <AvatarProjeto nome={p.nome} cor={p.cor} />
           <span className="linha-nome">{p.nome}</span>
         </button>
@@ -281,7 +296,12 @@ function ArvoreProjeto({
           {sessoes.map(({ sessao, vertices }) => (
             <li key={sessao.id}>
               {variasSessoes && (
-                <button className={`linha-sessao-casca ${e.sessaoAtivaId === sessao.id && rota === 'sessoes' ? 'ativa' : ''}`} onClick={() => abrirSessao(sessao.id)}>
+                <button
+                  className={`linha-sessao-casca ${e.sessaoAtivaId === sessao.id && rota === 'sessoes' ? 'ativa' : ''}`}
+                  onClick={() => abrirSessao(sessao.id)}
+                  onContextMenu={(ev) => abrirMenu(ev, menuSessao(sessao), sessao.nome)}
+                  title={`${sessao.nome} · clique direito: opções da sessão`}
+                >
                   <IconeCasca nome="terminal" tamanho={14} />
                   <span className="linha-nome">{sessao.nome}</span>
                   <span className="contador" title={`${totalDaSessao(e, sessao.id)} terminais`}>
@@ -337,10 +357,10 @@ function LinhaTerminal({ e, v, nivel, aninhar = true }: { e: Estado; v: Vertice;
         style={{ ['--cor-agente' as string]: cor, ...(nivel ? { paddingLeft: 12 + nivel * 16 } : {}) }}
         onClick={() => focar(v.id)}
         onContextMenu={(ev) => {
-          ev.preventDefault();
-          abrirEditarAgente(v.id, { x: ev.clientX, y: ev.clientY });
+          const ponto = { x: ev.clientX, y: ev.clientY };
+          abrirMenu(ev, menuAgente(v, () => abrirEditarAgente(v.id, ponto)), nome);
         }}
-        title={`${nome} · ${NOME_AGENTE[v.agente]}${v.oculto ? ' (oculto, ainda rodando)' : ''} · clique direito: apelido e cor`}
+        title={`${nome} · ${NOME_AGENTE[v.agente]}${v.oculto ? ' (oculto, ainda rodando)' : ''} · clique direito: opções do agente`}
       >
         {nivel > 0 && <span className="ramo" aria-hidden="true">└</span>}
         <MascoteAgente cor={cor} papel={v.papel} tamanho={14} estado={v.estado} />

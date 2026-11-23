@@ -7,6 +7,7 @@ import {
   DESCRICAO_PAPEL,
   NOME_NIVEL,
   NOME_PAPEL,
+  renomearSessao,
   useLoja,
   type Nivel,
   type Papel,
@@ -46,11 +47,37 @@ const NIVEL_PADRAO: Record<string, Nivel> = { lider: 'forte', batedor: 'barato',
 /** Vagas da equipe predefinida: o Líder chama cada papel quando precisar. */
 const VAGAS: Papel[] = ['batedor', 'construtor', 'revisor'];
 
-function NovaSessao() {
+function RenomearSessao({ sessaoId }: { sessaoId: string }) {
+  const e = useLoja();
+  const s = e.sessoes.find((x) => x.id === sessaoId);
+  const [nome, setNome] = useState(s?.nome ?? '');
+  const salvar = () => {
+    renomearSessao(sessaoId, nome);
+    abrirDialogo(null);
+  };
+  return (
+    <Moldura titulo="Renomear sessão">
+      <label className="campo">
+        <span>Nome</span>
+        <input autoFocus value={nome} onChange={(ev) => setNome(ev.target.value)} onKeyDown={(ev) => ev.key === 'Enter' && salvar()} />
+      </label>
+      <footer className="dialogo-rodape">
+        <button className="botao" onClick={() => abrirDialogo(null)}>
+          Cancelar
+        </button>
+        <button className="botao primario" onClick={salvar} disabled={!nome.trim()}>
+          Salvar
+        </button>
+      </footer>
+    </Moldura>
+  );
+}
+
+function NovaSessao({ pastaInicial }: { pastaInicial?: string }) {
   const agentes = useAgentes();
   const [nome, setNome] = useState('');
   const e = useLoja();
-  const [pasta, setPasta] = useState(() => e.sessoes.find((s) => s.id === e.sessaoAtivaId)?.pasta ?? '');
+  const [pasta, setPasta] = useState(() => pastaInicial ?? e.sessoes.find((s) => s.id === e.sessaoAtivaId)?.pasta ?? '');
   const [jeito, setJeito] = useState<Jeito>(lerJeito);
   const comAgentes = jeito === 'agentes';
   // Com agentes já liga as cópias separadas; em Normal a pessoa escolhe.
@@ -256,6 +283,7 @@ function NovoVertice({ sessaoId, papelInicial }: { sessaoId: string; papelInicia
 export function Dialogos() {
   const { dialogo } = useLoja();
   if (!dialogo) return null;
-  if (dialogo.tipo === 'novaSessao') return <NovaSessao />;
+  if (dialogo.tipo === 'novaSessao') return <NovaSessao pastaInicial={dialogo.pasta} />;
+  if (dialogo.tipo === 'renomearSessao') return <RenomearSessao sessaoId={dialogo.sessaoId} />;
   return <NovoVertice sessaoId={dialogo.sessaoId} papelInicial={dialogo.papel} />;
 }

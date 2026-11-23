@@ -6,6 +6,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
 import { nativo } from '../nativo';
 import { EVENTO_TEMA, token } from '../estado/tema';
+import { abrirMenu } from './MenuContexto';
 
 // Cores do xterm a partir dos tokens do tema atual (refeitas quando o tema muda).
 function temaXterm() {
@@ -95,5 +96,29 @@ export function Terminal({ terminalId, focado, aoFocar }: { terminalId: string; 
     if (focado) termRef.current?.focus();
   }, [focado]);
 
-  return <div className="terminal" ref={caixa} onMouseDown={aoFocar} />;
+  // Clique direito no terminal: Copiar (só com texto selecionado), Colar e Limpar.
+  const menu = (ev: React.MouseEvent) => {
+    const term = termRef.current;
+    if (!term) return;
+    const selecionado = term.getSelection();
+    abrirMenu(ev, [
+      { rotulo: 'Copiar', atalho: 'Ctrl+Shift+C', desativado: !selecionado, acao: () => void navigator.clipboard?.writeText(selecionado).catch(() => {}) },
+      {
+        rotulo: 'Colar',
+        atalho: 'Ctrl+Shift+V',
+        acao: () => {
+          navigator.clipboard
+            ?.readText()
+            .then((t) => t && term.paste(t))
+            .catch(() => {});
+          term.focus();
+        },
+      },
+      { rotulo: 'Selecionar tudo', acao: () => term.selectAll() },
+      'separador',
+      { rotulo: 'Limpar a tela', acao: () => term.clear() },
+    ]);
+  };
+
+  return <div className="terminal" ref={caixa} onMouseDown={aoFocar} onContextMenu={menu} />;
 }

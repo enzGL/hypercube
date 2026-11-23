@@ -169,6 +169,8 @@ export interface Nativo {
     tocarSom(): void;
     definirTitulo(titulo: string): void;
     abrirLink(url: string): void;
+    /** Abre a pasta no explorador de arquivos do sistema. */
+    abrirPasta(caminho: string): Promise<void>;
     portaCanvas(): Promise<number>;
   };
 

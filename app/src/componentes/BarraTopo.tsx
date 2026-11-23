@@ -1,5 +1,4 @@
 // Barra de cima do app (abas de projeto, navegação, uso dos agentes, RAM) e o cabeçalho de cada tela.
-import { LogoAgente } from './LogoAgente';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ControlesJanela, alternarMaximizar } from './ControlesJanela';
 import { abrirDialogo, contar, selecionarSessao, useLoja, verticesDaSessao } from '../estado/loja';
@@ -21,7 +20,6 @@ import {
   type Projeto,
   type Rota,
 } from '../estado/casca';
-import { nativo, type UsoDoPlano } from '../nativo';
 import { AvatarProjeto, IconeCasca } from './IconesCasca';
 import { SimboloEstado } from './Pecas';
 
@@ -88,40 +86,14 @@ const MENU: { rota: Rota; nome: string; icone: string }[] = [
   { rota: 'sobre', nome: 'Sobre', icone: 'sobre' },
 ];
 
-function usarMemoriaMB() {
-  const [mb, setMb] = useState<number | null>(null);
-  useEffect(() => {
-    const medir = () => {
-      const m = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory;
-      setMb(m ? Math.round(m.usedJSHeapSize / 1048576) : null);
-    };
-    medir();
-    const t = window.setInterval(medir, 4000);
-    return () => window.clearInterval(t);
-  }, []);
-  return mb;
-}
-
-function nivelUso(v: number) {
-  return v >= 80 ? 'alto' : v >= 60 ? 'medio' : 'ok';
-}
-
 function BarraGlobal() {
   const e = useLoja();
   const rota = e.tela as Rota;
   const casca = useCasca();
-  const [uso, setUso] = useState<UsoDoPlano[]>([]);
   const [menu, setMenu] = useState(false);
   const refMenu = useRef<HTMLDivElement>(null);
   const ultimaSessao = useRef<Record<string, string>>({});
-  const mb = usarMemoriaMB();
   const ativo = projetoAtivo(e);
-
-  useEffect(() => {
-    nativo.processos.usoDoPlano().then(setUso);
-    const t = window.setInterval(() => nativo.processos.usoDoPlano().then(setUso), 60000);
-    return () => window.clearInterval(t);
-  }, []);
 
   useEffect(() => {
     registrarPasso(rota, e.sessaoAtivaId);
@@ -250,24 +222,6 @@ function BarraGlobal() {
         <button className={`bg-botao ${casca.painelAberto && casca.aba === 'notas' ? 'ligado' : ''}`} onClick={() => abrirAba('notas')} title="Notas do projeto" aria-label="Notas do projeto">
           <IconeCasca nome="notas" />
         </button>
-        <div className="bg-usos" aria-label="Uso do plano por agente">
-          {uso.map((u) => (
-            <span
-              key={u.provedor}
-              className={`bg-chip uso-${nivelUso(u.cincoHoras)}`}
-              title={`${u.provedor}: ${u.cincoHoras}% das 5 h · ${u.semana}% da semana · renova em ${u.renovaEm}`}
-            >
-              <span className="bg-chip-ponto" aria-hidden="true" />
-              <LogoAgente agente={u.provedor === 'Claude' ? 'claude' : 'codex'} tamanho={12} />
-              {u.provedor} <b>{u.cincoHoras}%</b>
-            </span>
-          ))}
-        </div>
-        {mb !== null && (
-          <span className="bg-chip bg-ram" title="Memória usada pelo app">
-            <IconeCasca nome="memoria" tamanho={13} /> <b>{mb}</b> MB
-          </span>
-        )}
         <button className={`bg-botao ${casca.painelAberto ? 'ligado' : ''}`} onClick={alternarPainel} title={casca.painelAberto ? 'Esconder o painel direito' : 'Mostrar o painel direito'} aria-label="Painel direito">
           <IconeCasca nome="painelDireito" />
         </button>

@@ -101,6 +101,7 @@ export function criarNativoTauri(): Nativo {
       tocarSom: () => void invoke('sistema_tocar_som'),
       definirTitulo: (titulo) => void invoke('sistema_definir_titulo', { titulo }),
       abrirLink: (url) => void invoke('sistema_abrir_link', { url }),
+      abrirPasta: (caminho) => invoke('sistema_abrir_pasta', { caminho }),
       portaCanvas: () => invoke<number>('sistema_porta_canvas'),
     },
     roteador: {
