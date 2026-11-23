@@ -11,29 +11,20 @@ export const DESC_JEITO: Record<Jeito, string> = {
     'O estilo do Hypercube: o Líder põe o pedido numa lista e chama a equipe (Explorador, Construtor, Revisor, Mecânico), cada um com a sua skill, em cópias separadas, com revisão antes de entregar.',
 };
 
-const CHAVE = 'hypercube.jeito';
-
-/** A escolha da última vez (Normal se nada foi guardado ou sem armazenamento). */
+/** O jeito de começar é sempre Normal (terminal padrão). Com agentes só vale se a pessoa escolher agora. */
 export function lerJeito(): Jeito {
+  // Limpa a escolha guardada por versões anteriores, que fazia o app abrir Com agentes.
   try {
-    return localStorage.getItem(CHAVE) === 'agentes' ? 'agentes' : 'normal';
+    localStorage.removeItem('hypercube.jeito');
   } catch {
-    return 'normal';
+    /* sem armazenamento: nada a limpar */
   }
-}
-
-export function gravarJeito(j: Jeito) {
-  try {
-    localStorage.setItem(CHAVE, j);
-  } catch {
-    /* sem armazenamento: vale só agora */
-  }
+  return 'normal';
 }
 
 /** Dois cartões grandes, lado a lado. `compacto` deixa só o nome e uma linha (Início). */
 export function EscolhaJeito({ valor, aoMudar, compacto = false }: { valor: Jeito; aoMudar: (j: Jeito) => void; compacto?: boolean }) {
   const escolher = (j: Jeito) => {
-    gravarJeito(j);
     aoMudar(j);
   };
   return (
