@@ -254,6 +254,9 @@ impl Terminais {
                 args.push(format!("mcp_servers.hypercube.url={}", hooks::toml_texto(&hooks::url_mcp(hooks.porta, &id))));
                 args.push("-c".into());
                 args.push(format!("mcp_servers.hypercube.http_headers={{ {} = {} }}", hooks::toml_texto(hooks::HEADER_TOKEN), hooks::toml_texto(&hooks.token)));
+                // "esperar" segura a chamada por até 5 minutos; o padrão do Codex corta antes.
+                args.push("-c".into());
+                args.push(format!("mcp_servers.hypercube.tool_timeout_sec={}", hooks::ESPERA_MAX_SEG + 30));
             }
         }
         papel_e_nivel(&o, &mut args);
@@ -272,6 +275,10 @@ impl Terminais {
         }
         cmd.cwd(&cwd);
         cmd.env("HYPERCUBE_TERMINAL_ID", &id);
+        if o.orquestrar && o.agente == "claude" {
+            // Sem isto o Claude corta a chamada da ferramenta em cerca de 1 minuto e "esperar" falha.
+            cmd.env("MCP_TOOL_TIMEOUT", ((hooks::ESPERA_MAX_SEG + 30) * 1000).to_string());
+        }
         // Se o Hypercube foi aberto de dentro de outro agente, o filho não herda as marcas dele.
         for k in ["CLAUDECODE", "CLAUDE_CODE_CHILD_SESSION", "CLAUDE_CODE_ENTRYPOINT", "CLAUDE_CODE_SSE_PORT"] {
             cmd.env_remove(k);
