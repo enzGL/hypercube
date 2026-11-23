@@ -103,7 +103,7 @@ export function PainelOrquestracao({ sessaoId }: Props) {
   const mudarLimite = (n: number) => setPref((p) => ({ ...p, limite: Math.max(1, Math.min(8, Math.round(n) || 1)) }));
 
   return (
-    <section className={`po ${aberto ? 'po-aberto' : 'po-fechado'}`} aria-label="Orquestração">
+    <section className={`po ${aberto ? 'po-aberto' : 'po-fechado'}`} aria-label="Com agentes">
       <header className="po-cabeca">
         <button
           className="po-recolher"
@@ -115,7 +115,7 @@ export function PainelOrquestracao({ sessaoId }: Props) {
           title={aberto ? 'Recolher o painel' : 'Abrir o painel'}
         >
           <Icone nome={aberto ? 'baixo' : 'cima'} tamanho={14} />
-          <span className="po-titulo">Orquestração</span>
+          <span className="po-titulo">Com agentes</span>
         </button>
 
         {usoLider && (

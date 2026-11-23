@@ -101,10 +101,10 @@ export function Sessoes() {
       <button
         className={`botao ${temOrquestracao(sessao) ? 'ligado' : ''}`}
         aria-pressed={temOrquestracao(sessao)}
-        title={temOrquestracao(sessao) ? 'Voltar para o terminal padrão (some o painel de orquestração)' : 'Ligar a orquestração nesta sessão'}
+        title={temOrquestracao(sessao) ? 'Com agentes ligado. Clique para voltar ao Normal (some o painel da equipe)' : 'Normal. Clique para usar Com agentes: o Líder e a equipe'}
         onClick={() => definirOrquestracao(sessao.id, !temOrquestracao(sessao))}
       >
-        <Icone nome="orquestracao" /> Orquestração
+        <Icone nome="orquestracao" /> Com agentes
       </button>
       <button className="botao primario" onClick={() => abrirDialogo({ tipo: 'novoVertice', sessaoId: sessao.id })}>
         <Icone nome="mais" /> Agente

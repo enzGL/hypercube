@@ -162,3 +162,11 @@
 .ini-uso-aviso { margin: 14px 0 0; color: var(--texto-2); font-size: 14px; line-height: 1.5; }
 
 .ini-dica-modo { margin: 0; padding: 0 14px 12px; font-size: 14px; color: var(--texto-2); }
+
+/* Normal ou Com agentes, no Início. */
+.ini-jeito { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 0 8px 8px; }
+.ini-jeito .jeito { flex: 0 1 360px; }
+.ini-jeito .jeito-cartao b { white-space: nowrap; }
+.ini-comando .inst-faltam { margin: 0; padding: 8px 14px 12px; }
+.ini-planejar { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--texto-2); min-height: 32px; cursor: pointer; }
+

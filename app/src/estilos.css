@@ -895,3 +895,22 @@ span.ll-pergunta { font-size: 13px; color: var(--texto); padding: 6px 8px; borde
 .inst-nome { display: inline-flex; align-items: center; gap: 6px; min-width: 110px; min-height: 32px; font-size: 14px; }
 .inst-faltam .inst { flex: 1; }
 
+/* Escolha Normal ou Com agentes. */
+.jeito { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.jeito-cartao {
+  display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; text-align: left; border-radius: 10px;
+  border: 1px solid var(--borda-forte); background: var(--cartao); color: var(--texto); min-height: 44px;
+}
+.jeito-cartao:hover { border-color: color-mix(in srgb, var(--cobalto-claro) 60%, var(--borda-forte)); }
+.jeito-cartao.ativo { border-color: var(--cobalto-claro); box-shadow: 0 0 0 1px var(--cobalto-claro) inset; background: color-mix(in srgb, var(--cobalto) 14%, var(--cartao)); }
+.jeito-topo { display: flex; align-items: center; gap: 8px; }
+.jeito-topo b { font-size: 15px; }
+.jeito-icone { font-size: 14px; color: var(--cobalto-claro); }
+.jeito-equipe { display: inline-flex; gap: 2px; }
+.jeito-padrao { margin-left: auto; font-size: 13px; color: var(--texto-2); }
+.jeito-desc { font-size: 13px; line-height: 1.45; color: var(--texto-2); }
+.jeito-compacto .jeito-cartao { padding: 6px 10px; min-height: 36px; }
+.jeito-compacto .jeito-padrao { display: none; }
+.vagas-previa { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+.vaga-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1.5px dashed var(--borda-forte); border-radius: 999px; font-size: 13px; color: var(--texto-2); }
+

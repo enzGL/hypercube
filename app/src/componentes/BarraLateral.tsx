@@ -252,7 +252,7 @@ function ArvoreProjeto({
 }) {
   const rota = e.tela as Rota;
   const aberta = !!busca || (e.pastasAbertas[p.pasta] ?? true);
-  const mostrarOrq = !busca || 'orquestração'.includes(busca);
+  const mostrarOrq = !busca || 'com agentes orquestração'.includes(busca);
   const c = contar(e.vertices.filter((v) => p.sessoes.some((s) => s.id === v.sessaoId)));
   const ativo = projetoAtivo(e) === p.pasta;
   const variasSessoes = p.sessoes.length > 1;
@@ -300,7 +300,7 @@ function ArvoreProjeto({
                     onClick={() => abrirSessao(sessao.id, 'orquestracao')}
                   >
                     <IconeCasca nome="orquestracao" tamanho={14} />
-                    <span className="linha-nome">Orquestração</span>
+                    <span className="linha-nome">Com agentes</span>
                   </button>
                 </li>
                 )}

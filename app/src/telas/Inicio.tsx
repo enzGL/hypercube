@@ -18,14 +18,14 @@ import { nativo, NOME_AGENTE, type Agente, type UsoDoPlano } from '../nativo';
 import { FundoDither } from '../componentes/FundoDither';
 import { Icone } from '../componentes/Pecas';
 import { AgentesQueFaltam, useAgentesDetectados } from '../componentes/InstalarAgente';
+import { EscolhaJeito, lerJeito, type Jeito } from '../componentes/EscolhaJeito';
 import '../inicio.css';
 
 type Modo = 'normal' | 'planejar' | 'equipe';
-const NOME_MODO: Record<Modo, string> = { normal: 'Normal', planejar: 'Planejar', equipe: 'Equipe' };
 const DICA_MODO: Record<Modo, string> = {
-  normal: 'Normal: um agente faz a tarefa.',
-  planejar: 'Planejar: o agente só monta o plano, sem mudar arquivos.',
-  equipe: 'Equipe: um líder divide a tarefa e chama um explorador, um construtor e um revisor.',
+  normal: 'Normal: um agente faz a tarefa no terminal, do jeito dele.',
+  planejar: 'Normal, só planejar: o agente monta o plano sem mudar arquivos.',
+  equipe: 'Com agentes: o Líder põe o pedido numa lista e chama a equipe, com revisão antes de entregar.',
 };
 const AGENTES_PADRAO: Agente[] = ['claude', 'codex', 'gemini'];
 
@@ -187,7 +187,10 @@ function CaixaComando({ pastas }: { pastas: string[] }) {
   const [agente, setAgente] = useState<Agente>('claude');
   const [pasta, setPasta] = useState<string>(() => pastaAtual() ?? pastas[0] ?? '');
   const [extras, setExtras] = useState<string[]>([]);
-  const [modo, setModo] = useState<Modo>('normal');
+  // Normal (com ou sem "só planejar") ou Com agentes; a escolha fica guardada para a próxima vez.
+  const [jeito, setJeito] = useState<Jeito>(lerJeito);
+  const [planejar, setPlanejar] = useState(false);
+  const modo: Modo = jeito === 'agentes' ? 'equipe' : planejar ? 'planejar' : 'normal';
   const [enviando, setEnviando] = useState(false);
   const campo = useRef<HTMLInputElement>(null);
 
@@ -278,16 +281,17 @@ function CaixaComando({ pastas }: { pastas: string[] }) {
           icone={<Icone nome="pasta" tamanho={14} />}
           opcoes={[...listaPastas.map((p) => ({ valor: p, nome: pastaCurta(p) })), { valor: '__outra', nome: 'Escolher outra pasta…' }]}
         />
-        <Seletor
-          rotulo="Modo"
-          valor={modo}
-          aoMudar={setModo}
-          icone={<span className="ini-ponto-agente" style={{ background: 'var(--cobalto-claro)' }} />}
-          opcoes={(Object.keys(NOME_MODO) as Modo[]).map((m) => ({ valor: m, nome: NOME_MODO[m] }))}
-        />
         <button className="ini-enviar" onClick={enviar} disabled={!texto.trim() || enviando} aria-label="Enviar (Enter)" title="Enviar (Enter)">
           <Icone nome="enviar" tamanho={16} />
         </button>
+      </div>
+      <div className="ini-jeito">
+        <EscolhaJeito valor={jeito} aoMudar={setJeito} compacto />
+        {jeito === 'normal' && (
+          <label className="ini-planejar">
+            <input type="checkbox" checked={planejar} onChange={(ev) => setPlanejar(ev.target.checked)} /> Só planejar
+          </label>
+        )}
       </div>
       <p className="ini-dica-modo">{DICA_MODO[modo]}</p>
       <AgentesQueFaltam agentes={agentes} />
