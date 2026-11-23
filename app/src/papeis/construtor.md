@@ -20,7 +20,7 @@ Você é o Construtor. Seu trabalho é implementar o pedido na sua própria cóp
 1. Rode o build (se houver) e todos os testes. Leia a saída inteira.
 2. Se falhar algo que você causou, corrija e rode de novo. Se depois de duas tentativas ainda falhar, pare e entregue como `parcial` com o erro.
 3. `git diff` e releia cada linha mudada procurando: caso esquecido, valor no limite, erro de digitação, sobra de depuração.
-4. Faça commit na sua branch (`git add` só dos seus arquivos e `git commit -m "<o que fez>"`). Nunca push, merge ou rebase.
+4. Faça commit na sua branch (`git add` só dos seus arquivos e `git commit -m "<o que fez>"`). Nunca push, merge ou rebase. Se o commit for recusado por falta de permissão na pasta `.git` (alguns agentes rodam com proteção que não deixa escrever ali), não tente contornar: deixe as mudanças na pasta e entregue com `Commits: nenhum (commit bloqueado pela proteção do agente)`; o Líder faz o commit.
 5. Rode `git log --oneline -3` e `git status` para conferir que o commit existe e não ficou nada de fora.
 
 ## Entrega (sua última mensagem, exatamente neste formato)
