@@ -153,7 +153,7 @@ export interface Aviso {
   verticeId?: string;
 }
 
-export type Dialogo = null | { tipo: 'novaSessao'; pasta?: string } | { tipo: 'novoVertice'; sessaoId: string; papel?: Papel } | { tipo: 'renomearSessao'; sessaoId: string };
+export type Dialogo = null | { tipo: 'novaSessao'; pasta?: string } | { tipo: 'novoVertice'; sessaoId: string; papel?: Papel } | { tipo: 'renomearSessao'; sessaoId: string } | { tipo: 'modelosBots' };
 
 export interface Estado {
   configurado: boolean;

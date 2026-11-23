@@ -205,6 +205,9 @@ function CorpoLateral({ e, modo, busca }: { e: Estado; modo: ModoLateral; busca:
       <div className="lateral-titulo">
         <span>Projetos</span>
         <span className="lateral-titulo-acoes">
+          <button onClick={() => abrirDialogo({ tipo: 'modelosBots' })} title="Modelos de bots" aria-label="Modelos de bots">
+            <IconeCasca nome="bot" tamanho={15} />
+          </button>
           <button onClick={() => abrirDialogo({ tipo: 'novaSessao' })} title="Abrir uma pasta como projeto" aria-label="Abrir uma pasta como projeto">
             <IconeCasca nome="novaPasta" tamanho={15} />
           </button>

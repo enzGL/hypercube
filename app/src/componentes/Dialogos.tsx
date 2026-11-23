@@ -16,6 +16,7 @@ import { nativo, NOME_AGENTE, type Agente } from '../nativo';
 import { Icone, MiniVertice } from './Pecas';
 import { AgentesQueFaltam, useAgentesDetectados } from './InstalarAgente';
 import { EscolhaJeito, lerJeito, type Jeito } from './EscolhaJeito';
+import { ModelosBots } from './ModelosBots';
 
 /** Agentes do computador; a lista se atualiza quando uma instalação termina. */
 const useAgentes = useAgentesDetectados;
@@ -284,6 +285,7 @@ export function Dialogos() {
   const { dialogo } = useLoja();
   if (!dialogo) return null;
   if (dialogo.tipo === 'novaSessao') return <NovaSessao pastaInicial={dialogo.pasta} />;
+  if (dialogo.tipo === 'modelosBots') return <ModelosBots />;
   if (dialogo.tipo === 'renomearSessao') return <RenomearSessao sessaoId={dialogo.sessaoId} />;
   return <NovoVertice sessaoId={dialogo.sessaoId} papelInicial={dialogo.papel} />;
 }
