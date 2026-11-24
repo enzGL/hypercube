@@ -88,3 +88,7 @@
 .pf-intro .pf-bolinhas span.atual { width: 24px; }
 .pf-intro .pf-nav-botoes .botao.primario { min-width: 150px; }
 .pf-intro .pf-passo { min-height: 0; }
+
+/* O botão principal fica no mesmo canto em todos os passos (no último vira "Começar"). */
+.pf-intro .pf-nav-botoes .botao.pf-principal { min-width: 168px; height: 44px; font-size: 15px; font-weight: 600; }
+.pf-intro .pf-navegacao { position: sticky; bottom: -22px; margin-bottom: -22px; padding-bottom: 22px; background: var(--cartao); z-index: 2; }

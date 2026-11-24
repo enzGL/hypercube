@@ -215,9 +215,6 @@ export function PrimeiraAbertura() {
                 )}
               </div>
               <div className="primeira-acoes">
-                <button className="botao primario" onClick={abrirPasta} disabled={!agentes && !erroBusca}>
-                  <Icone nome="pasta" /> Abrir uma pasta de projeto
-                </button>
                 {nativo.modo !== 'tauri' && (
                 <button
                   className="botao"
@@ -252,9 +249,18 @@ export function PrimeiraAbertura() {
                 Pular
               </button>
             )}
-            {passo !== 'agentes' && (
-              <button className="botao primario" onClick={() => ir(1)} disabled={!podeSeguir}>
+            {passo !== 'agentes' ? (
+              <button className="botao primario pf-principal" onClick={() => ir(1)} disabled={!podeSeguir}>
                 Continuar
+              </button>
+            ) : (
+              <button
+                className="botao primario pf-principal"
+                onClick={abrirPasta}
+                disabled={!agentes && !erroBusca}
+                title="Escolher a pasta do seu primeiro projeto"
+              >
+                <Icone nome="pasta" /> Começar
               </button>
             )}
           </div>
