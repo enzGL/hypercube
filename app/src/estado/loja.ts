@@ -956,6 +956,7 @@ export function nomeDoAgente(v: Vertice): string {
 export function nomePadraoDoAgente(v: Vertice): string {
   const doPapel = personalizacoes.porPapel[v.papel]?.apelido?.trim();
   const base = NOME_PAPEL[v.papel];
+  if (!v.nome) return v.agente === 'terminal' ? 'Terminal' : base;
   // "Batedor 2" com o padrão "Olheiro" vira "Olheiro 2"; nomes próprios ("Corrida 1") ficam.
   if (doPapel && v.nome.startsWith(base)) return doPapel + v.nome.slice(base.length);
   return v.nome;

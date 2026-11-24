@@ -96,6 +96,11 @@ export function Roteador() {
           </table>
         </section>
 
+        {!r.ligado && (
+          <p className="secundario" style={{ margin: '0 0 12px' }}>
+            Ligue o roteador acima para ver os provedores, as cadeias de cada nível e as últimas chamadas.
+          </p>
+        )}
         <div className="cartoes-linha">
           {Object.entries(r.cadeias).map(([nivel, cadeia]) => (
             <section key={nivel} className="cartao">

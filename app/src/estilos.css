@@ -977,3 +977,10 @@ span.ll-pergunta { font-size: 13px; color: var(--texto); padding: 6px 8px; borde
   .mb-esquerda { border-right: 0; border-bottom: 1px solid var(--borda); max-height: 60vh; }
   .mb-direita { overflow: visible; }
 }
+
+/* Janela estreita: o painel direito recolhe sozinho para o centro respirar. */
+@media (max-width: 1000px) {
+  .app.com-painel { grid-template-columns: var(--larg-lateral) minmax(0, 1fr) 0; }
+  .app.com-painel .painel-direito { display: none; }
+}
+.cadeia li > span:nth-child(2) { overflow-wrap: anywhere; min-width: 0; }
