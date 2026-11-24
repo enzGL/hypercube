@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hypercube — todos os seus agentes, num cubo só</title>
+<meta name="description" content="Orquestrador de agentes de IA para o desktop. Grátis e de código aberto.">
+<link rel="icon" href="img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fundo: #0b132d;
+    --fundo-2: #080e22;
+    --cartao: #0e1738;
+    --borda: #1b2650;
+    --texto: #e8e9eb;
+    --texto-2: #9aa3c7;
+    --cobalto: #2238c4;
+    --cobalto-hover: #2a42d8;
+    --cobalto-claro: #93a4ff;
+    --estrela: #e9a21b;
+    --serifa: 'Libre Baskerville', Georgia, serif;
+    --sans: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--fundo); color: var(--texto); font-family: var(--sans); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: var(--cobalto-claro); }
+  .miolo { width: min(1040px, 100% - 32px); margin-inline: auto; }
+  header.topo { display: flex; align-items: center; justify-content: space-between; padding: 20px 0; gap: 16px; }
+  .marca { display: flex; align-items: center; gap: 10px; font-family: var(--serifa); font-weight: 700; font-size: 1.15rem; color: var(--texto); text-decoration: none; }
+  .marca img { width: 34px; height: 34px; image-rendering: pixelated; }
+  nav { display: flex; align-items: center; gap: 18px; font-size: .92rem; }
+  nav a { color: var(--texto-2); text-decoration: none; }
+  nav a:hover { color: var(--texto); }
+  .idioma { background: none; border: 1px solid var(--borda); color: var(--texto-2); border-radius: 999px; padding: 4px 12px; font: inherit; cursor: pointer; }
+  .idioma:hover { color: var(--texto); border-color: var(--cobalto-claro); }
+  .heroi { display: grid; grid-template-columns: 1.15fr .85fr; align-items: center; gap: 40px; padding: 56px 0 72px; }
+  .heroi h1 { font-family: var(--serifa); font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.15; margin: 0 0 18px; }
+  .heroi h1 em { font-style: normal; color: var(--cobalto-claro); }
+  .heroi p.lead { color: var(--texto-2); font-size: 1.12rem; max-width: 34em; margin: 0 0 28px; }
+  .heroi .arte { display: flex; justify-content: center; }
+  .heroi .arte img { width: min(100%, 320px); image-rendering: pixelated; filter: drop-shadow(0 20px 60px rgba(34, 56, 196, .45)); }
+  .botoes { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; border-radius: 10px; font-weight: 600; text-decoration: none; border: 1px solid transparent; font-size: 1rem; }
+  .btn.principal { background: var(--cobalto); color: #fff; }
+  .btn.principal:hover { background: var(--cobalto-hover); }
+  .btn.estrela { background: transparent; color: var(--texto); border-color: var(--borda); }
+  .btn.estrela:hover { border-color: var(--estrela); }
+  .btn.estrela svg { color: var(--estrela); }
+  .nota { margin-top: 16px; font-size: .92rem; color: var(--texto-2); }
+  .nota strong { color: var(--texto); font-weight: 600; }
+  section { padding: 56px 0; border-top: 1px solid var(--borda); }
+  section h2 { font-family: var(--serifa); font-size: clamp(1.5rem, 3vw, 2rem); margin: 0 0 8px; }
+  section > .miolo > p.sub { color: var(--texto-2); margin: 0 0 32px; max-width: 40em; }
+  .grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .cartao { background: var(--cartao); border: 1px solid var(--borda); border-radius: 14px; padding: 22px; }
+  .cartao h3 { margin: 0 0 8px; font-size: 1.05rem; }
+  .cartao p { margin: 0; color: var(--texto-2); font-size: .96rem; }
+  .passos { counter-reset: p; display: grid; gap: 14px; padding: 0; list-style: none; max-width: 40em; }
+  .passos li { counter-increment: p; display: grid; grid-template-columns: 34px 1fr; gap: 14px; align-items: start; }
+  .passos li::before { content: counter(p); display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--cobalto); font-weight: 600; }
+  code { font-family: ui-monospace, 'Geist Mono', Consolas, monospace; background: var(--fundo-2); border: 1px solid var(--borda); padding: 1px 6px; border-radius: 6px; font-size: .9em; }
+  footer { border-top: 1px solid var(--borda); padding: 28px 0 40px; color: var(--texto-2); font-size: .9rem; background: var(--fundo-2); }
+  footer .miolo { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+  [data-lang="en"] { display: none; }
+  html[lang="en"] [data-lang="pt"] { display: none; }
+  html[lang="en"] [data-lang="en"] { display: revert; }
+  @media (max-width: 760px) {
+    .heroi { grid-template-columns: minmax(0, 1fr); padding-top: 24px; }
+    .heroi .arte { order: -1; }
+    .heroi .arte img { width: 150px; }
+    nav a.some { display: none; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .cartao { transition: border-color .2s, transform .2s; }
+    .cartao:hover { border-color: var(--cobalto-claro); transform: translateY(-2px); }
+  }
+</style>
+</head>
+<body>
+<div class="miolo">
+  <header class="topo">
+    <a class="marca" href="#"><img src="img/logo.png" alt=""> Hypercube</a>
+    <nav>
+      <a class="some" href="#recursos"><span data-lang="pt">Recursos</span><span data-lang="en">Features</span></a>
+      <a class="some" href="#comecar"><span data-lang="pt">Como começar</span><span data-lang="en">Get started</span></a>
+      <a href="https://github.com/enzGL/hypercube">GitHub</a>
+      <button class="idioma" id="idioma" type="button" aria-label="Mudar idioma / Change language">EN</button>
+    </nav>
+  </header>
+
+  <div class="heroi">
+    <div>
+      <h1 data-lang="pt">Todos os seus agentes de IA, <em>num cubo só</em>.</h1>
+      <h1 data-lang="en">All your AI agents, <em>in one cube</em>.</h1>
+      <p class="lead" data-lang="pt">Veja, dirija e junte o trabalho de vários agentes de código (Claude Code, Codex, Gemini, OpenCode) numa janela só. Grátis e de código aberto.</p>
+      <p class="lead" data-lang="en">Watch, direct and combine the work of several coding agents (Claude Code, Codex, Gemini, OpenCode) in a single window. Free and open source.</p>
+      <div class="botoes">
+        <a class="btn principal" href="https://github.com/enzGL/hypercube/releases/latest">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 5-5m-5 5-5-5M4 20h16"/></svg>
+          <span data-lang="pt">Baixar para Windows</span><span data-lang="en">Download for Windows</span>
+        </a>
+        <a class="btn estrela" href="https://github.com/enzGL/hypercube">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 2.5 2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"/></svg>
+          <span data-lang="pt">Dar uma estrela</span><span data-lang="en">Star on GitHub</span>
+        </a>
+      </div>
+      <p class="nota" data-lang="pt"><strong>É grátis para usar.</strong> Só pedimos que você dê uma estrela no GitHub! Sem cadastro, sem plano pago.</p>
+      <p class="nota" data-lang="en"><strong>It's free to use.</strong> We only ask that you star the repo on GitHub! No sign-up, no paid plan.</p>
+    </div>
+    <div class="arte"><img src="img/logo.png" alt="Hypercube: um cubo feito de oito cubos menores, o da frente flutuando"></div>
+  </div>
+</div>
+
+<section id="recursos">
+  <div class="miolo">
+    <h2 data-lang="pt">Tudo o que os agentes fazem, num lugar</h2>
+    <h2 data-lang="en">Everything your agents do, in one place</h2>
+    <p class="sub" data-lang="pt">Pensado para quem já usa vários agentes ao mesmo tempo e perdeu a conta de qual está esperando por você.</p>
+    <p class="sub" data-lang="en">Built for people who already run several agents at once and lost track of which one is waiting for them.</p>
+    <div class="grade">
+      <div class="cartao">
+        <h3 data-lang="pt">Sessões ao vivo</h3><h3 data-lang="en">Live sessions</h3>
+        <p data-lang="pt">Terminais de verdade, lado a lado, com o estado de cada agente: trabalhando, esperando você, pronto ou com erro.</p>
+        <p data-lang="en">Real terminals side by side, with each agent's state: working, waiting for you, done or failed.</p>
+      </div>
+      <div class="cartao">
+        <h3 data-lang="pt">Orquestração</h3><h3 data-lang="en">Orchestration</h3>
+        <p data-lang="pt">Um Líder divide a tarefa entre Explorador, Construtor, Revisor e Mecânico. Cada um trabalha na sua própria cópia do projeto.</p>
+        <p data-lang="en">A Leader splits the task among Scout, Builder, Reviewer and Fixer. Each works in its own copy of the project.</p>
+      </div>
+      <div class="cartao">
+        <h3 data-lang="pt">Canvas de imagens</h3><h3 data-lang="en">Image canvas</h3>
+        <p data-lang="pt">Telas, imagens e desenhos gerados pelos agentes aparecem ao vivo, para você comparar as versões.</p>
+        <p data-lang="en">Screens, images and drawings the agents generate show up live, so you can compare versions.</p>
+      </div>
+      <div class="cartao">
+        <h3 data-lang="pt">Roteador de IA</h3><h3 data-lang="en">AI router</h3>
+        <p data-lang="pt">Modelos gratuitos para as tarefas mecânicas, sem gastar o seu plano. Tudo local, com token em cada chamada.</p>
+        <p data-lang="en">Free models for the mechanical work, without spending your plan. All local, with a token on every call.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="comecar">
+  <div class="miolo">
+    <h2 data-lang="pt">Como começar</h2><h2 data-lang="en">Get started</h2>
+    <ol class="passos">
+      <li><div data-lang="pt"><strong>Instale um agente</strong>, por exemplo o Claude Code. O Hypercube acha sozinho o que você já tem.</div><div data-lang="en"><strong>Install an agent</strong>, such as Claude Code. Hypercube finds what you already have.</div></li>
+      <li><div data-lang="pt"><strong>Baixe o Hypercube</strong> na <a href="https://github.com/enzGL/hypercube/releases/latest">página de versões</a> e abra.</div><div data-lang="en"><strong>Download Hypercube</strong> from the <a href="https://github.com/enzGL/hypercube/releases/latest">releases page</a> and open it.</div></li>
+      <li><div data-lang="pt"><strong>Escolha a pasta do projeto</strong> e abra o primeiro agente. O Hiper, o mascote, guia o resto.</div><div data-lang="en"><strong>Pick your project folder</strong> and open the first agent. Hiper, the mascot, guides the rest.</div></li>
+      <li><div data-lang="pt">Quer o roteador gratuito? Instale o <a href="https://nodejs.org">Node.js</a> e ligue na tela <code>Roteador</code>.</div><div data-lang="en">Want the free router? Install <a href="https://nodejs.org">Node.js</a> and turn it on in the <code>Roteador</code> screen.</div></li>
+    </ol>
+  </div>
+</section>
+
+<footer>
+  <div class="miolo">
+    <span data-lang="pt">Hypercube é MIT. O nome, o Hiper e a logo não fazem parte da licença.</span>
+    <span data-lang="en">Hypercube is MIT. The name, Hiper and the logo are not part of the license.</span>
+    <span><a href="https://github.com/enzGL/hypercube">GitHub</a> · <a href="https://github.com/enzGL/tesseract">TesserAct</a></span>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var raiz = document.documentElement, botao = document.getElementById('idioma');
+    function aplicar(l) {
+      raiz.lang = l === 'en' ? 'en' : 'pt-BR';
+      botao.textContent = l === 'en' ? 'PT' : 'EN';
+      try { localStorage.setItem('hc-lang', l); } catch (e) {}
+    }
+    var salvo = null;
+    try { salvo = localStorage.getItem('hc-lang'); } catch (e) {}
+    aplicar(salvo || ((navigator.language || '').toLowerCase().indexOf('pt') === 0 ? 'pt' : 'en'));
+    botao.addEventListener('click', function () { aplicar(raiz.lang === 'en' ? 'pt' : 'en'); });
+  })();
+</script>
+</body>
+</html>
