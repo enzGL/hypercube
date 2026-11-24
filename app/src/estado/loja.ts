@@ -1,7 +1,7 @@
 // Estado do app: sessões, agentes, telas e avisos. Fala com o sistema só por `nativo`.
 import { useSyncExternalStore } from 'react';
 import { nativo, NOME_AGENTE, type Agente, type EventoAgente, type PedidoOrquestrador } from '../nativo';
-import { esforcoDoNivel, INSTRUCAO_PAPEL, mensagemComPapel, modeloDoNivel, PRECISA_COPIA, SO_LEITURA } from './papeis';
+import { esforcoDoNivel, INSTRUCAO_IMAGENS, INSTRUCAO_PAPEL, mensagemComPapel, modeloDoNivel, PRECISA_COPIA, SO_LEITURA } from './papeis';
 
 /** 'agente' é o comum, sem papel. Os outros são agentes predefinidos, opcionais, cada um com a sua skill. */
 export type Papel = 'agente' | 'lider' | 'batedor' | 'construtor' | 'revisor' | 'consertador' | 'subagente';
@@ -530,7 +530,7 @@ async function abrirTerminal(a: AberturaTerminal, tarefa?: string): Promise<{ te
     rotulo: `${a.nome} · ${NOME_NIVEL[a.nivel]}`,
     worktree: a.worktree,
     tarefa: tarefaNativa,
-    instrucao: comoSistema ? INSTRUCAO_PAPEL[a.papel] : undefined,
+    instrucao: comoSistema ? (INSTRUCAO_PAPEL[a.papel] ?? INSTRUCAO_IMAGENS) : undefined,
     modelo: modeloDoNivel(a.agente, a.nivel),
     esforco: esforcoDoNivel(a.agente, a.nivel),
     soLeitura: a.soLeitura,

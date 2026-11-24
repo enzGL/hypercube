@@ -1,6 +1,7 @@
 // O que cada papel faz de verdade: uma instrução (arquivo em src/papeis), o modelo pelo nível
 // e se o agente abre só para leitura.
 import comum from '../papeis/_comum.md?raw';
+import imagens from '../papeis/imagens.md?raw';
 import lider from '../papeis/lider.md?raw';
 import batedor from '../papeis/batedor.md?raw';
 import construtor from '../papeis/construtor.md?raw';
@@ -11,8 +12,11 @@ import type { Nivel, Papel } from './loja';
 
 /** Regras de todos os papéis (entrega na última mensagem, provas, limites) + as do papel. */
 export function juntarInstrucao(papel: string): string {
-  return `${comum.trim()}\n\n---\n\n${papel.trim()}\n`;
+  return `${comum.trim()}\n\n${imagens.trim()}\n\n---\n\n${papel.trim()}\n`;
 }
+
+/** Só a regra de onde salvar telas e imagens: é o que o agente simples (sem papel) do Claude recebe. */
+export const INSTRUCAO_IMAGENS = `${imagens.trim()}\n`;
 
 export const INSTRUCAO_PAPEL: Partial<Record<Papel, string>> = {
   lider: juntarInstrucao(lider),
