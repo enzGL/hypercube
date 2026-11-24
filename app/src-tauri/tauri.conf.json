@@ -32,6 +32,7 @@
   },
   "bundle": {
     "active": true,
+    "resources": { "../../router/server.js": "router/server.js", "../../router/config.default.json": "router/config.default.json" },
     "targets": [
       "nsis"
     ],
