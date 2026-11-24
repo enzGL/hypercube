@@ -3,6 +3,7 @@
 mod fumaca;
 mod hooks;
 mod processos;
+mod saidas;
 mod terminais;
 
 use serde_json::{json, Value};
@@ -200,10 +201,10 @@ async fn arquivos_ler(caminho: String) -> R<String> {
     std::fs::read_to_string(&p).map_err(|e| e.to_string())
 }
 
-/// Observar `.hypercube/saidas/` ainda não foi feito no Tauri (não emite nada).
+/// Observa `<pasta>/.hypercube/saidas/` e emite `saidas:nova` para cada imagem, .svg ou .html.
 #[tauri::command]
-async fn arquivos_observar_saidas(pasta: String) -> R<()> {
-    let _ = pasta;
+async fn arquivos_observar_saidas(app: AppHandle, pasta: String) -> R<()> {
+    saidas::observar(app, &pasta);
     Ok(())
 }
 
