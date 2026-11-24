@@ -1057,12 +1057,49 @@ async function atenderLider(p: PedidoOrquestrador): Promise<string> {
     return alvo;
   };
   const a = p.argumentos ?? {};
+  const pastaDaSessao = () => {
+    const s = estado.sessoes.find((x) => x.id === lider.sessaoId);
+    if (!s) throw new Error('Não achei a pasta da sessão.');
+    return s.pasta;
+  };
+  // Só o Líder ganha as de orquestração (o servidor nem lista para os outros), mas confere aqui também.
+  const exigeLider = () => {
+    if (lider.papel !== 'lider') throw new Error('Esta ferramenta é só do Líder.');
+  };
 
   switch (p.ferramenta) {
+    case 'canvas_adicionar_imagem': {
+      const caminho = texto(a.caminho);
+      if (!caminho) throw new Error('Falta o caminho da imagem.');
+      const nome = texto(a.nome) || caminho.split(/[\\/]/).pop() || 'imagem';
+      const destino = await nativo.arquivos.salvarSaida(pastaDaSessao(), nome, { copiarDe: caminho });
+      return `Imagem no canvas: ${destino}`;
+    }
+
+    case 'canvas_adicionar_html':
+    case 'canvas_adicionar_svg': {
+      const svg = p.ferramenta === 'canvas_adicionar_svg';
+      const nome = texto(a.nome);
+      const conteudo = typeof (svg ? a.svg : a.html) === 'string' ? ((svg ? a.svg : a.html) as string) : '';
+      if (!nome) throw new Error('Falta o nome.');
+      if (!conteudo.trim()) throw new Error(svg ? 'Falta o svg.' : 'Falta o html.');
+      const destino = await nativo.arquivos.salvarSaida(pastaDaSessao(), nome, { texto: conteudo });
+      return `${svg ? 'Desenho' : 'Tela'} no canvas: ${destino}`;
+    }
+
+    case 'consulta_barata': {
+      const pedido = texto(a.pedido);
+      if (!pedido) throw new Error('Falta o pedido.');
+      if (pedido.length > 60_000) throw new Error('Pedido grande demais (mais de 60 mil caracteres): mande só o trecho que importa.');
+      return await nativo.roteador.consultar('barato', pedido);
+    }
+
     case 'listar_agentes':
+      exigeLider();
       return daSessao().map((v) => linhaAgente(v, lider)).join('\n') || 'Nenhum agente.';
 
     case 'criar_agente': {
+      exigeLider();
       const papel = texto(a.papel) as Papel;
       if (!PAPEIS_DO_LIDER.includes(papel)) throw new Error(`Papel inválido. Use um destes: ${PAPEIS_DO_LIDER.join(', ')}.`);
       const tarefa = texto(a.tarefa);
@@ -1093,6 +1130,7 @@ async function atenderLider(p: PedidoOrquestrador): Promise<string> {
     }
 
     case 'mandar_tarefa': {
+      exigeLider();
       const alvo = achar(texto(a.id));
       const tarefa = texto(a.tarefa);
       if (!tarefa) throw new Error('Falta a tarefa.');
@@ -1104,6 +1142,7 @@ async function atenderLider(p: PedidoOrquestrador): Promise<string> {
     }
 
     case 'esperar': {
+      exigeLider();
       const ids = Array.isArray(a.ids) ? a.ids.map(texto).filter(Boolean) : [];
       const alvos = () =>
         ids.length ? ids.map(achar) : daSessao().filter((x) => x.criadoPor === lider.id);
@@ -1126,12 +1165,14 @@ async function atenderLider(p: PedidoOrquestrador): Promise<string> {
     }
 
     case 'atualizar_lista': {
+      exigeLider();
       const lista = lerLista(a.itens);
       atualizarVertice(lider.id, () => ({ lista }));
       return `Lista atualizada: ${lista.length} itens.`;
     }
 
     case 'ler_resultado': {
+      exigeLider();
       const alvo = achar(texto(a.id));
       const partes = [`${nomeDoAgente(alvo)} · ${NOME_PAPEL[alvo.papel]} · ${estadoParaLider(alvo)}`];
       if (alvo.pergunta) partes.push(`Esperando a pessoa: ${alvo.pergunta}`);

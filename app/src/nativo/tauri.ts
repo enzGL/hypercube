@@ -82,6 +82,7 @@ export function criarNativoTauri(): Nativo {
     arquivos: {
       escolherPasta: () => invoke<string | null>('arquivos_escolher_pasta'),
       ler: (caminho) => invoke<string>('arquivos_ler', { caminho }),
+      salvarSaida: (pasta, nome, c) => invoke<string>('arquivos_salvar_saida', { pasta, nome, texto: c.texto ?? null, copiarDe: c.copiarDe ?? null }),
       observarSaidas: (pasta, ouvinte) => {
         invoke('arquivos_observar_saidas', { pasta });
         return ouvir<SaidaGerada>('saidas:nova', ouvinte);
@@ -108,6 +109,7 @@ export function criarNativoTauri(): Nativo {
       estado: () => invoke('roteador_estado'),
       ligar: (ligado) => invoke('roteador_ligar', { ligado }),
       salvarCadeia: (nivel, provedores) => invoke('roteador_salvar_cadeia', { nivel, provedores }),
+      consultar: (nivel, pedido) => invoke<string>('roteador_consultar', { nivel, pedido }),
     },
   };
 }

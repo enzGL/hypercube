@@ -79,6 +79,63 @@ fn ler_saida(caminho: &Path, mtime: SystemTime) -> Option<SaidaGerada> {
     })
 }
 
+/// Nome seguro para um arquivo do canvas: sem pastas, sem caracteres estranhos, com a extensão certa.
+fn nome_seguro(nome: &str, extensao: &str) -> Result<String, String> {
+    let base = nome.trim().rsplit(['/', '\\']).next().unwrap_or("").trim();
+    let sem_ext = match base.rsplit_once('.') {
+        Some((a, e)) if e.eq_ignore_ascii_case(extensao) => a,
+        _ => base,
+    };
+    let limpo: String = sem_ext
+        .chars()
+        .map(|c| if c.is_alphanumeric() || matches!(c, '-' | '_' | ' ') { c } else { '-' })
+        .collect::<String>()
+        .trim_matches(['-', ' '])
+        .chars()
+        .take(60)
+        .collect();
+    if limpo.is_empty() {
+        return Err("Nome inválido para o arquivo do canvas.".into());
+    }
+    Ok(format!("{limpo}.{extensao}"))
+}
+
+/// Grava uma tela (html ou svg) ou copia uma imagem para `<pasta>/.hypercube/saidas/`. Devolve o caminho final.
+/// `texto` é o conteúdo de html/svg; `copiar_de` é o arquivo de imagem a copiar.
+pub fn salvar(pasta: &str, nome: &str, texto: Option<&str>, copiar_de: Option<&str>) -> Result<String, String> {
+    let dir: PathBuf = Path::new(pasta).join(".hypercube").join("saidas");
+    let (extensao, dados): (String, Vec<u8>) = match (texto, copiar_de) {
+        (Some(t), None) => {
+            let ext = if t.trim_start().starts_with("<svg") || t.trim_start().starts_with("<?xml") { "svg" } else { "html" };
+            (ext.into(), t.as_bytes().to_vec())
+        }
+        (None, Some(origem)) => {
+            let o = Path::new(origem);
+            if !o.is_absolute() {
+                return Err(format!("Passe o caminho completo da imagem: {origem}"));
+            }
+            let ext = o.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
+            if !matches!(tipo_do_arquivo(o), Some(("imagem", _))) {
+                return Err("Só imagens png, jpg, gif ou webp (para html e svg, mande o texto).".into());
+            }
+            let meta = std::fs::metadata(o).map_err(|e| format!("Não achei a imagem: {e}"))?;
+            if !meta.is_file() || meta.len() > LIMITE_BYTES {
+                return Err("A imagem precisa ser um arquivo de até 8 MB.".into());
+            }
+            (ext, std::fs::read(o).map_err(|e| e.to_string())?)
+        }
+        _ => return Err("Falta o conteúdo.".into()),
+    };
+    if dados.len() as u64 > LIMITE_BYTES {
+        return Err("Conteúdo grande demais (mais de 8 MB).".into());
+    }
+    let arquivo = nome_seguro(nome, &extensao)?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let destino = dir.join(arquivo);
+    std::fs::write(&destino, dados).map_err(|e| e.to_string())?;
+    Ok(destino.to_string_lossy().into_owned())
+}
+
 /// Começa a observar a pasta de saídas desta sessão (substitui uma observação anterior da mesma pasta).
 pub fn observar(app: AppHandle, pasta: &str) {
     let dir: PathBuf = Path::new(pasta).join(".hypercube").join("saidas");
@@ -128,6 +185,40 @@ mod testes {
         assert_eq!(base64(b"fo"), "Zm8=");
         assert_eq!(base64(b"foo"), "Zm9v");
         assert_eq!(base64(b"hello!"), "aGVsbG8h");
+    }
+
+    #[test]
+    fn nome_seguro_tira_pastas_e_poe_extensao() {
+        assert_eq!(nome_seguro("login", "html").unwrap(), "login.html");
+        assert_eq!(nome_seguro("login.HTML", "html").unwrap(), "login.html");
+        assert_eq!(nome_seguro("../../etc/passwd", "html").unwrap(), "passwd.html");
+        assert_eq!(nome_seguro("a\\b\\tela 1", "svg").unwrap(), "tela 1.svg");
+        assert_eq!(nome_seguro("a:b*c", "svg").unwrap(), "a-b-c.svg");
+        assert!(nome_seguro("..", "html").is_err());
+        assert!(nome_seguro("   ", "png").is_err());
+    }
+
+    #[test]
+    fn salva_html_svg_e_copia_imagem_so_dentro_de_saidas() {
+        let raiz = std::env::temp_dir().join(format!("hc-salvar-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&raiz);
+        std::fs::create_dir_all(&raiz).unwrap();
+        let pasta = raiz.to_string_lossy().into_owned();
+        let h = salvar(&pasta, "../fora", Some("<b>oi</b>"), None).unwrap();
+        assert!(h.ends_with("fora.html") && h.contains("saidas"));
+        assert_eq!(std::fs::read_to_string(&h).unwrap(), "<b>oi</b>");
+        let s = salvar(&pasta, "logo", Some("<svg xmlns=\"http://www.w3.org/2000/svg\"/>"), None).unwrap();
+        assert!(s.ends_with("logo.svg"));
+        let img = raiz.join("origem.png");
+        std::fs::write(&img, [1u8, 2, 3]).unwrap();
+        let c = salvar(&pasta, "foto", None, Some(&img.to_string_lossy())).unwrap();
+        assert!(c.ends_with("foto.png"));
+        assert!(salvar(&pasta, "x", None, Some("relativo.png")).is_err());
+        let txt = raiz.join("segredo.txt");
+        std::fs::write(&txt, "x").unwrap();
+        assert!(salvar(&pasta, "x", None, Some(&txt.to_string_lossy())).is_err());
+        assert!(salvar(&pasta, "x", None, None).is_err());
+        let _ = std::fs::remove_dir_all(&raiz);
     }
 
     #[test]

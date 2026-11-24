@@ -40,8 +40,12 @@ fn achar_script() -> Option<PathBuf> {
 
 /// Pedido HTTP simples a 127.0.0.1 (HTTP/1.0: o servidor fecha ao terminar, sem resposta em pedaços).
 fn http(metodo: &str, caminho: &str, token: &str, corpo: Option<&str>) -> Result<(u16, String), String> {
+    http_com_espera(metodo, caminho, token, corpo, 5)
+}
+
+fn http_com_espera(metodo: &str, caminho: &str, token: &str, corpo: Option<&str>, segundos: u64) -> Result<(u16, String), String> {
     let mut s = TcpStream::connect_timeout(&format!("127.0.0.1:{PORTA}").parse().unwrap(), Duration::from_millis(800)).map_err(|e| e.to_string())?;
-    s.set_read_timeout(Some(Duration::from_secs(5))).ok();
+    s.set_read_timeout(Some(Duration::from_secs(segundos))).ok();
     s.set_write_timeout(Some(Duration::from_secs(5))).ok();
     let corpo = corpo.unwrap_or("");
     let pedido = format!(
@@ -118,6 +122,28 @@ impl Roteador {
             Ok((200, corpo)) => serde_json::from_str(&corpo).unwrap_or(vazio),
             _ => vazio,
         }
+    }
+
+    /// Manda um pedido de texto para a cadeia de um nível (ex.: "barato") e devolve a resposta.
+    pub fn consultar(&self, nivel: &str, pedido: &str) -> Result<String, String> {
+        if !self.vivo() {
+            return Err("O roteador está desligado. Ligue na tela Roteador do Hypercube ou faça você mesmo.".into());
+        }
+        if !matches!(nivel, "barato" | "padrao" | "forte") {
+            return Err("Nível inválido.".into());
+        }
+        let token = self.token.lock().unwrap().clone();
+        let corpo = json!({ "model": nivel, "messages": [{ "role": "user", "content": pedido }], "stream": false }).to_string();
+        let (status, resp) = http_com_espera("POST", "/v1/chat/completions", &token, Some(&corpo), 120)?;
+        let v: Value = serde_json::from_str(&resp).map_err(|_| format!("Resposta estranha do roteador (status {status})."))?;
+        if status != 200 {
+            let msg = v.pointer("/error/message").and_then(Value::as_str).unwrap_or("falhou");
+            return Err(format!("O roteador não conseguiu responder: {msg}"));
+        }
+        v.pointer("/choices/0/message/content")
+            .and_then(Value::as_str)
+            .map(str::to_string)
+            .ok_or_else(|| "O roteador respondeu sem texto.".into())
     }
 
     pub fn salvar_cadeia(&self, nivel: &str, lista: &[String]) -> Result<(), String> {

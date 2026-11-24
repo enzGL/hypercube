@@ -156,6 +156,8 @@ export interface Nativo {
     ler(caminho: string): Promise<string>;
     /** Observa `.hypercube/saidas/` da sessão: imagens, .html e .svg novos. */
     observarSaidas(pasta: string, ouvinte: (saida: SaidaGerada) => void): Desligar;
+    /** Grava html/svg (`texto`) ou copia uma imagem (`copiarDe`) para `.hypercube/saidas/` da sessão. Devolve o caminho. */
+    salvarSaida(pasta: string, nome: string, conteudo: { texto?: string; copiarDe?: string }): Promise<string>;
   };
 
   processos: {
@@ -181,5 +183,7 @@ export interface Nativo {
     estado(): Promise<EstadoRoteador>;
     ligar(ligado: boolean): Promise<void>;
     salvarCadeia(nivel: string, provedores: string[]): Promise<void>;
+    /** Pedido de texto a um nível ("barato", "padrao", "forte"); erra se o roteador está desligado. */
+    consultar(nivel: string, pedido: string): Promise<string>;
   };
 }

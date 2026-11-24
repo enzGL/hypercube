@@ -282,18 +282,17 @@ impl Terminais {
         let mut temporarios = Vec::new();
         let dir = std::env::temp_dir().join("hypercube").join("sessoes");
         if o.agente == "claude" {
-            let p = hooks::settings_da_sessao(&dir, hooks.porta, &hooks.token, &id, o.orquestrar)
+            let p = hooks::settings_da_sessao(&dir, hooks.porta, &hooks.token, &id)
                 .map_err(|e| format!("Não consegui preparar os hooks: {e}"))?;
             args.push("--settings".into());
             args.push(p.to_string_lossy().into_owned());
             temporarios.push(p);
-            if o.orquestrar {
-                let m = hooks::mcp_da_sessao(&dir, hooks.porta, &hooks.token, &id)
-                    .map_err(|e| format!("Não consegui preparar as ferramentas do Líder: {e}"))?;
-                args.push("--mcp-config".into());
-                args.push(m.to_string_lossy().into_owned());
-                temporarios.push(m);
-            }
+            // Todo Claude do Hypercube ganha as ferramentas de canvas; o Líder, também as de orquestração.
+            let m = hooks::mcp_da_sessao(&dir, hooks.porta, &hooks.token, &id)
+                .map_err(|e| format!("Não consegui preparar as ferramentas do Hypercube: {e}"))?;
+            args.push("--mcp-config".into());
+            args.push(m.to_string_lossy().into_owned());
+            temporarios.push(m);
             if let Some(texto) = o.instrucao.as_deref().filter(|t| !t.trim().is_empty()) {
                 let arq = dir.join(format!("{id}-papel.md"));
                 std::fs::write(&arq, texto).map_err(|e| format!("Não consegui preparar o papel: {e}"))?;
@@ -308,11 +307,11 @@ impl Terminais {
                 args.push("-c".into());
                 args.push(n);
             }
+            args.push("-c".into());
+            args.push(format!("mcp_servers.hypercube.url={}", hooks::toml_texto(&hooks::url_mcp(hooks.porta, &id))));
+            args.push("-c".into());
+            args.push(format!("mcp_servers.hypercube.http_headers={{ {} = {} }}", hooks::toml_texto(hooks::HEADER_TOKEN), hooks::toml_texto(&hooks.token)));
             if o.orquestrar {
-                args.push("-c".into());
-                args.push(format!("mcp_servers.hypercube.url={}", hooks::toml_texto(&hooks::url_mcp(hooks.porta, &id))));
-                args.push("-c".into());
-                args.push(format!("mcp_servers.hypercube.http_headers={{ {} = {} }}", hooks::toml_texto(hooks::HEADER_TOKEN), hooks::toml_texto(&hooks.token)));
                 // "esperar" segura a chamada por até 5 minutos; o padrão do Codex corta antes.
                 args.push("-c".into());
                 args.push(format!("mcp_servers.hypercube.tool_timeout_sec={}", hooks::ESPERA_MAX_SEG + 30));
@@ -356,6 +355,9 @@ impl Terminais {
         let historico: Arc<Mutex<String>> = Arc::default();
 
         hooks.conhecidos.lock().unwrap().insert(id.clone());
+        if o.orquestrar {
+            hooks.lideres.lock().unwrap().insert(id.clone());
+        }
 
         // Leitura da saída.
         let (app2, id2, hist2, esc2) = (app.clone(), id.clone(), historico.clone(), escritor.clone());
@@ -575,6 +577,7 @@ impl Terminais {
     pub fn encerrar(&self, hooks: &hooks::ServidorHooks, id: &str) -> Result<(), String> {
         let t = self.mapa.lock().unwrap().remove(id);
         hooks.conhecidos.lock().unwrap().remove(id);
+        hooks.lideres.lock().unwrap().remove(id);
         if let Some(mut t) = t {
             let _ = t.matador.kill();
             for p in t.temporarios.drain(..) {

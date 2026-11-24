@@ -210,6 +210,12 @@ async fn arquivos_observar_saidas(app: AppHandle, pasta: String) -> R<()> {
     Ok(())
 }
 
+/// Salva uma tela (html/svg) ou copia uma imagem para o canvas da sessão (`.hypercube/saidas/`).
+#[tauri::command]
+async fn arquivos_salvar_saida(pasta: String, nome: String, texto: Option<String>, copiar_de: Option<String>) -> R<String> {
+    em_fundo(move || saidas::salvar(&pasta, &nome, texto.as_deref(), copiar_de.as_deref())).await?
+}
+
 // ---------- roteador (modelos gratuitos para o nível barato) ----------
 
 fn pasta_do_roteador(app: &AppHandle) -> R<std::path::PathBuf> {
@@ -236,6 +242,12 @@ async fn roteador_ligar(app: AppHandle, ligado: bool) -> R<()> {
         let _ = std::fs::remove_file(&marca);
     }
     Ok(())
+}
+
+/// Pedido de texto a um nível do roteador (usado pela ferramenta consulta_barata).
+#[tauri::command]
+async fn roteador_consultar(app: AppHandle, nivel: String, pedido: String) -> R<String> {
+    em_fundo(move || app.state::<Estado>().roteador.consultar(&nivel, &pedido)).await?
 }
 
 #[tauri::command]
@@ -298,9 +310,11 @@ pub fn run() {
             arquivos_escolher_pasta,
             arquivos_ler,
             arquivos_observar_saidas,
+            arquivos_salvar_saida,
             roteador_estado,
             roteador_ligar,
             roteador_salvar_cadeia,
+            roteador_consultar,
         ])
         .build(tauri::generate_context!())
         .expect("erro ao iniciar o Hypercube");

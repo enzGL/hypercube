@@ -39,6 +39,8 @@ pub struct ServidorHooks {
     pub token: String,
     /// Terminais que podem mandar eventos (os que o app criou).
     pub conhecidos: Arc<Mutex<HashSet<String>>>,
+    /// Terminais de Líder: só eles ganham as ferramentas de orquestração (os demais só as de canvas).
+    pub lideres: Arc<Mutex<HashSet<String>>>,
     /// Pedidos do Líder (ferramentas do Hypercube) esperando a resposta da interface.
     pub pedidos: Pedidos,
     /// Última resposta de cada agente (Claude: transcript no Stop; Codex: aviso de fim de turno).
@@ -133,9 +135,10 @@ pub fn iniciar(app: AppHandle) -> std::io::Result<ServidorHooks> {
     let porta = servidor.server_addr().to_ip().map(|a| a.port()).unwrap_or(0);
     let token = token_novo();
     let conhecidos: Arc<Mutex<HashSet<String>>> = Arc::default();
+    let lideres: Arc<Mutex<HashSet<String>>> = Arc::default();
     let pedidos: Pedidos = Arc::default();
     let resultados: Arc<Mutex<HashMap<String, String>>> = Arc::default();
-    let (tok, conh, ped, res) = (token.clone(), conhecidos.clone(), pedidos.clone(), resultados.clone());
+    let (tok, conh, ped, res, lid) = (token.clone(), conhecidos.clone(), pedidos.clone(), resultados.clone(), lideres.clone());
     std::thread::Builder::new().name("hooks".into()).spawn(move || {
         let proximo = Arc::new(AtomicU64::new(1));
         for mut req in servidor.incoming_requests() {
@@ -164,9 +167,10 @@ pub fn iniciar(app: AppHandle) -> std::io::Result<ServidorHooks> {
             if url.starts_with("/mcp/") {
                 // Ferramentas do Líder: cada pedido num fio próprio (pode esperar a interface).
                 let (app, ped, proximo) = (app.clone(), ped.clone(), proximo.clone());
+                let lider = lid.lock().unwrap().contains(&id);
                 std::thread::spawn(move || {
                     let v = serde_json::from_slice::<Value>(&corpo).unwrap_or(Value::Null);
-                    let r = responder_mcp(&v, |ferramenta, argumentos| {
+                    let r = responder_mcp(&v, lider, |ferramenta, argumentos| {
                         pedir_a_interface(&app, &ped, &proximo, &id, ferramenta, argumentos)
                     });
                     match r {
@@ -224,7 +228,7 @@ pub fn iniciar(app: AppHandle) -> std::io::Result<ServidorHooks> {
         }
     })?;
     eprintln!("[hooks] ouvindo em 127.0.0.1:{porta}");
-    Ok(ServidorHooks { porta, token, conhecidos, pedidos, resultados })
+    Ok(ServidorHooks { porta, token, conhecidos, lideres, pedidos, resultados })
 }
 
 /// Última resposta do Claude: o campo do hook, se vier, ou a última fala do assistente no transcript.
@@ -289,9 +293,66 @@ pub fn responder_pedido(pedidos: &Pedidos, pedido: u64, r: Result<String, String
     }
 }
 
-/// Ferramentas que o Líder ganha (servidor MCP local, só para o terminal dele).
-pub fn ferramentas() -> Value {
-    serde_json::json!([
+/// Ferramentas de todos os agentes: canvas de imagens e consulta ao roteador.
+pub fn ferramentas_comuns() -> Vec<Value> {
+    vec![
+        serde_json::json!({
+            "name": "canvas_adicionar_imagem",
+            "description": "Mostra uma imagem (png, jpg, gif, webp) no canvas de imagens do Hypercube. Passe o caminho completo de um arquivo que já existe; o Hypercube copia para o canvas da sessão.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "caminho": { "type": "string", "description": "Caminho completo do arquivo de imagem." },
+                    "nome": { "type": "string", "description": "Nome do arquivo no canvas (opcional; sem pastas)." }
+                },
+                "required": ["caminho"]
+            }
+        }),
+        serde_json::json!({
+            "name": "canvas_adicionar_html",
+            "description": "Mostra uma tela em HTML no canvas de imagens (abre isolada: sem rede e sem acesso ao projeto). Mande o HTML completo, com CSS e JS embutidos.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "nome": { "type": "string", "description": "Nome da tela, ex.: login (vira login.html)." },
+                    "html": { "type": "string" }
+                },
+                "required": ["nome", "html"]
+            }
+        }),
+        serde_json::json!({
+            "name": "canvas_adicionar_svg",
+            "description": "Mostra um desenho em SVG no canvas de imagens. Mande o SVG completo.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "nome": { "type": "string", "description": "Nome do desenho, ex.: logo (vira logo.svg)." },
+                    "svg": { "type": "string" }
+                },
+                "required": ["nome", "svg"]
+            }
+        }),
+        serde_json::json!({
+            "name": "consulta_barata",
+            "description": "Manda um pedido de texto simples para um modelo gratuito pelo roteador do Hypercube (sem gastar o seu plano). Serve para resumir, classificar, extrair ou rascunhar; o modelo não vê arquivos nem usa ferramentas, então cole o texto no pedido. Não use para decisões, código importante ou segredos. Só funciona com o roteador ligado.",
+            "inputSchema": {
+                "type": "object",
+                "properties": { "pedido": { "type": "string", "description": "A instrução e o texto a processar." } },
+                "required": ["pedido"]
+            }
+        }),
+    ]
+}
+
+/// Ferramentas do Líder (orquestração) mais as comuns.
+pub fn ferramentas(lider: bool) -> Value {
+    let mut todas = if lider { ferramentas_do_lider() } else { vec![] };
+    todas.extend(ferramentas_comuns());
+    Value::Array(todas)
+}
+
+fn ferramentas_do_lider() -> Vec<Value> {
+    let v = serde_json::json!([
         {
             "name": "listar_agentes",
             "description": "Lista os agentes desta sessão do Hypercube: id, nome, papel, programa, estado (trabalhando, esperando, pronto, erro, encerrado) e a última ação.",
@@ -362,11 +423,12 @@ pub fn ferramentas() -> Value {
                 "required": ["itens"]
             }
         }
-    ])
+    ]);
+    v.as_array().cloned().unwrap_or_default()
 }
 
 /// Responde uma mensagem JSON-RPC do protocolo MCP (HTTP sem streaming). `None` = notificação (202).
-pub fn responder_mcp(v: &Value, chamar: impl Fn(&str, &Value) -> Result<String, String>) -> Option<Value> {
+pub fn responder_mcp(v: &Value, lider: bool, chamar: impl Fn(&str, &Value) -> Result<String, String>) -> Option<Value> {
     let id = v.get("id").cloned()?;
     let metodo = v.get("method").and_then(Value::as_str).unwrap_or("");
     let ok = |r: Value| Some(serde_json::json!({ "jsonrpc": "2.0", "id": id.clone(), "result": r }));
@@ -377,11 +439,11 @@ pub fn responder_mcp(v: &Value, chamar: impl Fn(&str, &Value) -> Result<String, 
                 "protocolVersion": versao,
                 "capabilities": { "tools": {} },
                 "serverInfo": { "name": "hypercube", "version": env!("CARGO_PKG_VERSION") },
-                "instructions": "Ferramentas do Hypercube para o Líder criar agentes na sessão, mandar tarefas e ler os resultados."
+                "instructions": "Ferramentas do Hypercube: canvas de imagens e consulta a modelos gratuitos; o Líder também cria agentes, manda tarefas e lê resultados."
             }))
         }
         "ping" => ok(serde_json::json!({})),
-        "tools/list" => ok(serde_json::json!({ "tools": ferramentas() })),
+        "tools/list" => ok(serde_json::json!({ "tools": ferramentas(lider) })),
         "tools/call" => {
             let nome = v.pointer("/params/name").and_then(Value::as_str).unwrap_or("");
             let args = v.pointer("/params/arguments").cloned().unwrap_or_else(|| serde_json::json!({}));
@@ -415,7 +477,7 @@ pub fn mcp_da_sessao(dir: &Path, porta: u16, token: &str, terminal_id: &str) -> 
 
 /// Settings temporário só desta sessão do Claude Code (passado com --settings).
 /// Não toca no ~/.claude/settings.json do usuário.
-pub fn settings_da_sessao(dir: &Path, porta: u16, token: &str, terminal_id: &str, orquestrar: bool) -> std::io::Result<PathBuf> {
+pub fn settings_da_sessao(dir: &Path, porta: u16, token: &str, terminal_id: &str) -> std::io::Result<PathBuf> {
     std::fs::create_dir_all(dir)?;
     let cmd = format!(
         "curl -s --max-time 3 -X POST -H \"Content-Type: application/json\" -H \"{HEADER_TOKEN}: {token}\" --data-binary @- http://127.0.0.1:{porta}/hook/{terminal_id}"
@@ -437,10 +499,8 @@ pub fn settings_da_sessao(dir: &Path, porta: u16, token: &str, terminal_id: &str
         "hooks": hooks,
         "statusLine": { "type": "command", "command": status, "padding": 0 }
     });
-    if orquestrar {
-        // As ferramentas do Hypercube não pedem permissão a cada uso.
-        conf["permissions"] = serde_json::json!({ "allow": ["mcp__hypercube"] });
-    }
+    // As ferramentas do Hypercube (canvas, consulta barata e, no Líder, a orquestração) não pedem permissão a cada uso.
+    conf["permissions"] = serde_json::json!({ "allow": ["mcp__hypercube"] });
     std::fs::write(&caminho, serde_json::to_vec_pretty(&conf)?)?;
     Ok(caminho)
 }
@@ -601,13 +661,18 @@ mod testes_mcp {
     #[test]
     fn protocolo_mcp() {
         let nada = |_: &str, _: &Value| Ok::<String, String>("x".into());
-        let ini = responder_mcp(&serde_json::json!({ "jsonrpc": "2.0", "id": 1, "method": "initialize", "params": { "protocolVersion": "2025-03-26" } }), nada).unwrap();
+        let ini = responder_mcp(&serde_json::json!({ "jsonrpc": "2.0", "id": 1, "method": "initialize", "params": { "protocolVersion": "2025-03-26" } }), true, nada).unwrap();
         assert_eq!(ini["result"]["protocolVersion"], "2025-03-26");
-        assert!(responder_mcp(&serde_json::json!({ "jsonrpc": "2.0", "method": "notifications/initialized" }), nada).is_none());
-        let l = responder_mcp(&serde_json::json!({ "jsonrpc": "2.0", "id": 2, "method": "tools/list" }), nada).unwrap();
-        assert_eq!(l["result"]["tools"].as_array().unwrap().len(), 6);
+        assert!(responder_mcp(&serde_json::json!({ "jsonrpc": "2.0", "method": "notifications/initialized" }), true, nada).is_none());
+        let l = responder_mcp(&serde_json::json!({ "jsonrpc": "2.0", "id": 2, "method": "tools/list" }), true, nada).unwrap();
+        assert_eq!(l["result"]["tools"].as_array().unwrap().len(), 10);
+        // Quem não é Líder só vê o canvas e a consulta barata.
+        let l = responder_mcp(&serde_json::json!({ "jsonrpc": "2.0", "id": 2, "method": "tools/list" }), false, nada).unwrap();
+        let nomes: Vec<&str> = l["result"]["tools"].as_array().unwrap().iter().filter_map(|t| t["name"].as_str()).collect();
+        assert_eq!(nomes, ["canvas_adicionar_imagem", "canvas_adicionar_html", "canvas_adicionar_svg", "consulta_barata"]);
         let c = responder_mcp(
             &serde_json::json!({ "jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": { "name": "listar_agentes", "arguments": {} } }),
+            true,
             |n, _| if n == "listar_agentes" { Ok("lista".into()) } else { Err("?".into()) },
         )
         .unwrap();
@@ -620,13 +685,14 @@ mod testes_mcp {
 
     #[test]
     fn ferramenta_atualizar_lista() {
-        let l = responder_mcp(&serde_json::json!({ "jsonrpc": "2.0", "id": 1, "method": "tools/list" }), |_: &str, _: &Value| Ok::<String, String>("x".into())).unwrap();
+        let l = responder_mcp(&serde_json::json!({ "jsonrpc": "2.0", "id": 1, "method": "tools/list" }), true, |_: &str, _: &Value| Ok::<String, String>("x".into())).unwrap();
         let t = l["result"]["tools"].as_array().unwrap().iter().find(|t| t["name"] == "atualizar_lista").expect("atualizar_lista na lista").clone();
         assert_eq!(t["inputSchema"]["required"][0], "itens");
         assert_eq!(t["inputSchema"]["properties"]["itens"]["items"]["properties"]["estado"]["enum"].as_array().unwrap().len(), 5);
         let itens = serde_json::json!([{ "n": 1, "titulo": "Cupom", "estado": "pergunta", "pergunta": "Vale para frete?" }]);
         let c = responder_mcp(
             &serde_json::json!({ "jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": { "name": "atualizar_lista", "arguments": { "itens": itens.clone() } } }),
+            true,
             |n, a| if n == "atualizar_lista" && a["itens"] == itens { Ok("Lista atualizada: 1 itens.".into()) } else { Err("?".into()) },
         )
         .unwrap();

@@ -466,6 +466,9 @@ export function criarNativoSimulado(): Nativo {
           return '--- a/src/checkout/pagamento.ts\n+++ b/src/checkout/pagamento.ts\n@@ -41,7 +41,12 @@\n-  await cobrar(pedido)\n+  if (!pedido.cobrado) {\n+    await cobrar(pedido)\n+    pedido.cobrado = true\n+  }\n';
         return '';
       },
+      async salvarSaida(pasta, nome, c) {
+        return `${pasta}\\.hypercube\\saidas\\${nome}${c.copiarDe ? '' : '.html'}`;
+      },
       observarSaidas(pasta, ouvinte) {
         const base = `${pasta}\\.hypercube\\saidas`;
         const agora = Date.now();
@@ -552,6 +555,10 @@ export function criarNativoSimulado(): Nativo {
       },
       async salvarCadeia(nivel, provedores) {
         roteador.cadeias[nivel] = provedores;
+      },
+      async consultar(_nivel, pedido) {
+        if (!roteador.ligado) throw new Error('O roteador está desligado.');
+        return `(resposta simulada para: ${pedido.slice(0, 40)})`;
       },
     },
   };
