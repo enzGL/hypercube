@@ -11,8 +11,10 @@ import '@fontsource/libre-baskerville/700.css';
 import './estilos.css';
 import { App } from './App';
 import { restaurarConfig } from './estado/loja';
+import { talvezTesteDoLider } from './estado/fumacaLider';
 
 restaurarConfig();
+void talvezTesteDoLider();
 
 createRoot(document.getElementById('raiz')!).render(
   <StrictMode>

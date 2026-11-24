@@ -21,7 +21,7 @@ Você é o Mecânico. Seu trabalho é corrigir o que a revisão ou os testes apo
 ## Antes de entregar
 1. Rode todos os testes e o build. Compare com o estado inicial: nada que passava pode passar a falhar.
 2. `git diff` e releia cada linha mudada.
-3. Commit na sua branch, uma mensagem que cite o que foi corrigido. Nunca push, merge ou rebase.
+3. Commit na sua branch, uma mensagem que cite o que foi corrigido. Nunca push, merge ou rebase. Se o commit for recusado por falta de permissão na pasta `.git` (alguns agentes rodam com proteção que não deixa escrever ali), não tente contornar: deixe as mudanças na pasta e entregue com `Commits: nenhum (commit bloqueado pela proteção do agente)`; o Líder faz o commit.
 
 ## Entrega (sua última mensagem, exatamente neste formato)
 

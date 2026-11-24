@@ -264,14 +264,23 @@ fn pedir_a_interface(
     let (tx, rx) = mpsc::channel();
     pedidos.lock().unwrap().insert(n, tx);
     eprintln!("[mcp] {ferramenta} terminal={terminal_id}");
+    crate::fumaca::registrar(&format!("mcp: pedido {ferramenta} {}", crate::fumaca::curto(&argumentos.to_string(), 300)));
     let p = PedidoOrquestrador { pedido: n, terminal_id: terminal_id.into(), ferramenta: ferramenta.into(), argumentos: argumentos.clone() };
     let _ = app.emit("pedido_orquestrador", p);
-    // "esperar" pode levar até 5 minutos; o resto responde em segundos.
-    let limite = if ferramenta == "esperar" { 330 } else { 120 };
+    // "esperar" pode levar até ESPERA_MAX_SEG; o resto responde em segundos.
+    let limite = if ferramenta == "esperar" { ESPERA_MAX_SEG + 30 } else { 120 };
     let r = rx.recv_timeout(Duration::from_secs(limite));
     pedidos.lock().unwrap().remove(&n);
-    r.unwrap_or_else(|_| Err("O Hypercube não respondeu a tempo.".into()))
+    let r = r.unwrap_or_else(|_| Err("O Hypercube não respondeu a tempo.".into()));
+    crate::fumaca::registrar(&format!("mcp: resposta {ferramenta} {}", match &r {
+        Ok(t) => crate::fumaca::curto(t, 600),
+        Err(e) => format!("ERRO {}", crate::fumaca::curto(e, 300)),
+    }));
+    r
 }
+
+/// Tempo máximo de uma chamada de "esperar" (a interface também limita a 300 s).
+pub const ESPERA_MAX_SEG: u64 = 300;
 
 /// A interface devolve o resultado de um pedido do Líder.
 pub fn responder_pedido(pedidos: &Pedidos, pedido: u64, r: Result<String, String>) {

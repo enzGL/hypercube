@@ -188,6 +188,65 @@ fn pasta_de_trabalho(o: &OpcoesTerminal) -> Result<PathBuf, String> {
     Err(format!("A pasta do projeto não existe: {}", o.pasta))
 }
 
+/// Último estado que o Codex marcou na tela (`ESC ] 7501 ; state=<estado>:...`), se houver.
+pub fn estado_codex(texto: &str) -> Option<&str> {
+    let i = texto.rfind("7501;state=")?;
+    let resto = &texto[i + "7501;state=".len()..];
+    let fim = resto.find(|c: char| c == ':' || c == '\x1b' || c == '\x07').unwrap_or(resto.len());
+    Some(&resto[..fim])
+}
+
+/// Última resposta do Codex que roda na pasta `cwd`: o Codex grava cada sessão em
+/// `~/.codex/sessions/AAAA/MM/DD/rollout-*.jsonl`, com a pasta no começo e a última mensagem
+/// em cada `task_complete`. Só olha sessões mexidas depois de `desde`.
+pub fn ultima_resposta_codex(cwd: &std::path::Path, desde: std::time::SystemTime) -> Option<String> {
+    let casa = PathBuf::from(std::env::var_os(if cfg!(windows) { "USERPROFILE" } else { "HOME" })?);
+    ultima_resposta_codex_em(&casa.join(".codex").join("sessions"), cwd, desde)
+}
+
+pub fn ultima_resposta_codex_em(raiz: &std::path::Path, cwd: &std::path::Path, desde: std::time::SystemTime) -> Option<String> {
+    let alvo = cwd.to_string_lossy().trim_end_matches(['\\', '/']).to_lowercase();
+    let mut arquivos = Vec::new();
+    let mut pilha = vec![(raiz.to_path_buf(), 0)];
+    while let Some((dir, nivel)) = pilha.pop() {
+        for e in std::fs::read_dir(&dir).ok()?.flatten() {
+            let p = e.path();
+            let Ok(meta) = e.metadata() else { continue };
+            if meta.is_dir() && nivel < 3 {
+                pilha.push((p, nivel + 1));
+            } else if meta.is_file()
+                && p.extension().is_some_and(|x| x == "jsonl")
+                && meta.modified().map(|m| m >= desde).unwrap_or(false)
+            {
+                arquivos.push((meta.modified().ok()?, p));
+            }
+        }
+    }
+    arquivos.sort_by(|a, b| b.0.cmp(&a.0));
+    for (_, p) in arquivos {
+        let texto = std::fs::read_to_string(&p).ok()?;
+        let mut linhas = texto.lines();
+        let primeira: serde_json::Value = serde_json::from_str(linhas.next()?).ok()?;
+        let pasta = primeira.pointer("/payload/cwd").and_then(|v| v.as_str()).unwrap_or("");
+        if pasta.trim_end_matches(['\\', '/']).to_lowercase() != alvo {
+            continue;
+        }
+        return texto.lines().rev().find_map(|l| {
+            if !l.contains("\"task_complete\"") {
+                return None;
+            }
+            let v: serde_json::Value = serde_json::from_str(l).ok()?;
+            v.pointer("/payload/last_agent_message").and_then(|m| m.as_str()).map(str::to_string)
+        });
+    }
+    None
+}
+
+/// Da tela de um agente sem resposta limpa, guarda a partir da última entrega ("Estado: ...").
+pub fn a_partir_da_entrega(tela: &str) -> &str {
+    tela.rfind("Estado:").map(|i| &tela[i..]).unwrap_or(tela)
+}
+
 /// Junta os bytes lidos em texto sem cortar caracteres UTF-8 no meio.
 pub fn decodificar(pendente: &mut Vec<u8>) -> String {
     match std::str::from_utf8(pendente) {
@@ -254,6 +313,9 @@ impl Terminais {
                 args.push(format!("mcp_servers.hypercube.url={}", hooks::toml_texto(&hooks::url_mcp(hooks.porta, &id))));
                 args.push("-c".into());
                 args.push(format!("mcp_servers.hypercube.http_headers={{ {} = {} }}", hooks::toml_texto(hooks::HEADER_TOKEN), hooks::toml_texto(&hooks.token)));
+                // "esperar" segura a chamada por até 5 minutos; o padrão do Codex corta antes.
+                args.push("-c".into());
+                args.push(format!("mcp_servers.hypercube.tool_timeout_sec={}", hooks::ESPERA_MAX_SEG + 30));
             }
         }
         papel_e_nivel(&o, &mut args);
@@ -272,6 +334,10 @@ impl Terminais {
         }
         cmd.cwd(&cwd);
         cmd.env("HYPERCUBE_TERMINAL_ID", &id);
+        if o.orquestrar && o.agente == "claude" {
+            // Sem isto o Claude corta a chamada da ferramenta em cerca de 1 minuto e "esperar" falha.
+            cmd.env("MCP_TOOL_TIMEOUT", ((hooks::ESPERA_MAX_SEG + 30) * 1000).to_string());
+        }
         // Se o Hypercube foi aberto de dentro de outro agente, o filho não herda as marcas dele.
         for k in ["CLAUDECODE", "CLAUDE_CODE_CHILD_SESSION", "CLAUDE_CODE_ENTRYPOINT", "CLAUDE_CODE_SSE_PORT"] {
             cmd.env_remove(k);
@@ -299,12 +365,15 @@ impl Terminais {
         let ult_mapa = ultima_saida.clone();
         let campo_visto = Arc::new(AtomicBool::new(false));
         let (ult2, campo2, agente2) = (ultima_saida.clone(), campo_visto.clone(), o.agente.clone());
+        let (res2, cwd2, aberto_em) = (hooks.resultados.clone(), cwd.clone(), std::time::SystemTime::now());
         std::thread::Builder::new().name(format!("pty-{id}")).spawn(move || {
             let mut buf = [0u8; 16 * 1024];
             let mut pendente = Vec::new();
             let mut cursor_respondido = false;
             let mut confiar_avisado = !olhar_confiar;
             let mut recente = String::new();
+            // Começa como "parado": o primeiro "done" só vale depois de um turno começar.
+            let mut codex_parado = true;
             let inicio = std::time::Instant::now();
             let mut lidos = 0usize;
             loop {
@@ -333,6 +402,38 @@ impl Terminais {
                         // O pedido só aparece na abertura: depois disso, um texto parecido na resposta não conta.
                         if !confiar_avisado && (inicio.elapsed().as_secs() > 180 || lidos > 400_000) {
                             confiar_avisado = true;
+                        }
+                        // O Codex marca na tela o fim de cada turno (sequência 7501 "state=done"). Vale como
+                        // o aviso de fim mesmo quando o aviso pelo servidor local não chega (por exemplo,
+                        // um hook do próprio Codex que trava antes dele).
+                        if agente2 == "codex" {
+                            // A linha "esc to interrupt" só aparece enquanto o turno roda.
+                            if texto.contains("esc to interrupt") {
+                                codex_parado = false;
+                            }
+                            if let Some(estado) = estado_codex(&texto) {
+                                let fim = estado == "done";
+                                if fim != codex_parado {
+                                    eprintln!("[terminais] codex {id2} estado {estado}");
+                                }
+                                if fim && !codex_parado {
+                                    if let Some(m) = ultima_resposta_codex(&cwd2, aberto_em) {
+                                        res2.lock().unwrap().insert(id2.clone(), m);
+                                    }
+                                    let _ = app2.emit(
+                                        "evento_agente",
+                                        hooks::EventoAgente {
+                                            tipo: "Stop".into(),
+                                            terminal_id: id2.clone(),
+                                            momento: hooks::agora_ms(),
+                                            ferramenta: None,
+                                            mensagem: None,
+                                            subagente_id: None,
+                                        },
+                                    );
+                                }
+                                codex_parado = fim;
+                            }
                         }
                         if !campo2.load(Ordering::Relaxed) {
                             let t = texto_limpo(&texto).to_lowercase();
@@ -440,7 +541,8 @@ impl Terminais {
             .map(|l| l.split_whitespace().collect::<Vec<_>>().join(" "))
             .filter(|l| !l.is_empty())
             .collect();
-        let mut fim = limpo.join("\n");
+        let junto = limpo.join("\n");
+        let mut fim = a_partir_da_entrega(&junto).to_string();
         if fim.len() > 4000 {
             let mut c = fim.len() - 4000;
             while !fim.is_char_boundary(c) {
@@ -494,6 +596,37 @@ impl Terminais {
 
 #[cfg(test)]
 mod testes {
+    #[test]
+    fn le_o_estado_do_codex_na_tela() {
+        assert_eq!(super::estado_codex("x\x1b]7501;state=working:app=codex\x1b\\"), Some("working"));
+        assert_eq!(super::estado_codex("a]7501;state=working:app=codex b]7501;state=done:app=codex\x07"), Some("done"));
+        assert_eq!(super::estado_codex("nada aqui"), None);
+    }
+
+    #[test]
+    fn le_a_ultima_resposta_do_codex() {
+        let raiz = std::env::temp_dir().join(format!("hc-sessoes-{}", std::process::id()));
+        let dia = raiz.join("2026").join("11").join("22");
+        std::fs::create_dir_all(&dia).unwrap();
+        let antes = std::time::SystemTime::now() - std::time::Duration::from_secs(5);
+        let meta = |cwd: &str| serde_json::json!({ "type": "session_meta", "payload": { "cwd": cwd } }).to_string();
+        let fim = |m: &str| serde_json::json!({ "type": "event_msg", "payload": { "type": "task_complete", "last_agent_message": m } }).to_string();
+        std::fs::write(dia.join("rollout-a.jsonl"), format!("{}\n{}\n", meta("C:\\outra"), fim("não é esta"))).unwrap();
+        std::fs::write(dia.join("rollout-b.jsonl"), format!("{}\n{}\n{}\n", meta("C:\\Projeto\\wt"), fim("primeira"), fim("Estado: concluído"))).unwrap();
+        let r = super::ultima_resposta_codex_em(&raiz, std::path::Path::new("c:\\projeto\\wt\\"), antes);
+        assert_eq!(r.as_deref(), Some("Estado: concluído"));
+        let nada = super::ultima_resposta_codex_em(&raiz, std::path::Path::new("C:\\nenhuma"), antes);
+        assert!(nada.is_none());
+        let _ = std::fs::remove_dir_all(&raiz);
+    }
+
+    #[test]
+    fn resultado_comeca_na_ultima_entrega() {
+        let tela = "lixo\nEstado: parcial\nvelho\nEstado: concluído\nPróximo: nenhum";
+        assert_eq!(super::a_partir_da_entrega(tela), "Estado: concluído\nPróximo: nenhum");
+        assert_eq!(super::a_partir_da_entrega("sem entrega"), "sem entrega");
+    }
+
     use super::{decodificar, pede_confiar};
 
     #[test]

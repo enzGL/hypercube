@@ -73,6 +73,19 @@ async fn orquestrador_responder(estado: State<'_, Estado>, pedido: u64, texto: S
     Ok(())
 }
 
+// ---------- teste de fumaça do Líder ----------
+
+#[tauri::command]
+async fn fumaca_lider() -> R<Option<serde_json::Value>> {
+    Ok(fumaca::lider())
+}
+
+#[tauri::command]
+async fn fumaca_registrar(linha: String) -> R<()> {
+    fumaca::registrar(&linha);
+    Ok(())
+}
+
 // ---------- processos ----------
 
 #[tauri::command]
@@ -242,6 +255,8 @@ pub fn run() {
             terminal_resultado,
             terminal_ocioso,
             orquestrador_responder,
+            fumaca_lider,
+            fumaca_registrar,
             processos_resumo_mudancas,
             processos_detectar_agentes,
             processos_criar_worktree,
