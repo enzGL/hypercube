@@ -122,3 +122,14 @@
   .po-resumo { display: none; }
   .po-uso { display: none; }
 }
+/* Janela estreita: o minimapa cobre os nós, então some. */
+@media (max-width: 1100px) { .react-flow__minimap { display: none; } }
+
+/* Cabeçalho do painel: contagens nunca encolhem; as abas dos líderes cedem (rolam) em vez de cobrir o resto. */
+.po-contas { flex-shrink: 0; }
+.po-abas { flex: 1 1 0; justify-content: flex-end; }
+.po-aba { flex-shrink: 0; }
+@media (max-width: 1100px) {
+  .po-uso, .po-dica-canvas { display: none; }
+}
+.po-contas input.po-limite { width: 46px; flex: 0 0 46px; }

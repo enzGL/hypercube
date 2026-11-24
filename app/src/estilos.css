@@ -984,3 +984,15 @@ span.ll-pergunta { font-size: 13px; color: var(--texto); padding: 6px 8px; borde
   .app.com-painel .painel-direito { display: none; }
 }
 .cadeia li > span:nth-child(2) { overflow-wrap: anywhere; min-width: 0; }
+
+/* Janela estreita: ações do cabeçalho descem para a linha de baixo e o título não é cortado. */
+@media (max-width: 1100px) {
+  .topo-linha { flex-wrap: wrap; row-gap: 8px; }
+  .topo-titulo { flex: 0 0 auto; max-width: 100%; }
+  .topo h1 { flex-shrink: 0; }
+  .topo-acoes { flex-basis: 100%; margin-left: 0; }
+  .topo-acoes { display: flex; flex-wrap: wrap !important; gap: 8px; }
+  .quadro-dica { display: none; }
+}
+.quadro-vazio { padding: 24px; text-align: center; }
+.quadro-vazio p { max-width: 460px; }
