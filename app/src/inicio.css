@@ -177,3 +177,4 @@
 .ini-comando .inst-faltam { margin: 0; padding: 8px 14px 12px; }
 .ini-planejar { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--texto-2); min-height: 32px; cursor: pointer; }
 
+.jeito-cartao:focus:not(:focus-visible) { outline: none; }

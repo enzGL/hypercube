@@ -276,7 +276,7 @@ export function Orquestracao() {
           >
             <Background color="var(--borda)" gap={22} size={1.4} />
             <Controls showInteractive={false} />
-            <MiniMap pannable zoomable nodeColor={(n) => corDoNo(n.data as DadosNo)} maskColor="color-mix(in srgb, var(--terminal) 70%, transparent)" style={{ background: 'var(--fundo-lateral)', width: 150, height: 96 }} />
+            <MiniMap position="top-right" pannable zoomable nodeColor={(n) => corDoNo(n.data as DadosNo)} maskColor="color-mix(in srgb, var(--terminal) 70%, transparent)" style={{ background: 'var(--fundo-lateral)', width: 150, height: 96 }} />
           </ReactFlow>
         </div>
 

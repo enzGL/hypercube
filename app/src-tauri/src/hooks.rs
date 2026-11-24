@@ -360,7 +360,7 @@ fn ferramentas_do_lider() -> Vec<Value> {
         },
         {
             "name": "criar_agente",
-            "description": "Cria um agente novo nesta sessão do Hypercube, num terminal próprio, ligado a você no painel de orquestração, e já manda a tarefa. Devolve o id dele. Papéis: agente (comum), batedor (explora o código, só lendo), construtor (escreve o código na cópia dele), revisor (revisa o diff, só lendo), consertador (corrige o que a revisão apontou).",
+            "description": "Cria um agente novo nesta sessão do Hypercube, num terminal próprio, ligado a você no painel de orquestração, e já manda a tarefa. Devolve o id dele. Papéis: agente (comum), batedor (o Explorador: explora o código, só lendo), construtor (escreve o código na cópia dele), revisor (revisa o diff, só lendo), consertador (o Mecânico: corrige o que a revisão apontou).",
             "inputSchema": {
                 "type": "object",
                 "properties": {

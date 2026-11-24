@@ -71,6 +71,7 @@ export function Terminal({ terminalId, focado, aoFocar }: { terminalId: string; 
     });
     nativo.terminais.historico(terminalId).then((h) => {
       if (!vivo) return;
+      ajustar(); // no tamanho certo antes de repetir o histórico, senão sobra lixo
       term.write(h);
       for (const d of pendente ?? []) term.write(d);
       pendente = null;

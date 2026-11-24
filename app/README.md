@@ -2,7 +2,7 @@
 
 Todos os seus agentes, num cubo só.
 
-O Hypercube junta numa janela todas as sessões dos seus agentes de IA no terminal (Claude Code, Codex, Gemini CLI, Kiro, OpenCode ou um terminal comum). Cada agente é um **agente** com um papel (líder, batedor, construtor, revisor, consertador) e o **Hiper**, o mascote, mostra como está tudo.
+O Hypercube junta numa janela todas as sessões dos seus agentes de IA no terminal (Claude Code, Codex, Gemini CLI, Kiro, OpenCode ou um terminal comum). Cada agente é um **agente** com um papel (Líder, Explorador, Construtor, Revisor, Mecânico) e o **Hiper**, o mascote, mostra como está tudo.
 
 **É grátis para usar. Só pedimos que você dê uma estrela no GitHub!** https://github.com/enzGL/hypercube
 
