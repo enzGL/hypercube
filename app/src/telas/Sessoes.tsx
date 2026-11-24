@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { abrirMenu } from '../componentes/MenuContexto';
+import { EVENTO_CAMPO, EVENTO_RENOMEAR, menuAgente } from '../estado/menus';
 import { LogoAgente } from '../componentes/LogoAgente';
 import {
   abrirDialogo,
@@ -18,6 +20,8 @@ import {
   NOME_NIVEL,
   ocultar,
   ordenados,
+  reabrir,
+  reabrirTodos,
   responder,
   revisaoCruzada,
   avisar,
@@ -28,6 +32,10 @@ import {
   type Estado,
   type Layout,
   type Vertice,
+  COR_PAPEL,
+  NOME_PAPEL,
+  vagasDaEquipe,
+  type Papel,
 } from '../estado/loja';
 import { BarraTopo } from '../componentes/BarraTopo';
 import { Hiper } from '../componentes/Hiper';
@@ -67,7 +75,10 @@ export function Sessoes() {
   const todos = ordenados(e, sessao.id);
   const visiveis = todos.filter((v) => !v.oculto);
   const ocultos = todos.filter((v) => v.oculto);
+  const encerrados = todos.filter((v) => v.encerrado);
   const corrida = e.corridas.find((c) => c.sessaoId === sessao.id && !c.escolhido && c.ids.length > 0);
+  // Modo Equipe: papéis que o Líder ainda vai chamar aparecem como vagas tracejadas.
+  const vagas = todos.filter((v) => v.papel === 'lider').flatMap((l) => vagasDaEquipe(e, l.id).map((papel) => ({ papel, lider: l })));
 
   const acoes = (
     <>
@@ -92,10 +103,10 @@ export function Sessoes() {
       <button
         className={`botao ${temOrquestracao(sessao) ? 'ligado' : ''}`}
         aria-pressed={temOrquestracao(sessao)}
-        title={temOrquestracao(sessao) ? 'Voltar para o terminal padrão (some o painel de orquestração)' : 'Ligar a orquestração nesta sessão'}
+        title={temOrquestracao(sessao) ? 'Com agentes ligado. Clique para voltar ao Normal (some o painel da equipe)' : 'Normal. Clique para usar Com agentes: o Líder e a equipe'}
         onClick={() => definirOrquestracao(sessao.id, !temOrquestracao(sessao))}
       >
-        <Icone nome="orquestracao" /> Orquestração
+        <Icone nome="orquestracao" /> Com agentes
       </button>
       <button className="botao primario" onClick={() => abrirDialogo({ tipo: 'novoVertice', sessaoId: sessao.id })}>
         <Icone nome="mais" /> Agente
@@ -122,6 +133,17 @@ export function Sessoes() {
         </div>
       ) : (
         <>
+          {encerrados.length > 1 && (
+            <div className="faixa-ocultos">
+              <Icone nome="parar" tamanho={14} />
+              <span>
+                {encerrados.length} agentes estão fechados. Eles abrem sem tarefa e esperam você.
+              </span>
+              <button className="botao pequeno" onClick={() => reabrirTodos(sessao.id)}>
+                Abrir todos de novo
+              </button>
+            </div>
+          )}
           {ocultos.length > 0 && (
             <div className="faixa-ocultos">
               <Icone nome="ocultar" tamanho={14} />
@@ -145,10 +167,13 @@ export function Sessoes() {
           ) : (
             <div
               className="grade"
-              style={{ gridTemplateColumns: `repeat(${e.layout === 'livre' ? e.colunasLivres : colunasAuto(visiveis.length)}, minmax(0, 1fr))` }}
+              style={{ gridTemplateColumns: `repeat(${e.layout === 'livre' ? e.colunasLivres : colunasAuto(visiveis.length + vagas.length)}, minmax(0, 1fr))` }}
             >
               {visiveis.map((v) => (
                 <Painel key={v.id} v={v} e={e} arrastavel={e.layout === 'livre'} />
+              ))}
+              {vagas.map(({ papel, lider }) => (
+                <Vaga key={`${lider.id}-${papel}`} papel={papel} lider={lider} />
               ))}
             </div>
           )}
@@ -158,6 +183,17 @@ export function Sessoes() {
       <Avisos emLinha />
       <CampoComando e={e} sessaoId={sessao.id} vertices={todos} />
     </div>
+  );
+}
+
+/** Vaga da equipe: o papel que o Líder ainda vai chamar. Some quando ele cria o agente. */
+function Vaga({ papel, lider }: { papel: Papel; lider: Vertice }) {
+  return (
+    <article className="painel vaga" aria-label={`Vaga: ${NOME_PAPEL[papel]}, o Líder vai chamar`}>
+      <MascoteAgente cor={COR_PAPEL[papel]} papel={papel} tamanho={34} estado="pronto" />
+      <b>{NOME_PAPEL[papel]}</b>
+      <span>{nomeDoAgente(lider)} vai chamar</span>
+    </article>
   );
 }
 
@@ -196,6 +232,17 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
   const focado = e.focoId === v.id;
   const filhos = e.vertices.filter((f) => f.paiId === v.id);
   const corrida = v.corridaId ? e.corridas.find((c) => c.id === v.corridaId) : undefined;
+  const lider = v.criadoPor ? e.vertices.find((x) => x.id === v.criadoPor) : undefined;
+  // "Renomear" no menu do clique direito abre a edição do nome aqui no painel.
+  useEffect(() => {
+    const f = (ev: Event) => (ev as CustomEvent<string>).detail === v.id && setRenomeando(true);
+    window.addEventListener(EVENTO_RENOMEAR, f);
+    return () => window.removeEventListener(EVENTO_RENOMEAR, f);
+  }, [v.id]);
+  const menu = (ev: React.MouseEvent<HTMLElement>) => {
+    const ponto = ev.currentTarget;
+    abrirMenu(ev, menuAgente(v, () => abrirEditarAgente(v.id, ponto)), nome);
+  };
 
   return (
     <article
@@ -216,7 +263,7 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
         if (de) mover(v.sessaoId, de, v.id);
       }}
     >
-      <header className="painel-cabeca com-cor-agente" style={{ ['--cor-agente' as string]: cor }}>
+      <header className="painel-cabeca com-cor-agente" style={{ ['--cor-agente' as string]: cor }} onContextMenu={menu}>
         <MascoteAgente cor={cor} papel={v.papel} tamanho={28} estado={v.estado} entrada={entrada} />
         <div className="painel-nome">
           <span className="painel-nome-linha">
@@ -225,12 +272,8 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
             ) : (
               <b
                 tabIndex={0}
-                title="Duplo clique: apelido e cor · F2 ou clique direito: renomear aqui"
+                title="Duplo clique: apelido e cor · F2: renomear aqui · clique direito: opções do agente"
                 onDoubleClick={(ev) => abrirEditarAgente(v.id, ev.currentTarget)}
-                onContextMenu={(ev) => {
-                  ev.preventDefault();
-                  setRenomeando(true);
-                }}
                 onKeyDown={(ev) => {
                   if (ev.key === 'F2') setRenomeando(true);
                   if (ev.key === 'Enter') abrirEditarAgente(v.id, ev.currentTarget);
@@ -248,9 +291,17 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
           <span className="painel-meta">
             <LogoAgente agente={v.agente} tamanho={13} /> {NOME_AGENTE[v.agente]} · {NOME_NIVEL[v.nivel]}
             {v.worktree && <span className="mono"> · {v.worktree.split('\\').pop()}</span>}
+            {lider && <span title={`Criado por ${nomeDoAgente(lider)}`}> · de {nomeDoAgente(lider)}</span>}
           </span>
         </div>
-        <SimboloEstado estado={v.estado} comNome />
+        {v.encerrado ? (
+          <span className="estado estado-fechado" title="Fechado" aria-label="Fechado">
+            <span className="estado-simbolo" aria-hidden="true">○</span>
+            <span className="estado-nome">Fechado</span>
+          </span>
+        ) : (
+          <SimboloEstado estado={v.estado} comNome />
+        )}
         {(v.custo > 0 || v.tokens > 0 || v.diff.mais > 0 || v.diff.menos > 0) && (
         <div className="painel-numeros mono" title="Custo, tokens e diff">
           {v.custo > 0 && <span>{formatarCusto(v.custo)}</span>}
@@ -289,9 +340,11 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
           <button className="icone-botao" title="Ocultar (o processo continua rodando)" onClick={() => ocultar(v.id)}>
             <Icone nome="ocultar" tamanho={14} />
           </button>
-          <button className="icone-botao perigo" title="Encerrar o processo" onClick={() => setConfirmar(true)}>
-            <Icone nome="fechar" tamanho={14} />
-          </button>
+          {!v.encerrado && (
+            <button className="icone-botao perigo" title="Encerrar o processo" onClick={() => setConfirmar(true)}>
+              <Icone nome="fechar" tamanho={14} />
+            </button>
+          )}
         </div>
       </header>
 
@@ -308,6 +361,17 @@ function Painel({ v, e, arrastavel }: { v: Vertice; e: Estado; arrastavel?: bool
       )}
 
       {v.estado === 'esperando' && v.pergunta && <FaixaPermissao v={v} nome={nome} />}
+
+      {v.encerrado && (
+        <div className="faixa" role="status">
+          <span>
+            {v.terminalId ? 'O processo terminou.' : 'Fechou junto com o app.'} Abre de novo sem tarefa, esperando você.
+          </span>
+          <button className="botao primario pequeno" onClick={() => reabrir(v.id)}>
+            Abrir de novo
+          </button>
+        </div>
+      )}
 
       {v.terminalId && <Terminal terminalId={v.terminalId} focado={focado} aoFocar={() => e.focoId !== v.id && focar(v.id)} />}
 
@@ -374,6 +438,19 @@ function CampoComando({ e, sessaoId, vertices }: { e: Estado; sessaoId: string; 
   const [alvo, setAlvo] = useState<string>('');
   const alvoId = alvo || padrao?.id || '';
   const alvoV = vertices.find((v) => v.id === alvoId);
+
+  // Menu do clique direito: "Mandar tarefa" e "Mandar para todos" miram o campo e dão o foco.
+  const campoRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    const f = (ev: Event) => {
+      const d = (ev as CustomEvent<{ sessaoId: string; alvo: string }>).detail;
+      if (d.sessaoId !== sessaoId) return;
+      setAlvo(d.alvo);
+      window.setTimeout(() => campoRef.current?.focus(), 30);
+    };
+    window.addEventListener(EVENTO_CAMPO, f);
+    return () => window.removeEventListener(EVENTO_CAMPO, f);
+  }, [sessaoId]);
 
   const enviar = () => {
     const t = texto.trim();
@@ -452,6 +529,7 @@ function CampoComando({ e, sessaoId, vertices }: { e: Estado; sessaoId: string; 
         </select>
       </label>
       <input
+        ref={campoRef}
         value={texto}
         onChange={(ev) => {
           setTexto(ev.target.value);

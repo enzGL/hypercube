@@ -9,6 +9,7 @@ import type {
   EventoAgente,
   Nativo,
   OpcoesTerminal,
+  PedidoOrquestrador,
   SaidaGerada,
   UsoDoPlano,
 } from './tipos';
@@ -148,6 +149,8 @@ class TerminalSimulado {
     readonly id: string,
     readonly opcoes: OpcoesTerminal,
     private readonly emitir: (e: Omit<EventoAgente, 'momento'>) => void,
+    /** Líder: recebe a tarefa também por aqui, para usar as ferramentas do Hypercube. */
+    private readonly aoTarefa?: (texto: string) => void,
   ) {
     const nome = NOME_AGENTE[opcoes.agente];
     const local = opcoes.worktree ? opcoes.worktree.replace(opcoes.pasta, '.') : opcoes.pasta;
@@ -159,6 +162,11 @@ class TerminalSimulado {
     }
     this.prompt();
     this.agendar(50, () => this.emitir({ tipo: 'SessionStart', terminalId: id }));
+  }
+
+  /** Linha escrita por fora do roteiro (ex.: ferramenta do Hypercube chamada pelo Líder). */
+  anotar(t: string) {
+    this.saida(t);
   }
 
   private saida(t: string) {
@@ -216,6 +224,7 @@ class TerminalSimulado {
   private executar(texto: string) {
     this.ocupado = true;
     this.emitir({ tipo: 'UserPromptSubmit', terminalId: this.id, mensagem: texto });
+    this.aoTarefa?.(texto);
     const roteiro = montarRoteiro(this.opcoes.agente, texto);
     this.rodar(roteiro.passos, () => {
       if (roteiro.pergunta) {
@@ -306,10 +315,66 @@ const novoId = (prefixo: string) => `${prefixo}-${Date.now().toString(36)}-${(co
 export function criarNativoSimulado(): Nativo {
   const terminais = new Map<string, TerminalSimulado>();
   const ouvintesEvento = new Set<(e: EventoAgente) => void>();
+  const ouvintesFim = new Set<(f: { id: string; codigo: number }) => void>();
+  /** Agentes "instalados" pelo botão Instalar nesta abertura. */
+  const instaladosAqui = new Set<string>();
+  /** Finge a instalação: mostra o npm trabalhando, marca o agente como instalado e termina com 0. */
+  const fingirInstalacao = (id: string, agente: string, linha: string) => {
+    const t = terminais.get(id);
+    const pacote = /npm install -g (\S+)/.exec(linha)?.[1] ?? agente;
+    const passos: [number, string][] = [
+      [400, `${CINZA}PS> npm install -g ${pacote}${FIM}\r\n`],
+      [1200, `${CINZA}added 1 package in 2s${FIM}\r\n`],
+      [400, `${VERDE}✓ ${pacote} instalado${FIM}\r\n`],
+    ];
+    let ms = 0;
+    for (const [espera, texto] of passos) {
+      ms += espera;
+      window.setTimeout(() => t?.anotar(texto), ms);
+    }
+    window.setTimeout(() => {
+      instaladosAqui.add(agente);
+      ouvintesFim.forEach((o) => o({ id, codigo: 0 }));
+    }, ms + 300);
+  };
   const emitir = (e: Omit<EventoAgente, 'momento'>) => {
     const evento = { ...e, momento: Date.now() };
     ouvintesEvento.forEach((o) => o(evento));
   };
+
+  // Ferramentas do Hypercube no simulado: o Líder roteirizado chama a interface como o de verdade.
+  const ouvintesPedido = new Set<(p: PedidoOrquestrador) => void>();
+  const pendentes = new Map<number, (texto: string) => void>();
+  let proximoPedido = 1;
+  const pedir = (terminalId: string, ferramenta: string, argumentos: Record<string, unknown>) =>
+    new Promise<string>((resolve) => {
+      const pedido = proximoPedido++;
+      pendentes.set(pedido, (texto) => {
+        terminais.get(terminalId)?.anotar(`  ${AZUL}hypercube${FIM} ${ferramenta} ${CINZA}→ ${texto.split('\n')[0]}${FIM}\r\n`);
+        resolve(texto);
+      });
+      ouvintesPedido.forEach((o) => o({ pedido, terminalId, ferramenta, argumentos }));
+    });
+  const pausa = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
+  /** Roteiro do Líder: monta a lista, chama Explorador e Construtor e deixa uma pergunta no item 3. */
+  async function roteiroLider(id: string, texto: string) {
+    const pedido = texto.replace(/^.*?:\s*/, '').slice(0, 60) || 'o pedido';
+    const lista = (estados: string[], extra: Record<number, Record<string, string>> = {}) => ({
+      itens: [
+        { n: 1, titulo: `Mapear onde mexer para: ${pedido}`, estado: estados[0], quem: 'Explorador' },
+        { n: 2, titulo: 'Fazer a mudança com testes', estado: estados[1], quem: 'Construtor' },
+        { n: 3, titulo: 'Revisar a branch e abrir o pull request', estado: estados[2], quem: 'Revisor' },
+      ].map((i) => ({ ...i, ...(extra[i.n] ?? {}) })),
+    });
+    await pausa(1200);
+    await pedir(id, 'atualizar_lista', lista(['aberto', 'aberto', 'aberto']));
+    await pausa(1500);
+    await pedir(id, 'criar_agente', { papel: 'batedor', agente: 'gemini', nivel: 'barato', tarefa: `Mapeie onde mexer para: ${pedido}. Entregue no formato do seu papel.` });
+    await pedir(id, 'atualizar_lista', lista(['em_andamento', 'aberto', 'aberto']));
+    await pausa(3500);
+    await pedir(id, 'criar_agente', { papel: 'construtor', agente: 'codex', nivel: 'padrao', tarefa: `Faça a mudança: ${pedido}. Entregue no formato do seu papel.` });
+    await pedir(id, 'atualizar_lista', lista(['fechado', 'em_andamento', 'pergunta'], { 3: { pergunta: 'Abro o pull request quando a revisão passar, ou só deixo a branch pronta?' } }));
+  }
 
   const roteador: EstadoRoteador = {
     endereco: '127.0.0.1:8765',
@@ -336,11 +401,24 @@ export function criarNativoSimulado(): Nativo {
     terminais: {
       async criar(opcoes) {
         const id = novoId('pty');
-        terminais.set(id, new TerminalSimulado(id, opcoes, emitir));
+        // Só o pedido do modo Equipe dispara o roteiro com as ferramentas (o exemplo já tem a equipe pronta).
+        const lider = opcoes.orquestrar ? (texto: string) => texto.startsWith('Divida esta tarefa') && roteiroLider(id, texto) : undefined;
+        terminais.set(id, new TerminalSimulado(id, opcoes, emitir, lider));
+        const instalar = /^Instalar (\w+)$/.exec(opcoes.rotulo);
+        if (opcoes.agente === 'terminal' && instalar && opcoes.tarefa) fingirInstalacao(id, instalar[1], opcoes.tarefa);
         return id;
       },
       async escrever(id, dados) {
         terminais.get(id)?.escrever(dados);
+      },
+      async enviar(id, texto) {
+        terminais.get(id)?.escrever(`${texto}\r`);
+      },
+      async ocioso(id) {
+        return terminais.has(id) ? 10_000 : null;
+      },
+      async resultado(id) {
+        return (terminais.get(id)?.historico ?? '').slice(-2000);
       },
       async redimensionar() {},
       async encerrar(id) {
@@ -361,6 +439,20 @@ export function criarNativoSimulado(): Nativo {
       aoEvento(ouvinte) {
         ouvintesEvento.add(ouvinte);
         return () => ouvintesEvento.delete(ouvinte);
+      },
+      aoFim(ouvinte) {
+        ouvintesFim.add(ouvinte);
+        return () => ouvintesFim.delete(ouvinte);
+      },
+    },
+    orquestrador: {
+      aoPedido(ouvinte) {
+        ouvintesPedido.add(ouvinte);
+        return () => ouvintesPedido.delete(ouvinte);
+      },
+      async responder(pedido, texto, erro) {
+        pendentes.get(pedido)?.(erro ? `erro: ${texto}` : texto);
+        pendentes.delete(pedido);
       },
     },
     arquivos: {
@@ -400,8 +492,8 @@ export function criarNativoSimulado(): Nativo {
           { agente: 'claude', instalado: true, versao: '2.1', comando: 'claude' },
           { agente: 'codex', instalado: true, versao: '0.9', comando: 'codex' },
           { agente: 'gemini', instalado: true, versao: '1.4', comando: 'gemini' },
-          { agente: 'kiro', instalado: false, comando: 'kiro' },
-          { agente: 'opencode', instalado: false, comando: 'opencode' },
+          { agente: 'kiro', instalado: instaladosAqui.has('kiro'), comando: 'kiro' },
+          { agente: 'opencode', instalado: instaladosAqui.has('opencode'), versao: instaladosAqui.has('opencode') ? '1.0' : undefined, comando: 'opencode' },
           { agente: 'terminal', instalado: true, comando: 'pwsh' },
         ];
       },
@@ -410,6 +502,9 @@ export function criarNativoSimulado(): Nativo {
           { provedor: 'Claude', cincoHoras: 42, semana: 18, renovaEm: '2 h 10 min' },
           { provedor: 'Codex', cincoHoras: 11, semana: 6, renovaEm: '4 h 02 min' },
         ];
+      },
+      async resumoMudancas(worktree) {
+        return `Pasta: ${worktree}\nBranch: v/simulado\nCommits novos:\n(nenhum)`;
       },
       async criarWorktree(pasta, ramo) {
         return `${pasta}\\.hypercube\\worktrees\\${ramo}`;
@@ -437,6 +532,9 @@ export function criarNativoSimulado(): Nativo {
       },
       definirTitulo(titulo) {
         document.title = titulo;
+      },
+      async abrirPasta(caminho) {
+        console.info('[simulado] abrir pasta', caminho);
       },
       abrirLink(url) {
         window.open(url, '_blank', 'noopener');

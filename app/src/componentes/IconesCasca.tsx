@@ -47,6 +47,12 @@ const desenhos: Record<string, ReactNode> = {
       <path d="M7 7.5v9M17 10.5c0 4-10 2.5-10 6" />
     </>
   ),
+  bot: (
+    <>
+      <rect x="5" y="8" width="14" height="11" rx="3" />
+      <path d="M12 4v4M9.5 13v1.5M14.5 13v1.5" />
+    </>
+  ),
   busca: (
     <>
       <circle cx="11" cy="11" r="6" />

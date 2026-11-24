@@ -48,7 +48,50 @@ async fn terminal_historico(estado: State<'_, Estado>, id: String) -> R<String> 
     Ok(estado.terminais.historico(&id))
 }
 
+/// Texto e depois o Enter (para mandar mensagens ao agente).
+#[tauri::command]
+async fn terminal_enviar(estado: State<'_, Estado>, id: String, texto: String) -> R<()> {
+    estado.terminais.enviar(&id, &texto)
+}
+
+#[tauri::command]
+async fn terminal_resultado(estado: State<'_, Estado>, id: String) -> R<String> {
+    Ok(estado.terminais.resultado(&estado.hooks, &id))
+}
+
+/// Milissegundos sem nada novo no terminal (`None` se ele não existe mais).
+#[tauri::command]
+async fn terminal_ocioso(estado: State<'_, Estado>, id: String) -> R<Option<u64>> {
+    Ok(estado.terminais.ocioso_ms(&id))
+}
+
+// ---------- orquestrador (ferramentas do Líder) ----------
+
+#[tauri::command]
+async fn orquestrador_responder(estado: State<'_, Estado>, pedido: u64, texto: String, erro: bool) -> R<()> {
+    hooks::responder_pedido(&estado.hooks.pedidos, pedido, if erro { Err(texto) } else { Ok(texto) });
+    Ok(())
+}
+
+// ---------- teste de fumaça do Líder ----------
+
+#[tauri::command]
+async fn fumaca_lider() -> R<Option<serde_json::Value>> {
+    Ok(fumaca::lider())
+}
+
+#[tauri::command]
+async fn fumaca_registrar(linha: String) -> R<()> {
+    fumaca::registrar(&linha);
+    Ok(())
+}
+
 // ---------- processos ----------
+
+#[tauri::command]
+async fn processos_resumo_mudancas(worktree: String, pasta: String) -> R<String> {
+    em_fundo(move || processos::resumo_mudancas(&worktree, &pasta)).await?
+}
 
 #[tauri::command]
 async fn processos_detectar_agentes() -> R<Vec<processos::AgenteDetectado>> {
@@ -104,6 +147,22 @@ async fn sistema_abrir_link(url: String) -> R<()> {
     let r = std::process::Command::new("open").arg(&url).spawn();
     #[cfg(all(unix, not(target_os = "macos")))]
     let r = std::process::Command::new("xdg-open").arg(&url).spawn();
+    r.map(|_| ()).map_err(|e| e.to_string())
+}
+
+/// Abre uma pasta no explorador de arquivos (só pastas que existem).
+#[tauri::command]
+async fn sistema_abrir_pasta(caminho: String) -> R<()> {
+    let p = std::path::PathBuf::from(&caminho);
+    if !p.is_dir() {
+        return Err(format!("A pasta não existe: {caminho}"));
+    }
+    #[cfg(windows)]
+    let r = std::process::Command::new("explorer.exe").arg(&p).spawn();
+    #[cfg(target_os = "macos")]
+    let r = std::process::Command::new("open").arg(&p).spawn();
+    #[cfg(all(unix, not(target_os = "macos")))]
+    let r = std::process::Command::new("xdg-open").arg(&p).spawn();
     r.map(|_| ()).map_err(|e| e.to_string())
 }
 
@@ -192,6 +251,13 @@ pub fn run() {
             terminal_redimensionar,
             terminal_encerrar,
             terminal_historico,
+            terminal_enviar,
+            terminal_resultado,
+            terminal_ocioso,
+            orquestrador_responder,
+            fumaca_lider,
+            fumaca_registrar,
+            processos_resumo_mudancas,
             processos_detectar_agentes,
             processos_criar_worktree,
             processos_uso_do_plano,
@@ -199,6 +265,7 @@ pub fn run() {
             sistema_notificar,
             sistema_tocar_som,
             sistema_abrir_link,
+            sistema_abrir_pasta,
             sistema_porta_canvas,
             arquivos_escolher_pasta,
             arquivos_ler,

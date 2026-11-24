@@ -24,6 +24,9 @@ import { HiperMini } from './HiperMini';
 import { SimboloEstado } from './Pecas';
 import { abrirEditarAgente, MascoteAgente } from './EditarAgente';
 import { CartaoUsuario } from './Perfil';
+import { PilulasDeUso } from './PilulasDeUso';
+import { abrirMenu } from './MenuContexto';
+import { menuAgente, menuProjeto, menuSessao } from '../estado/menus';
 
 function abrirSessao(id: string, rota: 'sessoes' | 'orquestracao' = 'sessoes') {
   selecionarSessao(id);
@@ -36,6 +39,10 @@ export function BarraLateral() {
   const casca = useCasca();
   const [busca, setBusca] = useState('');
   const hiper = estadoHiper(e.vertices, e.sucessoAte);
+  // Diz quem precisa de atenção, em vez de uma frase genérica.
+  const comErro = hiper === 'erro' ? e.vertices.find((v) => v.estado === 'erro') : undefined;
+  const esperando = hiper === 'atencao' ? e.vertices.find((v) => v.estado === 'esperando') : undefined;
+  const frase = comErro ? `${nomeDoAgente(comErro)} parou com erro.` : esperando ? `${nomeDoAgente(esperando)} precisa de você.` : FRASE_HIPER[hiper];
   const total = contar(e.vertices);
   const recolhida = casca.lateralRecolhida;
 
@@ -84,12 +91,12 @@ export function BarraLateral() {
       {recolhida && <div className="lateral-espaco" />}
 
       <footer className="lateral-rodape">
-        <div className={`hiper-rodape hiper-${hiper}`} aria-live="polite" title={FRASE_HIPER[hiper]}>
+        <div className={`hiper-rodape hiper-${hiper}`} aria-live="polite" title={frase}>
           <Hiper estado={hiper} tamanho={recolhida ? 30 : 38} />
           {!recolhida && (
             <div className="hiper-texto">
               <div className="hiper-nome">Hiper</div>
-              <div className="hiper-frase">{FRASE_HIPER[hiper]}</div>
+              <div className="hiper-frase">{frase}</div>
               {total.esperando > 0 && (
                 <div className="hiper-atalho">
                   <kbd>Alt</kbd>+<kbd>N</kbd> vai para quem espera
@@ -114,6 +121,8 @@ export function BarraLateral() {
             </button>
           </>
         )}
+
+        <PilulasDeUso compacta={recolhida} />
 
         <CartaoUsuario recolhida={recolhida}>
           <button className="faixa-botao" onClick={() => irParaRota('sobre')} title="Sobre e ajustes" aria-label="Sobre e ajustes">
@@ -195,6 +204,9 @@ function CorpoLateral({ e, modo, busca }: { e: Estado; modo: ModoLateral; busca:
       <div className="lateral-titulo">
         <span>Projetos</span>
         <span className="lateral-titulo-acoes">
+          <button onClick={() => abrirDialogo({ tipo: 'modelosBots' })} title="Modelos de bots" aria-label="Modelos de bots">
+            <IconeCasca nome="bot" tamanho={15} />
+          </button>
           <button onClick={() => abrirDialogo({ tipo: 'novaSessao' })} title="Abrir uma pasta como projeto" aria-label="Abrir uma pasta como projeto">
             <IconeCasca nome="novaPasta" tamanho={15} />
           </button>
@@ -218,7 +230,11 @@ function CorpoLateral({ e, modo, busca }: { e: Estado; modo: ModoLateral; busca:
 }
 
 function filtrarProjeto(e: Estado, p: Projeto, busca: string) {
-  const todas = p.sessoes.map((s) => ({ sessao: s, vertices: e.vertices.filter((v) => v.sessaoId === s.id && !v.paiId) }));
+  // Sem busca, quem o Líder criou aparece dentro dele; buscando, todos aparecem soltos.
+  const todas = p.sessoes.map((s) => ({
+    sessao: s,
+    vertices: e.vertices.filter((v) => v.sessaoId === s.id && !v.paiId && (!!busca || !criadoPorLiderVivo(e, v))),
+  }));
   if (!busca || p.nome.toLowerCase().includes(busca)) return { projeto: p, sessoes: todas };
   const sessoes = todas
     .map(({ sessao, vertices }) => {
@@ -243,7 +259,7 @@ function ArvoreProjeto({
 }) {
   const rota = e.tela as Rota;
   const aberta = !!busca || (e.pastasAbertas[p.pasta] ?? true);
-  const mostrarOrq = !busca || 'orquestração'.includes(busca);
+  const mostrarOrq = !busca || 'com agentes orquestração'.includes(busca);
   const c = contar(e.vertices.filter((v) => p.sessoes.some((s) => s.id === v.sessaoId)));
   const ativo = projetoAtivo(e) === p.pasta;
   const variasSessoes = p.sessoes.length > 1;
@@ -251,7 +267,17 @@ function ArvoreProjeto({
   return (
     <section className="projeto">
       <div className={`linha-projeto ${ativo ? 'ativo' : ''}`}>
-        <button className="linha-projeto-corpo" onClick={() => p.sessoes[0] && abrirSessao(p.sessoes.find((s) => s.id === e.sessaoAtivaId)?.id ?? p.sessoes[0].id)} title={p.pasta}>
+        <button
+          className="linha-projeto-corpo"
+          onContextMenu={(ev) =>
+            abrirMenu(
+              ev,
+              // Projeto com uma sessão só: as opções da sessão vêm junto (não há linha própria dela).
+              [...menuProjeto(p.pasta, aberta), ...(p.sessoes.length === 1 ? (['separador', ...menuSessao(p.sessoes[0])] as const) : [])],
+              p.nome,
+            )
+          }
+          onClick={() => p.sessoes[0] && abrirSessao(p.sessoes.find((s) => s.id === e.sessaoAtivaId)?.id ?? p.sessoes[0].id)} title={p.pasta}>
           <AvatarProjeto nome={p.nome} cor={p.cor} />
           <span className="linha-nome">{p.nome}</span>
         </button>
@@ -272,17 +298,22 @@ function ArvoreProjeto({
           {sessoes.map(({ sessao, vertices }) => (
             <li key={sessao.id}>
               {variasSessoes && (
-                <button className={`linha-sessao-casca ${e.sessaoAtivaId === sessao.id && rota === 'sessoes' ? 'ativa' : ''}`} onClick={() => abrirSessao(sessao.id)}>
+                <button
+                  className={`linha-sessao-casca ${e.sessaoAtivaId === sessao.id && rota === 'sessoes' ? 'ativa' : ''}`}
+                  onClick={() => abrirSessao(sessao.id)}
+                  onContextMenu={(ev) => abrirMenu(ev, menuSessao(sessao), sessao.nome)}
+                  title={`${sessao.nome} · clique direito: opções da sessão`}
+                >
                   <IconeCasca nome="terminal" tamanho={14} />
                   <span className="linha-nome">{sessao.nome}</span>
-                  <span className="contador" title={`${vertices.length} terminais`}>
-                    {vertices.length}
+                  <span className="contador" title={`${totalDaSessao(e, sessao.id)} terminais`}>
+                    {totalDaSessao(e, sessao.id)}
                   </span>
                 </button>
               )}
               <ul className={variasSessoes ? 'arvore-sub' : undefined}>
                 {vertices.map((v) => (
-                  <LinhaTerminal key={v.id} e={e} v={v} nivel={0} />
+                  <LinhaTerminal key={v.id} e={e} v={v} nivel={0} aninhar={!busca} />
                 ))}
                 {mostrarOrq && (
                 <li>
@@ -291,7 +322,7 @@ function ArvoreProjeto({
                     onClick={() => abrirSessao(sessao.id, 'orquestracao')}
                   >
                     <IconeCasca nome="orquestracao" tamanho={14} />
-                    <span className="linha-nome">Orquestração</span>
+                    <span className="linha-nome">Com agentes</span>
                   </button>
                 </li>
                 )}
@@ -304,9 +335,20 @@ function ArvoreProjeto({
   );
 }
 
-function LinhaTerminal({ e, v, nivel }: { e: Estado; v: Vertice; nivel: number }) {
+/** Terminais da sessão, contando os que aparecem dentro do Líder. */
+function totalDaSessao(e: Estado, sessaoId: string): number {
+  return e.vertices.filter((v) => v.sessaoId === sessaoId && !v.paiId).length;
+}
+
+/** O agente foi criado por um Líder que ainda está na sessão. */
+function criadoPorLiderVivo(e: Estado, v: Vertice): boolean {
+  return !!v.criadoPor && e.vertices.some((x) => x.id === v.criadoPor);
+}
+
+function LinhaTerminal({ e, v, nivel, aninhar = true }: { e: Estado; v: Vertice; nivel: number; aninhar?: boolean }) {
   const rota = e.tela as Rota;
-  const filhos = e.vertices.filter((f) => f.paiId === v.id).slice(-3);
+  const criados = aninhar ? e.vertices.filter((f) => f.criadoPor === v.id && !f.paiId) : [];
+  const filhos = [...criados, ...e.vertices.filter((f) => f.paiId === v.id).slice(-3)];
   const ativo = e.focoId === v.id && rota === 'sessoes';
   const nome = nomeDoAgente(v);
   const cor = corDoAgente(v);
@@ -317,21 +359,29 @@ function LinhaTerminal({ e, v, nivel }: { e: Estado; v: Vertice; nivel: number }
         style={{ ['--cor-agente' as string]: cor, ...(nivel ? { paddingLeft: 12 + nivel * 16 } : {}) }}
         onClick={() => focar(v.id)}
         onContextMenu={(ev) => {
-          ev.preventDefault();
-          abrirEditarAgente(v.id, { x: ev.clientX, y: ev.clientY });
+          const ponto = { x: ev.clientX, y: ev.clientY };
+          abrirMenu(ev, menuAgente(v, () => abrirEditarAgente(v.id, ponto)), nome);
         }}
-        title={`${nome} · ${NOME_AGENTE[v.agente]}${v.oculto ? ' (oculto, ainda rodando)' : ''} · clique direito: apelido e cor`}
+        title={`${nome} · ${NOME_AGENTE[v.agente]}${v.oculto ? ' (oculto, ainda rodando)' : ''} · clique direito: opções do agente`}
       >
         {nivel > 0 && <span className="ramo" aria-hidden="true">└</span>}
         <MascoteAgente cor={cor} papel={v.papel} tamanho={14} estado={v.estado} />
         <span className="linha-nome">{nome}</span>
         {nivel === 0 && <LogoAgente agente={v.agente} tamanho={14} className="linha-agente-logo" />}
-        {v.estado === 'trabalhando' ? <HiperMini estado="trabalhando" tamanho={16} rotulo="Trabalhando" /> : <SimboloEstado estado={v.estado} />}
+        {v.encerrado ? (
+          <span className="estado estado-fechado" title="Fechado" aria-label="Fechado">
+            ○
+          </span>
+        ) : v.estado === 'trabalhando' ? (
+          <HiperMini estado="trabalhando" tamanho={16} rotulo="Trabalhando" />
+        ) : (
+          <SimboloEstado estado={v.estado} />
+        )}
       </button>
       {filhos.length > 0 && (
         <ul>
           {filhos.map((f) => (
-            <LinhaTerminal key={f.id} e={e} v={f} nivel={nivel + 1} />
+            <LinhaTerminal key={f.id} e={e} v={f} nivel={nivel + 1} aninhar={aninhar} />
           ))}
         </ul>
       )}

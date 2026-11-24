@@ -18,7 +18,7 @@ export function Avisos({ emLinha }: { emLinha?: boolean }) {
           <span className="aviso-texto">{a.texto}</span>
           {a.verticeId && (
             <button
-              className="link"
+              className="link aviso-ver"
               onClick={() => {
                 focar(a.verticeId!);
                 fecharAviso(a.id);

@@ -139,6 +139,72 @@ fn ramo_seguro(ramo: &str) -> String {
     if s.is_empty() { "vertice".into() } else { s }
 }
 
+/// Modelo do Codex para quando o do config.toml não vale para a conta: o primeiro da lista
+/// de modelos que o próprio Codex guardou (models_cache.json). `None` = o do config serve.
+pub fn modelo_codex_reserva() -> Option<String> {
+    let casa = PathBuf::from(std::env::var_os(if cfg!(windows) { "USERPROFILE" } else { "HOME" })?).join(".codex");
+    let cache: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(casa.join("models_cache.json")).ok()?).ok()?;
+    let lista = cache.get("models").and_then(|m| m.as_array())?;
+    let slug = |m: &serde_json::Value| m.get("slug").and_then(|s| s.as_str()).map(str::to_string);
+    let todos: Vec<String> = lista.iter().filter_map(slug).collect();
+    let configurado = std::fs::read_to_string(casa.join("config.toml")).ok().and_then(|t| {
+        t.lines()
+            .take_while(|l| !l.trim_start().starts_with('['))
+            .find_map(|l| l.trim().strip_prefix("model").map(str::trim).and_then(|r| r.strip_prefix('=')).map(|r| r.trim().trim_matches('"').to_string()))
+    });
+    match configurado {
+        Some(m) if !todos.contains(&m) => lista
+            .iter()
+            .find(|m| m.get("visibility").and_then(|v| v.as_str()) == Some("list"))
+            .and_then(slug),
+        _ => None,
+    }
+}
+
+fn git_saida(git: &Path, pasta: &Path, args: &[&str]) -> String {
+    let mut c = comando_sem_janela(git, args);
+    c.current_dir(pasta);
+    rodar_com_limite(c, Duration::from_secs(15)).map(|(_, s)| s).unwrap_or_default()
+}
+
+/// O que mudou na cópia (worktree) de um agente desde que ela saiu do projeto: branch,
+/// commits, arquivos e o diff (cortado).
+pub fn resumo_mudancas(worktree: &str, pasta: &str) -> Result<String, String> {
+    let wt = PathBuf::from(worktree);
+    if !wt.is_dir() {
+        return Err(format!("Pasta não encontrada: {worktree}"));
+    }
+    let git = resolver("git").ok_or("git não encontrado no PATH")?;
+    let ramo = git_saida(&git, &wt, &["rev-parse", "--abbrev-ref", "HEAD"]).trim().to_string();
+    let topo_projeto = git_saida(&git, Path::new(pasta), &["rev-parse", "HEAD"]).trim().to_string();
+    let base = if topo_projeto.is_empty() {
+        String::new()
+    } else {
+        git_saida(&git, &wt, &["merge-base", "HEAD", &topo_projeto]).trim().to_string()
+    };
+    let base = if base.is_empty() { "HEAD".to_string() } else { base };
+    let commits = git_saida(&git, &wt, &["log", "--oneline", "-15", &format!("{base}..HEAD")]);
+    let estado = git_saida(&git, &wt, &["status", "--short"]);
+    let arquivos = git_saida(&git, &wt, &["diff", "--stat", &base]);
+    let mut diff = git_saida(&git, &wt, &["diff", &base]);
+    if diff.len() > 6000 {
+        let mut c = 6000;
+        while !diff.is_char_boundary(c) {
+            c -= 1;
+        }
+        diff.truncate(c);
+        diff.push_str("\n… (diff cortado)");
+    }
+    let ou = |s: &str, nada: &str| if s.trim().is_empty() { nada.to_string() } else { s.trim_end().to_string() };
+    Ok(format!(
+        "Pasta: {worktree}\nBranch: {ramo}\nCommits novos:\n{}\nArquivos sem commit:\n{}\nArquivos mudados desde a base:\n{}\nDiff:\n{}",
+        ou(&commits, "(nenhum)"),
+        ou(&estado, "(nenhum)"),
+        ou(&arquivos, "(nenhum)"),
+        ou(&diff, "(vazio)")
+    ))
+}
+
 /// `git worktree add` numa pasta irmã: <pasta>-wt-<ramo>, branch v/<ramo>.
 pub fn criar_worktree(pasta: &str, ramo: &str) -> Result<String, String> {
     let base = PathBuf::from(pasta);

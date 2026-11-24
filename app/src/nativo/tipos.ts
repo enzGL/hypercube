@@ -21,6 +21,23 @@ export interface OpcoesTerminal {
   modelo?: string;
   /** Abre o agente em modo só leitura. */
   soLeitura?: boolean;
+  /** Esforço de raciocínio pelo nível (Codex). */
+  esforco?: 'low' | 'medium' | 'high';
+  /** Líder: ganha as ferramentas do Hypercube para criar e chamar outros agentes. */
+  orquestrar?: boolean;
+}
+
+/** Pedido do Líder (ferramenta do Hypercube) que a interface atende. */
+export interface PedidoOrquestrador {
+  pedido: number;
+  terminalId: string;
+  ferramenta: string;
+  argumentos: Record<string, unknown>;
+}
+
+export interface FimTerminal {
+  id: string;
+  codigo: number;
 }
 
 /** Eventos de estado vindos dos hooks HTTP dos agentes (127.0.0.1 + token). */
@@ -106,6 +123,12 @@ export interface Nativo {
   terminais: {
     criar(opcoes: OpcoesTerminal): Promise<string>;
     escrever(id: string, dados: string): Promise<void>;
+    /** Manda uma mensagem: o texto e, um instante depois, o Enter. */
+    enviar(id: string, texto: string): Promise<void>;
+    /** Última resposta do agente (ou o fim da tela do terminal). */
+    resultado(id: string): Promise<string>;
+    /** Há quanto tempo (ms) o terminal não mostra nada; null se ele não existe mais. */
+    ocioso(id: string): Promise<number | null>;
     redimensionar(id: string, cols: number, rows: number): Promise<void>;
     /** Encerra o processo de verdade (fechar o painel só esconde). */
     encerrar(id: string): Promise<void>;
@@ -116,6 +139,13 @@ export interface Nativo {
 
   eventos: {
     aoEvento(ouvinte: (evento: EventoAgente) => void): Desligar;
+    /** O processo do terminal terminou. */
+    aoFim(ouvinte: (fim: FimTerminal) => void): Desligar;
+  };
+
+  orquestrador: {
+    aoPedido(ouvinte: (p: PedidoOrquestrador) => void): Desligar;
+    responder(pedido: number, texto: string, erro?: boolean): Promise<void>;
   };
 
   arquivos: {
@@ -130,6 +160,8 @@ export interface Nativo {
     detectarAgentes(novo?: boolean): Promise<AgenteDetectado[]>;
     usoDoPlano(): Promise<UsoDoPlano[]>;
     criarWorktree(pasta: string, ramo: string): Promise<string>;
+    /** Branch, commits e diff da cópia (worktree) de um agente. */
+    resumoMudancas(worktree: string, pasta: string): Promise<string>;
   };
 
   sistema: {
@@ -137,6 +169,8 @@ export interface Nativo {
     tocarSom(): void;
     definirTitulo(titulo: string): void;
     abrirLink(url: string): void;
+    /** Abre a pasta no explorador de arquivos do sistema. */
+    abrirPasta(caminho: string): Promise<void>;
     portaCanvas(): Promise<number>;
   };
 

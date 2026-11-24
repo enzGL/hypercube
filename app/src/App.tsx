@@ -8,6 +8,8 @@ import { BarraLateral } from './componentes/BarraLateral';
 import { BarraTopo } from './componentes/BarraTopo';
 import { PainelDireito } from './componentes/PainelDireito';
 import { Dialogos } from './componentes/Dialogos';
+import { ligarMenuDoApp, MenuContexto } from './componentes/MenuContexto';
+import { menuVazio } from './estado/menus';
 import { BoasVindas } from './componentes/BoasVindas';
 import { PainelOrquestracao } from './componentes/PainelOrquestracao';
 import { Imagens } from './telas/Imagens';
@@ -33,6 +35,8 @@ function InicioProvisorio() {
 const Inicio: ComponentType = InicioDoArquivo ?? InicioProvisorio;
 
 export function App() {
+  // Clique direito: menu do app em todo lugar (campos de texto mantêm copiar e colar).
+  useEffect(() => ligarMenuDoApp(menuVazio), []);
   const e = useLoja();
   const casca = useCasca();
   const rota = e.tela as Rota;
@@ -77,6 +81,7 @@ export function App() {
       </main>
       {casca.painelAberto && <PainelDireito />}
       <Dialogos />
+      <MenuContexto />
       {e.configurado ? (
         <BoasVindas nome={nomeUsuario() || undefined} aoComecar={() => irPara('inicio')} />
       ) : (

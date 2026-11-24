@@ -7,20 +7,19 @@ import {
   DESCRICAO_PAPEL,
   NOME_NIVEL,
   NOME_PAPEL,
+  renomearSessao,
   useLoja,
   type Nivel,
   type Papel,
 } from '../estado/loja';
-import { nativo, NOME_AGENTE, type Agente, type AgenteDetectado } from '../nativo';
+import { nativo, NOME_AGENTE, type Agente } from '../nativo';
 import { Icone, MiniVertice } from './Pecas';
+import { AgentesQueFaltam, useAgentesDetectados } from './InstalarAgente';
+import { EscolhaJeito, lerJeito, type Jeito } from './EscolhaJeito';
+import { ModelosBots } from './ModelosBots';
 
-function useAgentes() {
-  const [a, setA] = useState<AgenteDetectado[]>([]);
-  useEffect(() => {
-    nativo.processos.detectarAgentes().then(setA);
-  }, []);
-  return a;
-}
+/** Agentes do computador; a lista se atualiza quando uma instalação termina. */
+const useAgentes = useAgentesDetectados;
 
 function Moldura({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   useEffect(() => {
@@ -43,35 +42,66 @@ function Moldura({ titulo, children }: { titulo: string; children: React.ReactNo
   );
 }
 
-const EQUIPE: Papel[] = ['lider', 'batedor', 'construtor', 'revisor'];
 const AGENTE_PADRAO: Record<string, Agente> = { lider: 'claude', batedor: 'gemini', construtor: 'codex', revisor: 'claude' };
 const NIVEL_PADRAO: Record<string, Nivel> = { lider: 'forte', batedor: 'barato', construtor: 'padrao', revisor: 'padrao' };
 
-function NovaSessao() {
+/** Vagas da equipe predefinida: o Líder chama cada papel quando precisar. */
+const VAGAS: Papel[] = ['batedor', 'construtor', 'revisor'];
+
+function RenomearSessao({ sessaoId }: { sessaoId: string }) {
+  const e = useLoja();
+  const s = e.sessoes.find((x) => x.id === sessaoId);
+  const [nome, setNome] = useState(s?.nome ?? '');
+  const salvar = () => {
+    renomearSessao(sessaoId, nome);
+    abrirDialogo(null);
+  };
+  return (
+    <Moldura titulo="Renomear sessão">
+      <label className="campo">
+        <span>Nome</span>
+        <input autoFocus value={nome} onChange={(ev) => setNome(ev.target.value)} onKeyDown={(ev) => ev.key === 'Enter' && salvar()} />
+      </label>
+      <footer className="dialogo-rodape">
+        <button className="botao" onClick={() => abrirDialogo(null)}>
+          Cancelar
+        </button>
+        <button className="botao primario" onClick={salvar} disabled={!nome.trim()}>
+          Salvar
+        </button>
+      </footer>
+    </Moldura>
+  );
+}
+
+function NovaSessao({ pastaInicial }: { pastaInicial?: string }) {
   const agentes = useAgentes();
   const [nome, setNome] = useState('');
   const e = useLoja();
-  const [pasta, setPasta] = useState(() => e.sessoes.find((s) => s.id === e.sessaoAtivaId)?.pasta ?? '');
-  const [orquestracao, setOrquestracao] = useState(false);
-  const [worktrees, setWorktrees] = useState(false);
-  const [inicio, setInicio] = useState<'vazio' | 'agente' | 'equipe'>('agente');
+  const [pasta, setPasta] = useState(() => pastaInicial ?? e.sessoes.find((s) => s.id === e.sessaoAtivaId)?.pasta ?? '');
+  const [jeito, setJeito] = useState<Jeito>(lerJeito);
+  const comAgentes = jeito === 'agentes';
+  // Com agentes já liga as cópias separadas; em Normal a pessoa escolhe.
+  const [worktrees, setWorktrees] = useState(comAgentes);
+  const [inicio, setInicio] = useState<'vazio' | 'agente' | 'equipe'>(comAgentes ? 'equipe' : 'agente');
   const [agente, setAgente] = useState<Agente>('claude');
 
+  const mudarJeito = (j: Jeito) => {
+    setJeito(j);
+    setWorktrees(j === 'agentes');
+    setInicio(j === 'agentes' ? 'equipe' : 'agente');
+  };
+
   const criar = async () => {
-    const s = criarSessao(nome.trim() || 'Nova sessão', pasta, worktrees, orquestracao);
+    const s = criarSessao(nome.trim() || 'Nova sessão', pasta, worktrees, comAgentes);
     abrirDialogo(null);
     if (inicio === 'agente') await criarVertice(s.id, 'agente', agente, 'padrao');
-    if (inicio === 'equipe') {
-      const instalado = (a: Agente) => agentes.some((d) => d.agente === a && d.instalado);
-      for (const p of EQUIPE) {
-        const preferido = p === 'lider' ? agente : AGENTE_PADRAO[p];
-        await criarVertice(s.id, p, instalado(preferido) ? preferido : agente, NIVEL_PADRAO[p]);
-      }
-    }
+    if (inicio === 'equipe') await criarVertice(s.id, 'lider', agente, 'forte', undefined, { vagas: VAGAS });
   };
 
   return (
     <Moldura titulo="Nova sessão">
+      <EscolhaJeito valor={jeito} aoMudar={mudarJeito} />
       <label className="campo">
         <span>Nome</span>
         <input autoFocus value={nome} onChange={(ev) => setNome(ev.target.value)} placeholder="Ex.: Checkout novo" />
@@ -85,26 +115,6 @@ function NovaSessao() {
           </button>
         </div>
       </div>
-      <label className="campo">
-        <span>Como usar esta sessão</span>
-        <select
-          value={orquestracao ? 'orquestracao' : 'terminal'}
-          onChange={(ev) => {
-            const sim = ev.target.value === 'orquestracao';
-            setOrquestracao(sim);
-            setWorktrees(sim);
-            if (!sim && inicio === 'equipe') setInicio('agente');
-          }}
-        >
-          <option value="terminal">Terminal padrão</option>
-          <option value="orquestracao">Orquestração</option>
-        </select>
-        <span className="dica-campo">
-          {orquestracao
-            ? 'Um painel mostra quem divide e quem faz, com limite de agentes ao mesmo tempo.'
-            : 'Os agentes lado a lado, cada um no seu terminal. Você manda em cada um.'}
-        </span>
-      </label>
       <label className="interruptor">
         <input type="checkbox" checked={worktrees} onChange={(ev) => setWorktrees(ev.target.checked)} />
         <span className="interruptor-trilho" />
@@ -116,17 +126,32 @@ function NovaSessao() {
       <div className="campo">
         <span>Começar com</span>
         <div className="opcoes">
-          {[
-            { id: 'vazio', nome: 'Nenhum agente', desc: 'Sessão vazia, você cria depois' },
-            { id: 'agente', nome: 'Um agente', desc: 'Um agente comum, faz o que você pedir' },
-            ...(orquestracao ? [{ id: 'equipe', nome: 'Equipe predefinida', desc: 'Líder, explorador, construtor e revisor, cada um com a sua skill' }] : []),
-          ].map((o) => (
+          {(comAgentes
+            ? [
+                { id: 'equipe', nome: 'Equipe predefinida', desc: 'O Líder, com vagas para Explorador, Construtor e Revisor' },
+                { id: 'vazio', nome: 'Nenhum agente', desc: 'Sessão vazia, você cria depois' },
+              ]
+            : [
+                { id: 'agente', nome: 'Um agente', desc: 'Um agente comum, faz o que você pedir' },
+                { id: 'vazio', nome: 'Nenhum agente', desc: 'Sessão vazia, você cria depois' },
+              ]
+          ).map((o) => (
             <button key={o.id} className={`opcao ${inicio === o.id ? 'ativo' : ''}`} onClick={() => setInicio(o.id as typeof inicio)}>
               <b>{o.nome}</b>
               <span>{o.desc}</span>
             </button>
           ))}
         </div>
+        {inicio === 'equipe' && (
+          <div className="vagas-previa" aria-label="Vagas da equipe">
+            {VAGAS.map((p) => (
+              <span key={p} className="vaga-chip">
+                <MiniVertice papel={p} tamanho={16} /> {NOME_PAPEL[p]}
+              </span>
+            ))}
+            <span className="dica-campo">O Líder chama cada um quando precisar.</span>
+          </div>
+        )}
       </div>
       {inicio !== 'vazio' && (
         <label className="campo">
@@ -231,6 +256,7 @@ function NovoVertice({ sessaoId, papelInicial }: { sessaoId: string; papelInicia
           <p className="dica-campo">{DESCRICAO_NIVEL[nivel]}</p>
         </div>
       </div>
+      <AgentesQueFaltam agentes={agentes} />
       <label className="campo">
         <span>Primeira tarefa (opcional)</span>
         <textarea rows={2} value={tarefa} onChange={(ev) => setTarefa(ev.target.value)} placeholder="Ex.: Mapeie onde o pedido é cobrado" />
@@ -258,6 +284,8 @@ function NovoVertice({ sessaoId, papelInicial }: { sessaoId: string; papelInicia
 export function Dialogos() {
   const { dialogo } = useLoja();
   if (!dialogo) return null;
-  if (dialogo.tipo === 'novaSessao') return <NovaSessao />;
+  if (dialogo.tipo === 'novaSessao') return <NovaSessao pastaInicial={dialogo.pasta} />;
+  if (dialogo.tipo === 'modelosBots') return <ModelosBots />;
+  if (dialogo.tipo === 'renomearSessao') return <RenomearSessao sessaoId={dialogo.sessaoId} />;
   return <NovoVertice sessaoId={dialogo.sessaoId} papelInicial={dialogo.papel} />;
 }
