@@ -1,0 +1,49 @@
+{
+  "port": 18765,
+  "cooldownSegundos": 60,
+  "providers": {
+    "opencode": {
+      "tipo": "opencode-cli",
+      "bin": "opencode",
+      "timeoutSegundos": 600,
+      "concorrencia": 2,
+      "models": ["big-pickle", "deepseek-v4.1-flash-free", "mimo-v2.6-flash-free"]
+    },
+    "kiro": {
+      "tipo": "kiro-cli",
+      "bin": "kiro-cli",
+      "timeoutSegundos": 600,
+      "concorrencia": 2,
+      "models": ["qwen3-coder-next", "deepseek-3.2", "glm-5", "claude-haiku-4.5", "claude-sonnet-4.5", "auto"]
+    },
+    "groq": {
+      "tipo": "openai",
+      "baseUrl": "https://api.groq.com/openai/v1",
+      "chaveEnv": "GROQ_API_KEY",
+      "timeoutSegundos": 60,
+      "concorrencia": 4,
+      "models": ["openai/gpt-oss-120b", "openai/gpt-oss-20b"]
+    },
+    "gemini": {
+      "tipo": "gemini-cli",
+      "bin": "gemini",
+      "timeoutSegundos": 180,
+      "concorrencia": 1,
+      "models": ["padrao"]
+    }
+  },
+  "cadeias": {
+    "barato": [
+      "groq/openai/gpt-oss-20b",
+      "opencode/deepseek-v4.1-flash-free",
+      "kiro/qwen3-coder-next",
+      "gemini/padrao"
+    ],
+    "padrao": [
+      "groq/openai/gpt-oss-120b",
+      "kiro/deepseek-3.2",
+      "opencode/big-pickle",
+      "gemini/padrao"
+    ]
+  }
+}

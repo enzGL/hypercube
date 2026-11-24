@@ -3,10 +3,11 @@
 mod fumaca;
 mod hooks;
 mod processos;
+mod roteador;
 mod saidas;
 mod terminais;
 
-use serde_json::{json, Value};
+use serde_json::Value;
 use tauri::{AppHandle, Manager, State, WebviewWindow};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_notification::NotificationExt;
@@ -14,6 +15,7 @@ use tauri_plugin_notification::NotificationExt;
 pub struct Estado {
     pub terminais: terminais::Terminais,
     pub hooks: hooks::ServidorHooks,
+    pub roteador: roteador::Roteador,
 }
 
 type R<T> = Result<T, String>;
@@ -208,23 +210,37 @@ async fn arquivos_observar_saidas(app: AppHandle, pasta: String) -> R<()> {
     Ok(())
 }
 
-// ---------- roteador (ainda não existe no Tauri) ----------
+// ---------- roteador (modelos gratuitos para o nível barato) ----------
 
-#[tauri::command]
-async fn roteador_estado() -> R<Value> {
-    Ok(json!({ "endereco": "", "ligado": false, "provedores": [], "cadeias": {}, "chamadas": [] }))
+fn pasta_do_roteador(app: &AppHandle) -> R<std::path::PathBuf> {
+    app.path().app_data_dir().map(|d| d.join("router")).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-async fn roteador_ligar(ligado: bool) -> R<()> {
-    let _ = ligado;
+async fn roteador_estado(app: AppHandle) -> R<Value> {
+    // A consulta é por socket e pode demorar um instante: fora da thread principal.
+    em_fundo(move || app.state::<Estado>().roteador.estado()).await
+}
+
+#[tauri::command]
+async fn roteador_ligar(app: AppHandle, ligado: bool) -> R<()> {
+    let dados = pasta_do_roteador(&app)?;
+    let marca = dados.join("ligado");
+    if ligado {
+        let (h, d) = (app.clone(), dados.clone());
+        em_fundo(move || h.state::<Estado>().roteador.ligar(&d)).await??;
+        let _ = std::fs::create_dir_all(&dados);
+        let _ = std::fs::write(&marca, "1");
+    } else {
+        app.state::<Estado>().roteador.desligar();
+        let _ = std::fs::remove_file(&marca);
+    }
     Ok(())
 }
 
 #[tauri::command]
-async fn roteador_salvar_cadeia(nivel: String, provedores: Vec<String>) -> R<()> {
-    let _ = (nivel, provedores);
-    Ok(())
+async fn roteador_salvar_cadeia(estado: State<'_, Estado>, nivel: String, provedores: Vec<String>) -> R<()> {
+    estado.roteador.salvar_cadeia(&nivel, &provedores)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -234,7 +250,18 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             let hooks = hooks::iniciar(app.handle().clone())?;
-            app.manage(Estado { terminais: terminais::Terminais::default(), hooks });
+            app.manage(Estado { terminais: terminais::Terminais::default(), hooks, roteador: roteador::Roteador::default() });
+            // Se a pessoa deixou o roteador ligado da última vez, liga de novo em segundo plano.
+            if let Ok(dados) = pasta_do_roteador(app.handle()) {
+                if dados.join("ligado").exists() {
+                    let h = app.handle().clone();
+                    std::thread::spawn(move || {
+                        if let Some(e) = h.try_state::<Estado>() {
+                            let _ = e.roteador.ligar(&dados);
+                        }
+                    });
+                }
+            }
             if let Some(janela) = app.get_webview_window("main") {
                 if fumaca::ligada() {
                     fumaca::posicionar_no_segundo_monitor(&janela);
@@ -283,6 +310,7 @@ pub fn run() {
             fumaca::registrar("evento: Exit");
             if let Some(e) = app.try_state::<Estado>() {
                 e.terminais.encerrar_todos(&e.hooks);
+                e.roteador.desligar();
             }
         }
     });

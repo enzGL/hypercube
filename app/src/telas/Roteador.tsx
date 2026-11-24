@@ -5,7 +5,7 @@ import { nativo, type EstadoRoteador } from '../nativo';
 import { BarraTopo } from '../componentes/BarraTopo';
 import { Icone } from '../componentes/Pecas';
 
-const NOME_CADEIA: Record<string, string> = { barato: 'Nível barato', padrao: 'Nível padrão' };
+const NOME_CADEIA: Record<string, string> = { barato: 'Nível barato', padrao: 'Nível padrão', forte: 'Nível forte' };
 
 export function Roteador() {
   const [r, setR] = useState<EstadoRoteador | null>(null);
@@ -37,9 +37,14 @@ export function Roteador() {
                 type="checkbox"
                 checked={r.ligado}
                 onChange={(ev) => {
-                  setR({ ...r, ligado: ev.target.checked });
-                  nativo.roteador.ligar(ev.target.checked);
-                  avisar(ev.target.checked ? 'Roteador ligado.' : 'Roteador desligado: o nível barato usa o próprio agente.');
+                  const ligar = ev.target.checked;
+                  nativo.roteador
+                    .ligar(ligar)
+                    .then(() => {
+                      avisar(ligar ? 'Roteador ligado.' : 'Roteador desligado: o nível barato usa o próprio agente.');
+                      return nativo.roteador.estado().then(setR);
+                    })
+                    .catch((erro) => avisar(String(erro)));
                 }}
               />
               <span className="interruptor-trilho" />
@@ -67,7 +72,7 @@ export function Roteador() {
                 <th>Provedor</th>
                 <th>Estado</th>
                 <th className="num">Chamadas hoje</th>
-                <th>Cota do dia</th>
+                <th>Situação</th>
                 <th className="num">Latência</th>
               </tr>
             </thead>
@@ -76,27 +81,14 @@ export function Roteador() {
                 <tr key={p.id}>
                   <td>{p.nome}</td>
                   <td>
-                    <label className="interruptor pequeno">
-                      <input
-                        type="checkbox"
-                        checked={p.ligado}
-                        onChange={(ev) => setR({ ...r, provedores: r.provedores.map((x) => (x.id === p.id ? { ...x, ligado: ev.target.checked } : x)) })}
-                      />
-                      <span className="interruptor-trilho" />
-                      <span>{p.ligado ? 'ligado' : 'desligado'}</span>
-                    </label>
+                    {p.ligado ? (
+                      <span style={{ color: 'var(--pronto)' }}>● pronto</span>
+                    ) : (
+                      <span className="secundario">○ {p.nota || 'indisponível'}</span>
+                    )}
                   </td>
                   <td className="num mono">{p.chamadasHoje}</td>
-                  <td>
-                    <span className="barra-uso">
-                      <span className="barra-trilho">
-                        <span className="barra-cheia" style={{ width: `${(p.chamadasHoje / p.cotaDiaria) * 100}%`, background: 'var(--cobalto-claro)' }} />
-                      </span>
-                      <span className="barra-valor">
-                        {p.chamadasHoje}/{p.cotaDiaria}
-                      </span>
-                    </span>
-                  </td>
+                  <td className="secundario">{p.pausaSegundos ? `em pausa por ${p.pausaSegundos} s` : 'sem limite fixo'}</td>
                   <td className="num mono">{p.latenciaMs ? `${p.latenciaMs} ms` : '—'}</td>
                 </tr>
               ))}

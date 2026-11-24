@@ -95,6 +95,9 @@ export interface ProvedorRoteador {
   chamadasHoje: number;
   cotaDiaria: number;
   latenciaMs: number;
+  /** Por que não está pronto (falta chave, CLI não instalada…). */
+  nota?: string;
+  pausaSegundos?: number;
 }
 
 export interface ChamadaRoteador {
