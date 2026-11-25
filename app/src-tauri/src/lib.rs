@@ -92,6 +92,11 @@ async fn fumaca_registrar(linha: String) -> R<()> {
 // ---------- processos ----------
 
 #[tauri::command]
+async fn processos_linhas_mudadas(worktree: String, pasta: String) -> R<(u64, u64)> {
+    em_fundo(move || processos::linhas_mudadas(&worktree, &pasta)).await?
+}
+
+#[tauri::command]
 async fn processos_resumo_mudancas(worktree: String, pasta: String) -> R<String> {
     em_fundo(move || processos::resumo_mudancas(&worktree, &pasta)).await?
 }
@@ -298,6 +303,7 @@ pub fn run() {
             fumaca_lider,
             fumaca_registrar,
             processos_resumo_mudancas,
+            processos_linhas_mudadas,
             processos_detectar_agentes,
             processos_criar_worktree,
             processos_uso_do_plano,

@@ -168,6 +168,8 @@ export interface Nativo {
     criarWorktree(pasta: string, ramo: string): Promise<string>;
     /** Branch, commits e diff da cópia (worktree) de um agente. */
     resumoMudancas(worktree: string, pasta: string): Promise<string>;
+    /** Linhas acrescentadas e removidas na cópia do agente desde que saiu do projeto. */
+    linhasMudadas(worktree: string, pasta: string): Promise<{ mais: number; menos: number }>;
   };
 
   sistema: {

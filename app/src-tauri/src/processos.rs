@@ -205,6 +205,29 @@ pub fn resumo_mudancas(worktree: &str, pasta: &str) -> Result<String, String> {
     ))
 }
 
+/// Soma das linhas acrescentadas e removidas na cópia (worktree) desde que saiu do projeto,
+/// contando commits e mudanças ainda sem commit nos arquivos já conhecidos pelo git.
+pub fn linhas_mudadas(worktree: &str, pasta: &str) -> Result<(u64, u64), String> {
+    let wt = PathBuf::from(worktree);
+    if !wt.is_dir() {
+        return Err(format!("Pasta não encontrada: {worktree}"));
+    }
+    let git = resolver("git").ok_or("git não encontrado no PATH")?;
+    let topo = git_saida(&git, Path::new(pasta), &["rev-parse", "HEAD"]).trim().to_string();
+    let base = if topo.is_empty() { String::new() } else { git_saida(&git, &wt, &["merge-base", "HEAD", &topo]).trim().to_string() };
+    let base = if base.is_empty() { "HEAD".to_string() } else { base };
+    Ok(somar_numstat(&git_saida(&git, &wt, &["diff", "--numstat", &base])))
+}
+
+/// Soma a saída de `git diff --numstat` (arquivos binários aparecem com "-" e não contam).
+pub fn somar_numstat(texto: &str) -> (u64, u64) {
+    texto.lines().fold((0, 0), |(m, n), l| {
+        let mut p = l.split_whitespace();
+        let (a, b) = (p.next().and_then(|x| x.parse::<u64>().ok()), p.next().and_then(|x| x.parse::<u64>().ok()));
+        (m + a.unwrap_or(0), n + b.unwrap_or(0))
+    })
+}
+
 /// `git worktree add` numa pasta irmã: <pasta>-wt-<ramo>, branch v/<ramo>.
 pub fn criar_worktree(pasta: &str, ramo: &str) -> Result<String, String> {
     let base = PathBuf::from(pasta);
@@ -250,6 +273,15 @@ pub fn criar_worktree(pasta: &str, ramo: &str) -> Result<String, String> {
 #[cfg(test)]
 mod testes {
     use super::*;
+
+    #[test]
+    fn soma_numstat() {
+        assert_eq!(somar_numstat("6	1	preco.js
+19	0	preco.test.js
+-	-	img.png
+"), (25, 1));
+        assert_eq!(somar_numstat(""), (0, 0));
+    }
 
     #[test]
     fn cria_worktree_num_repo_temporario() {

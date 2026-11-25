@@ -95,6 +95,10 @@ export function criarNativoTauri(): Nativo {
       },
       usoDoPlano: () => invoke('processos_uso_do_plano'),
       criarWorktree: (pasta, ramo) => invoke<string>('processos_criar_worktree', { pasta, ramo }),
+      linhasMudadas: async (worktree, pasta) => {
+        const [mais, menos] = await invoke<[number, number]>('processos_linhas_mudadas', { worktree, pasta });
+        return { mais, menos };
+      },
       resumoMudancas: (worktree, pasta) => invoke<string>('processos_resumo_mudancas', { worktree, pasta }),
     },
     sistema: {

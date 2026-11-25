@@ -332,6 +332,18 @@ export function ordenados(e: Estado, sessaoId: string): Vertice[] {
 
 // ---------- eventos dos hooks ----------
 
+/** Lê no git quantas linhas o agente mudou na sua cópia do projeto e mostra no card. */
+function atualizarLinhasDaCopia(v: Vertice) {
+  const sessao = estado.sessoes.find((s) => s.id === v.sessaoId);
+  if (!v.worktree || !sessao) return;
+  nativo.processos
+    .linhasMudadas(v.worktree, sessao.pasta)
+    .then((diff) => atualizarVertice(v.id, () => ({ diff })))
+    .catch(() => {
+      /* sem git ou pasta apagada: fica o que já havia */
+    });
+}
+
 function aoEvento(ev: EventoAgente) {
   const v = estado.vertices.find((x) => x.terminalId === ev.terminalId);
   if (!v) return;
@@ -346,7 +358,8 @@ function aoEvento(ev: EventoAgente) {
       break;
     case 'Consumo':
       // Totais da sessão do agente (linha de status do Claude): troca, não soma.
-      atualizarVertice(v.id, (x) => ({ tokens: ev.tokens ?? x.tokens, custo: ev.custo ?? x.custo, diff: ev.diff ?? x.diff }));
+      // Na cópia própria (worktree) as linhas vêm do git ao fim de cada tarefa; o Claude só conta o que ele mesmo editou.
+      atualizarVertice(v.id, (x) => ({ tokens: ev.tokens ?? x.tokens, custo: ev.custo ?? x.custo, diff: x.worktree ? x.diff : (ev.diff ?? x.diff) }));
       break;
     case 'UserPromptSubmit':
       atualizarVertice(v.id, (x) => ({
@@ -378,6 +391,7 @@ function aoEvento(ev: EventoAgente) {
       break;
     }
     case 'Stop':
+      atualizarLinhasDaCopia(v);
       atualizarVertice(v.id, (x) => ({ ...soma(x), estado: 'pronto', pergunta: undefined, esperandoDesde: undefined, ultimaAcao: ev.mensagem ?? 'Concluiu' }));
       mudar(() => ({ sucessoAte: Date.now() + 3500 }));
       {

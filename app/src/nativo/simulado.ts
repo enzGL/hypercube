@@ -506,6 +506,9 @@ export function criarNativoSimulado(): Nativo {
           { provedor: 'Codex', cincoHoras: 11, semana: 6, renovaEm: '4 h 02 min' },
         ];
       },
+      async linhasMudadas() {
+        return { mais: 0, menos: 0 };
+      },
       async resumoMudancas(worktree) {
         return `Pasta: ${worktree}\nBranch: v/simulado\nCommits novos:\n(nenhum)`;
       },
