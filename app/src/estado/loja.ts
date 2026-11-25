@@ -344,6 +344,10 @@ function aoEvento(ev: EventoAgente) {
   switch (ev.tipo) {
     case 'SessionStart':
       break;
+    case 'Consumo':
+      // Totais da sessão do agente (linha de status do Claude): troca, não soma.
+      atualizarVertice(v.id, (x) => ({ tokens: ev.tokens ?? x.tokens, custo: ev.custo ?? x.custo, diff: ev.diff ?? x.diff }));
+      break;
     case 'UserPromptSubmit':
       atualizarVertice(v.id, (x) => ({
         estado: 'trabalhando',

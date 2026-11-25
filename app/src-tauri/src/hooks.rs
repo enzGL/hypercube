@@ -206,6 +206,16 @@ pub fn iniciar(app: AppHandle) -> std::io::Result<ServidorHooks> {
                     *ULTIMO_USO.lock().unwrap() = Some(u.clone());
                     let _ = app.emit("uso_plano", u);
                 }
+                if let Some(c) = consumo_da_linha_de_status(&v) {
+                    // Valores totais da sessão do Claude, não a diferença: a interface troca os números.
+                    let _ = app.emit(
+                        "evento_agente",
+                        serde_json::json!({
+                            "tipo": "Consumo", "terminalId": id, "momento": agora_ms(),
+                            "tokens": c.tokens, "custo": c.custo, "diff": { "mais": c.mais, "menos": c.menos }
+                        }),
+                    );
+                }
                 let _ = req.respond(tiny_http::Response::from_string(linha_de_status(&v)));
                 continue;
             }
@@ -595,6 +605,28 @@ pub fn uso_da_linha_de_status(v: &Value) -> Option<UsoPlano> {
     })
 }
 
+/// Gasto da sessão do Claude, lido da linha de status (totais desde que a sessão abriu).
+#[derive(Debug, PartialEq)]
+pub struct Consumo {
+    pub tokens: u64,
+    pub custo: f64,
+    pub mais: u64,
+    pub menos: u64,
+}
+
+pub fn consumo_da_linha_de_status(v: &Value) -> Option<Consumo> {
+    let cost = v.get("cost");
+    let janela = v.get("context_window");
+    let n = |x: Option<&Value>, k: &str| x.and_then(|j| j.get(k)).and_then(Value::as_f64).unwrap_or(0.0);
+    let tokens = (n(janela, "total_input_tokens") + n(janela, "total_output_tokens")).max(0.0) as u64;
+    let custo = n(cost, "total_cost_usd").max(0.0);
+    let (mais, menos) = (n(cost, "total_lines_added").max(0.0) as u64, n(cost, "total_lines_removed").max(0.0) as u64);
+    if cost.is_none() && janela.is_none() {
+        return None;
+    }
+    Some(Consumo { tokens, custo, mais, menos })
+}
+
 /// O que aparece embaixo do terminal do Claude (substitui a linha de status só nesta sessão).
 pub fn linha_de_status(v: &Value) -> String {
     let modelo = v.pointer("/model/display_name").and_then(Value::as_str).unwrap_or("Claude");
@@ -616,6 +648,13 @@ mod testes_uso {
         assert_eq!((u.cinco_horas, u.semana), (42, 12));
         assert!(u.renova_em.starts_with("2 h 1") || u.renova_em.starts_with("2 h 0"), "{}", u.renova_em);
         assert!(uso_da_linha_de_status(&serde_json::json!({})).is_none());
+    }
+    #[test]
+    fn le_consumo_da_linha_de_status() {
+        let v = serde_json::json!({ "cost": { "total_cost_usd": 0.0421, "total_lines_added": 12, "total_lines_removed": 3 },
+            "context_window": { "total_input_tokens": 1500, "total_output_tokens": 320 } });
+        assert_eq!(consumo_da_linha_de_status(&v), Some(Consumo { tokens: 1820, custo: 0.0421, mais: 12, menos: 3 }));
+        assert!(consumo_da_linha_de_status(&serde_json::json!({ "model": {} })).is_none());
     }
     #[test]
     fn data_iso() {

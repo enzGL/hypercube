@@ -49,6 +49,7 @@ export type TipoEvento =
   | 'Stop'
   | 'SubagentStart'
   | 'SubagentStop'
+  | 'Consumo'
   | 'Erro';
 
 export interface EventoAgente {
@@ -57,7 +58,7 @@ export interface EventoAgente {
   momento: number;
   ferramenta?: string;
   mensagem?: string;
-  /** Tokens e custo (US$) acumulados desde o último evento. */
+  /** Tokens e custo (US$) acumulados desde o último evento. Em 'Consumo' são os totais da sessão do agente. */
   tokens?: number;
   custo?: number;
   diff?: { mais: number; menos: number };
