@@ -11,7 +11,7 @@ Uma etapa por vez, cada uma testada no app antes da próxima.
 
 _0.3 em 2026-11-23/24: canvas ao vivo pela pasta `.hypercube/saidas/`, roteador dentro (`router/`, ligado pela tela Roteador), ferramentas MCP `canvas_adicionar_imagem/html/svg` para todo agente (Claude e Codex) e `consulta_barata` (texto simples pelo roteador, para resumir/classificar sem gastar o plano). Decisão: agente que usa ferramentas não roda direto num modelo gratuito (as CLIs gratuitas só devolvem texto), então o roteador entra como ferramenta, não como motor do agente._
 
-_0.4 em 2026-11-24: README PT/EN e página `site/` prontos. Falta: gerar o instalador (`tauri build`) e publicar a release no GitHub (precisa do OK do Enzo)._
+_0.4 em 2026-11-24: README PT/EN e página `site/` prontos; instalador gerado e release v0.1.0 publicada no GitHub. Em 2026-11-25: v0.1.1 com terminal como padrão e apagar sessão/projeto._
 | 0.4 Lançamento | README em PT/EN, página de download com pedido de estrela | instalador baixado pelo site |
 | Feito (2026-11-25, conferido no app real): terminal como padrão | Agentes viram parte bem opcional e o normal é o terminal puro, como num workspace de terminais. Nova sessão começa com **Terminal** (shell comum), não com agente; botão principal do cabeçalho vira "+ Terminal" e "Agente" fica secundário; a linha "Com agentes" da lateral, a aba Orquestração e o campo de comando "Para…" só aparecem em sessão com agentes ligados; estado vazio fala de terminal | abrir o app, criar sessão e usar um terminal sem ver nada de agente |
 | Depois | Celular via QR; aba MCP/Skills; passar conversa entre agentes | — |

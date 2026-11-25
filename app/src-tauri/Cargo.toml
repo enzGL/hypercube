@@ -1,6 +1,6 @@
 [package]
 name = "hypercube"
-version = "0.1.0"
+version = "0.1.1"
 description = "Hypercube: todos os seus agentes, num cubo só."
 license = "MIT"
 edition = "2021"

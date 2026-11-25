@@ -54,6 +54,15 @@ export function menuProjeto(pasta: string, aberta: boolean): EntradaMenu[] {
     'separador',
     { rotulo: aberta ? 'Recolher' : 'Expandir', icone: ic(aberta ? 'cima' : 'baixo'), acao: () => alternarPasta(pasta) },
     { rotulo: 'Fechar projeto', icone: ic('fechar'), acao: () => fecharAbaProjeto(pasta) },
+    {
+      rotulo: 'Apagar projeto',
+      icone: ic('fechar'),
+      perigo: true,
+      confirmar: 'Clique de novo: apaga todas as sessões deste projeto (a pasta no disco não muda)',
+      acao: async () => {
+        for (const s of lerEstado().sessoes.filter((x) => x.pasta === pasta)) await encerrarSessao(s.id);
+      },
+    },
   ];
 }
 
@@ -75,10 +84,10 @@ export function menuSessao(s: Sessao): EntradaMenu[] {
     { rotulo: 'Mandar para todos…', icone: ic('enviar'), desativado: !vs.some((v) => !v.encerrado), acao: () => mirarCampo(s.id, 'todos') },
     'separador',
     {
-      rotulo: 'Encerrar a sessão',
-      icone: ic('parar'),
+      rotulo: 'Apagar a sessão',
+      icone: ic('fechar'),
       perigo: true,
-      confirmar: `Clique de novo: encerra ${vs.length} ${vs.length === 1 ? 'agente' : 'agentes'}`,
+      confirmar: `Clique de novo: apaga a sessão e encerra ${vs.length} ${vs.length === 1 ? 'terminal' : 'terminais'}`,
       acao: () => encerrarSessao(s.id),
     },
   ];

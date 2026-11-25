@@ -9,6 +9,7 @@ import {
   temOrquestracao,
   definirLayout,
   encerrar,
+  encerrarSessao,
   escolherVencedor,
   focar,
   iniciarCorrida,
@@ -115,6 +116,7 @@ export function Sessoes() {
       <button className="botao primario" onClick={() => novoTerminal(sessao.id)}>
         <Icone nome="mais" /> Terminal
       </button>
+      <ApagarSessao id={sessao.id} nome={sessao.nome} />
     </>
   );
 
@@ -136,6 +138,7 @@ export function Sessoes() {
             <button className="botao" onClick={() => abrirDialogo({ tipo: 'novoVertice', sessaoId: sessao.id, papel: 'agente' })}>
               Criar agente
             </button>
+            <ApagarSessao id={sessao.id} nome={sessao.nome} />
           </div>
         </div>
       ) : (
@@ -190,6 +193,25 @@ export function Sessoes() {
       <Avisos emLinha />
       {temOrquestracao(sessao) && <CampoComando e={e} sessaoId={sessao.id} vertices={todos} />}
     </div>
+  );
+}
+
+/** Apaga a sessão e encerra os terminais dela; pede um segundo clique. */
+function ApagarSessao({ id, nome }: { id: string; nome: string }) {
+  const [certeza, setCerteza] = useState(false);
+  useEffect(() => {
+    if (!certeza) return;
+    const t = window.setTimeout(() => setCerteza(false), 4000);
+    return () => window.clearTimeout(t);
+  }, [certeza]);
+  return (
+    <button
+      className={`botao ${certeza ? 'perigo' : ''}`}
+      title={certeza ? `Clique de novo para apagar “${nome}”` : 'Apagar esta sessão e encerrar os terminais dela'}
+      onClick={() => (certeza ? encerrarSessao(id) : setCerteza(true))}
+    >
+      <Icone nome="fechar" /> {certeza ? 'Apagar mesmo?' : 'Apagar'}
+    </button>
   );
 }
 
