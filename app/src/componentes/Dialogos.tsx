@@ -156,7 +156,7 @@ function NovaSessao({ pastaInicial }: { pastaInicial?: string }) {
           </div>
         )}
       </div>
-      {inicio !== 'vazio' && (
+      {(inicio === 'agente' || inicio === 'equipe') && (
         <label className="campo">
           <span>{inicio === 'equipe' ? 'Agente do Líder' : 'Agente'}</span>
           <select value={agente} onChange={(ev) => setAgente(ev.target.value as Agente)}>
