@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="site/img/logo.png" alt="Hypercube" width="120" />
+<img src="site/img/logo.png" alt="Hypercube" width="72" />
 
 # Hypercube
 
@@ -21,11 +21,35 @@
 
 **It's free to use. We only ask that you star the repo on GitHub!** ⭐
 
+<div align="center">
+
+<img src="docs/img/sessoes.png" alt="Sessions: every agent in one window" width="900" />
+
+</div>
+
 ## What Hypercube is
 
 Hypercube is a desktop app for people who run several coding agents at once and want to watch, direct and combine all of their work in one place. Instead of ten loose terminal windows, you get one window with every agent, each one's live state, and a notification when one needs your answer.
 
 > A tesseract is a hypercube. Each agent is a **Vertex**. **Hiper** (the cube mascot) rules them all.
+
+## What sets it apart
+
+- **Every agent, one window.** Claude Code, Codex, Gemini CLI, Kiro and OpenCode side by side, in real terminals.
+- **Live state.** See who is working, who is waiting for your answer and who is done, and allow or deny a request without switching terminals.
+- **Visual orchestration.** A Leader splits the task, each Builder works in its own copy of the project, and the result is reviewed before merging.
+- **Live image canvas.** What agents draw shows up right away, side by side, so you can compare versions.
+- **Free router.** Mechanical tasks go to free models and save your plan.
+- **Local and private.** `127.0.0.1` only, no account and no telemetry.
+
+## Screens
+
+| | |
+|---|---|
+| ![Sessions](docs/img/sessoes.png)<br>**Sessions**: agents, states and permission requests | ![Orchestration](docs/img/orquestracao.png)<br>**Orchestration**: Leader, roles and playbooks on the canvas |
+| ![Images](docs/img/imagens.png)<br>**Images**: versions side by side, live | ![Router](docs/img/roteador.png)<br>**Router**: free providers and chains per level |
+
+_Screenshots in example mode, with simulated agents._
 
 ## Platforms
 

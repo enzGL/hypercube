@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="site/img/logo.png" alt="Hypercube" width="120" />
+<img src="site/img/logo.png" alt="Hypercube" width="72" />
 
 # Hypercube
 
@@ -21,11 +21,35 @@
 
 **É grátis para usar. Só pedimos que você dê uma estrela no GitHub!** ⭐
 
+<div align="center">
+
+<img src="docs/img/sessoes.png" alt="Sessões: todos os agentes numa janela" width="900" />
+
+</div>
+
 ## O que é o Hypercube
 
 O Hypercube é um app de desktop para quem trabalha com vários agentes de código ao mesmo tempo e quer ver, dirigir e juntar o trabalho de todos num lugar só. Em vez de dez janelas de terminal soltas, você tem uma janela com todos os agentes, o estado de cada um ao vivo e um aviso quando algum precisa da sua resposta.
 
 > Um tesseract é um hipercubo. Cada agente é um **Vértice**. O **Hiper** (o cubo mascote) rege todos.
+
+## Diferenciais
+
+- **Todos os agentes, uma janela.** Claude Code, Codex, Gemini CLI, Kiro e OpenCode lado a lado, em terminais de verdade.
+- **Estado ao vivo.** Você vê quem está trabalhando, quem espera a sua resposta e quem terminou, e pode permitir ou negar um pedido sem trocar de terminal.
+- **Orquestração visual.** Um Líder reparte a tarefa, cada Construtor trabalha na sua própria cópia do projeto e o resultado é revisado antes de juntar.
+- **Canvas de imagens ao vivo.** O que os agentes desenham aparece na hora, lado a lado, para comparar versões.
+- **Roteador gratuito.** Tarefas mecânicas vão para modelos gratuitos e poupam o seu plano.
+- **Local e privado.** Só `127.0.0.1`, sem conta e sem telemetria.
+
+## Telas
+
+| | |
+|---|---|
+| ![Sessões](docs/img/sessoes.png)<br>**Sessões**: agentes, estados e pedidos de permissão | ![Orquestração](docs/img/orquestracao.png)<br>**Orquestração**: Líder, papéis e roteiros no canvas |
+| ![Imagens](docs/img/imagens.png)<br>**Imagens**: versões lado a lado, ao vivo | ![Roteador](docs/img/roteador.png)<br>**Roteador**: provedores gratuitos e cadeias por nível |
+
+_Capturas no modo de exemplo, com agentes simulados._
 
 ## Plataformas
 
