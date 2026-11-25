@@ -3,6 +3,7 @@ import {
   abrirDialogo,
   criarSessao,
   criarVertice,
+  novoTerminal,
   DESCRICAO_NIVEL,
   DESCRICAO_PAPEL,
   NOME_NIVEL,
@@ -83,18 +84,19 @@ function NovaSessao({ pastaInicial }: { pastaInicial?: string }) {
   const comAgentes = jeito === 'agentes';
   // Com agentes já liga as cópias separadas; em Normal a pessoa escolhe.
   const [worktrees, setWorktrees] = useState(comAgentes);
-  const [inicio, setInicio] = useState<'vazio' | 'agente' | 'equipe'>(comAgentes ? 'equipe' : 'agente');
+  const [inicio, setInicio] = useState<'vazio' | 'terminal' | 'agente' | 'equipe'>(comAgentes ? 'equipe' : 'terminal');
   const [agente, setAgente] = useState<Agente>('claude');
 
   const mudarJeito = (j: Jeito) => {
     setJeito(j);
     setWorktrees(j === 'agentes');
-    setInicio(j === 'agentes' ? 'equipe' : 'agente');
+    setInicio(j === 'agentes' ? 'equipe' : 'terminal');
   };
 
   const criar = async () => {
     const s = criarSessao(nome.trim() || 'Nova sessão', pasta, worktrees, comAgentes);
     abrirDialogo(null);
+    if (inicio === 'terminal') await novoTerminal(s.id);
     if (inicio === 'agente') await criarVertice(s.id, 'agente', agente, 'padrao');
     if (inicio === 'equipe') await criarVertice(s.id, 'lider', agente, 'forte', undefined, { vagas: VAGAS });
   };
@@ -132,8 +134,9 @@ function NovaSessao({ pastaInicial }: { pastaInicial?: string }) {
                 { id: 'vazio', nome: 'Nenhum agente', desc: 'Sessão vazia, você cria depois' },
               ]
             : [
+                { id: 'terminal', nome: 'Terminal', desc: 'Um terminal comum na pasta do projeto' },
                 { id: 'agente', nome: 'Um agente', desc: 'Um agente comum, faz o que você pedir' },
-                { id: 'vazio', nome: 'Nenhum agente', desc: 'Sessão vazia, você cria depois' },
+                { id: 'vazio', nome: 'Nada', desc: 'Sessão vazia, você abre depois' },
               ]
           ).map((o) => (
             <button key={o.id} className={`opcao ${inicio === o.id ? 'ativo' : ''}`} onClick={() => setInicio(o.id as typeof inicio)}>

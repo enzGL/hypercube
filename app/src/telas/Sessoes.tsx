@@ -16,6 +16,7 @@ import {
   mandar,
   mandarParaTodos,
   mover,
+  novoTerminal,
   NOME_AGENTE,
   NOME_NIVEL,
   ocultar,
@@ -108,8 +109,11 @@ export function Sessoes() {
       >
         <Icone nome="orquestracao" /> Com agentes
       </button>
-      <button className="botao primario" onClick={() => abrirDialogo({ tipo: 'novoVertice', sessaoId: sessao.id })}>
+      <button className="botao" onClick={() => abrirDialogo({ tipo: 'novoVertice', sessaoId: sessao.id })}>
         <Icone nome="mais" /> Agente
+      </button>
+      <button className="botao primario" onClick={() => novoTerminal(sessao.id)}>
+        <Icone nome="mais" /> Terminal
       </button>
     </>
   );
@@ -123,11 +127,14 @@ export function Sessoes() {
       {todos.length === 0 ? (
         <div className="vazio">
           <Hiper estado="repouso" tamanho={150} />
-          <h2>Nenhum agente nesta sessão</h2>
-          <p>Cada agente ganha o seu terminal. Use um agente comum ou um predefinido, que já vem com a skill do seu ofício.</p>
+          <h2>Nenhum terminal nesta sessão</h2>
+          <p>Abra um terminal na pasta do projeto. Se quiser, rode um agente dentro dele ou crie um agente à parte.</p>
           <div className="vazio-acoes">
-            <button className="botao primario" onClick={() => abrirDialogo({ tipo: 'novoVertice', sessaoId: sessao.id, papel: 'agente' })}>
-              <Icone nome="mais" /> Criar agente
+            <button className="botao primario" onClick={() => novoTerminal(sessao.id)}>
+              <Icone nome="mais" /> Novo terminal
+            </button>
+            <button className="botao" onClick={() => abrirDialogo({ tipo: 'novoVertice', sessaoId: sessao.id, papel: 'agente' })}>
+              Criar agente
             </button>
           </div>
         </div>
@@ -181,7 +188,7 @@ export function Sessoes() {
       )}
 
       <Avisos emLinha />
-      <CampoComando e={e} sessaoId={sessao.id} vertices={todos} />
+      {temOrquestracao(sessao) && <CampoComando e={e} sessaoId={sessao.id} vertices={todos} />}
     </div>
   );
 }

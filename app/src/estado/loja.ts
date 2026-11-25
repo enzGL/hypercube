@@ -589,6 +589,11 @@ export function criarSessao(nome: string, pasta: string, worktrees: boolean, orq
 /** Sessão de orquestração ou terminal padrão. */
 export const temOrquestracao = (s: Sessao | undefined) => !!s && s.orquestracao !== false;
 
+/** Terminal comum (o shell da pessoa), sem agente. É o que se abre por padrão. */
+export function novoTerminal(sessaoId: string) {
+  return criarVertice(sessaoId, 'agente', 'terminal', 'barato', undefined, { nome: 'Terminal' });
+}
+
 export function definirOrquestracao(sessaoId: string, orquestracao: boolean) {
   mudar((e) => ({ sessoes: e.sessoes.map((s) => (s.id === sessaoId ? { ...s, orquestracao } : s)) }));
 }

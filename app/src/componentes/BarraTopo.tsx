@@ -1,7 +1,7 @@
 // Barra de cima do app (abas de projeto, navegação, uso dos agentes, RAM) e o cabeçalho de cada tela.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ControlesJanela, alternarMaximizar } from './ControlesJanela';
-import { abrirDialogo, contar, selecionarSessao, useLoja, verticesDaSessao } from '../estado/loja';
+import { abrirDialogo, contar, selecionarSessao, temOrquestracao, useLoja, verticesDaSessao } from '../estado/loja';
 import {
   abrirAba,
   alternarLateral,
@@ -156,7 +156,7 @@ function BarraGlobal() {
         </button>
         {menu && (
           <div className="bg-menu" role="menu">
-            {MENU.map((m) => (
+            {MENU.filter((m) => m.rota !== 'orquestracao' || rota === 'orquestracao' || temOrquestracao(e.sessoes.find((s) => s.id === e.sessaoAtivaId))).map((m) => (
               <button
                 key={m.rota}
                 role="menuitem"

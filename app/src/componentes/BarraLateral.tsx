@@ -11,7 +11,9 @@ import {
   focar,
   NOME_AGENTE,
   nomeDoAgente,
+  novoTerminal,
   selecionarSessao,
+  temOrquestracao,
   useLoja,
   type Estado,
   type Sessao,
@@ -211,7 +213,7 @@ function CorpoLateral({ e, modo, busca }: { e: Estado; modo: ModoLateral; busca:
             <IconeCasca nome="novaPasta" tamanho={15} />
           </button>
           <button
-            onClick={() => (e.sessaoAtivaId ? abrirDialogo({ tipo: 'novoVertice', sessaoId: e.sessaoAtivaId }) : abrirDialogo({ tipo: 'novaSessao' }))}
+            onClick={() => (e.sessaoAtivaId ? novoTerminal(e.sessaoAtivaId) : abrirDialogo({ tipo: 'novaSessao' }))}
             title="Novo terminal no projeto aberto"
             aria-label="Novo terminal no projeto aberto"
           >
@@ -315,7 +317,7 @@ function ArvoreProjeto({
                 {vertices.map((v) => (
                   <LinhaTerminal key={v.id} e={e} v={v} nivel={0} aninhar={!busca} />
                 ))}
-                {mostrarOrq && (
+                {mostrarOrq && temOrquestracao(sessao) && (
                 <li>
                   <button
                     className={`linha-terminal linha-orq ${rota === 'orquestracao' && e.sessaoAtivaId === sessao.id ? 'ativo' : ''}`}
